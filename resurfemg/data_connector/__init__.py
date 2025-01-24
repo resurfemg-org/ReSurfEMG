@@ -8,3 +8,4 @@ from . import file_discovery
 from . import peakset_class
 from . import synthetic_data
 from . import tmsisdk_lite
+from . import adicht_reader
