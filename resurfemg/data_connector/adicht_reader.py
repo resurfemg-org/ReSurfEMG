@@ -1,10 +1,13 @@
-# The class AdichtReader is designed to load EMG data from an ADInstruments device using the .adicht file format (Labchart) 
-# and prepares it for use in ReSurfEMG. The foundation of the AdichtReader class is the repository
-# 'adinstruments_sdk_python' by Jim Hokanson, available at:
-# https://github.com/JimHokanson/adinstruments_sdk_python
-#
-# An example of how to use this class is provided in the main block of this file. This example executes only if the script 
-# is run directly by the Python interpreter and not when imported as a module.
+"""The class AdichtReader is designed to load EMG data from an ADInstruments
+device using the .adicht file format (Labchart) and prepares it for use in
+ReSurfEMG. The foundation of the AdichtReader class is the repository
+'adinstruments_sdk_python' by Jim Hokanson, available at:
+https://github.com/JimHokanson/adinstruments_sdk_python
+
+An example of how to use this class is provided in the main block of this file.
+This example executes only if the script is run directly by the Python
+interpreter and not when imported as a module.
+"""
 
 import adi                              # adi-reader==0.0.13        adinstruments_sdk_python by Jim Hokanson, https://github.com/JimHokanson/adinstruments_sdk_python
 import numpy as np                      # numpy==2.1.2
