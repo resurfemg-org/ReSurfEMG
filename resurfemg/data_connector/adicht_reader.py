@@ -8,6 +8,7 @@ An example of how to use this class is provided in the main block of this file.
 This example executes only if the script is run directly by the Python
 interpreter and not when imported as a module.
 """
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -118,67 +119,65 @@ class AdichtReader:
             print(f"Error reading the file: {e}")
             raise
 
-    def get_labels(self, channel_ids: list[str])-> list[str]:
+    def get_labels(self, channel_idxs: list[str])-> list[str]:
         """
         Returns a list of channel names based on a list of channel IDs.
 
-        :param channel_ids: List of channel IDs.
+        :param channel_idxs: List of channel indices.
         :return: List of channel names.
         """
         try:
             labels = [
-                self.adicht_data.channels[channel_id - 1].name
-                for channel_id in channel_ids]
+                self.adicht_data.channels[idx].name for idx in channel_idxs]
             return labels
         except Exception as e:
             print(f"Error getting labels: {e}")
             raise
 
-    def get_units(self, channel_ids: list[str], record_id: int)-> list[str]:
+    def get_units(self, channel_idxs: list[str], record_idx: int)-> list[str]:
         """
         Returns a list of units based on a list of channel IDs and a record ID.
 
-        :param channel_ids: List of channel IDs.
-        :param record_id: The record ID for which the units are to be retrieved.
+        :param channel_idxs: List of channel indices.
+        :param record_idx: The record index to retrieve the units for.
         :return: List of units.
         """
         try:
             units = [
-                self.adicht_data.channels[channel_id - 1].units[record_id-1]
-                for channel_id in channel_ids]
+                self.adicht_data.channels[idx].units[record_idx] 
+                for idx in channel_idxs]
             return units
         except Exception as e:
             print(f"Error getting units: {e}")
             raise
 
-    def resample_channel(self, channel_id: int, record_id: int, target_rate: int):
+    def resample_channel(
+            self, channel_idx: int, record_idx: int, target_rate: int):
         """
         Performs resampling for a specific channel using a linear interpolation
         method and adds an additional row to the resampled DataFrame.
         
-        :param channel_id: The ID of the channel to be resampled.
-        :param record_id: The ID of the record to extract the data from.
+        :param channel_idx: The ID of the channel to be resampled.
+        :param record_idx: The ID of the record to extract the data from.
         :param target_rate: The target sampling rate in Hz.
         :return: A Pandas DataFrame with resampled data for the channel.
         """
         try:
             # Extract data for the specific channel
-            if channel_id < 1 or channel_id > len(self.adicht_data.channels):
-                raise ValueError(f"Channel ID '{channel_id}' is invalid.")
-            
-            # Retrieve sampling details
-            # convert id to index
-            time_step = self.adicht_data.channels[channel_id - 1].dt[
-                record_id-1]  # Original time step  
-            current_rate = 1 / time_step  # Current sampling rate
-
-            if target_rate == current_rate:
-                raise Exception("target_rate = current_rate")
+            if channel_idx < 1 or channel_idx > len(self.adicht_data.channels):
+                raise ValueError(f"Channel ID '{channel_idx}' is invalid.")
             
             # Load channel data
-            data = self.adicht_data.channels[channel_id - 1].get_data(record_id)
-            channel_name = self.adicht_data.channels[channel_id - 1].name
+            _channel = self.adicht_data.channels[channel_idx]
+            data = _channel.get_data(record_idx)
+            channel_name = _channel.name
             
+            # Retrieve sampling details: Original time step
+            time_step = _channel.dt[record_idx]  # 
+            current_rate = 1 / time_step  # Current sampling rate
+            if target_rate == current_rate:
+                raise UserWarning("target_rate equals current_rate")
+
             # Create DataFrame and set time index
             df = pd.DataFrame({channel_name: data})
             df.index = pd.to_timedelta(df.index * time_step, unit='s')
@@ -187,30 +186,36 @@ class AdichtReader:
             new_interval = 1 / target_rate 
             new_interval_timedelta = pd.to_timedelta(new_interval, unit='s')
 
-            original_sampling_rate = self.adicht_data.channels[channel_id - 1].fs[record_id-1]
-            num_of_samples = self.adicht_data.channels[channel_id - 1].n_samples[record_id-1]
-            target_num_samples = int(num_of_samples * (target_rate / original_sampling_rate))
+            original_sampling_rate = _channel.fs[record_idx]
+            num_of_samples = _channel.n_samples[record_idx]
+            target_num_samples = int(
+                num_of_samples * (target_rate / original_sampling_rate))
 
             # Create an empty DataFrame with target sample rate
-            timedelta_index = pd.to_timedelta(np.arange(target_num_samples) * new_interval_timedelta.value)
-            empty_df = pd.DataFrame(index=timedelta_index, columns=[channel_name])  # create new empty DataFrame with target sampling rate
+            timedelta_index = pd.to_timedelta(
+                np.arange(target_num_samples) * new_interval_timedelta.value)
+            empty_df = pd.DataFrame(
+                index=timedelta_index, columns=[channel_name])
             empty_df[channel_name] = np.nan
 
             # Merge DataFrames
             df_combined = empty_df.combine_first(df)
-            df_combined = df_combined.interpolate(method='linear')  # Interpolate missing values
-            df_resampled = df_combined.resample(new_interval_timedelta).interpolate(method='linear')
+            df_combined = df_combined.interpolate(method='linear')
+            df_resampled = df_combined.resample(
+                new_interval_timedelta).interpolate(method='linear')
 
             return df_resampled
-
-
         except Exception as e:
-            print(f"Error resampling channel {channel_id}: {e}")
+            print(f"Error resampling channel {channel_idx}: {e}")
             raise
 
-    from typing import Tuple
+    
 
-    def extract_data(self, channel_ids: list, record_id: int, resample_channels: dict = None) -> Tuple[pd.DataFrame, int]:
+    def extract_data(
+        self,
+        channel_idxs: list,
+        record_idx: int,
+        resample_channels: dict = None) -> Tuple[pd.DataFrame, int]:
         """
         Extracts specific data based on a list of channel IDs and a record ID.
         Optionally, certain channels can be resampled to a new sampling rate.
@@ -235,33 +240,32 @@ class AdichtReader:
         try:
             data_dict = {}
             non_resampled_channels = []
-            for channel_id in channel_ids:
-                if (channel_id < 1
-                        or channel_id > len(self.adicht_data.channels)):
-                    raise ValueError(f"Channel ID '{channel_id}' is invalid.")
+            for idx in channel_idxs:
+                if (idx < 0 or idx >= len(self.adicht_data.channels)):
+                    raise ValueError(f"Channel ID '{idx}' is invalid.")
                 
-                if resample_channels and channel_id in resample_channels:
-                    target_rate = resample_channels[channel_id]
+                if resample_channels and idx in resample_channels:
+                    target_rate = resample_channels[idx]
                     resampled_df = self.resample_channel(
-                        channel_id, record_id, target_rate)
+                        idx, record_idx, target_rate)
                     for column in resampled_df.columns:
                         data_dict[column] = resampled_df[column].values
                 else:
-                    np_data = self.adicht_data.channels[
-                        channel_id - 1].get_data(record_id)
-                    channel_name = self.adicht_data.channels[
-                        channel_id - 1].name
+                    np_data = self.adicht_data.channels[idx].get_data(
+                        record_idx)
+                    # TODO: Record_idx and Record_id are not the same
+                    channel_name = self.adicht_data.channels[idx].name
                     data_dict[channel_name] = np_data
-                    non_resampled_channels.append(channel_id)
+                    non_resampled_channels.append(idx)
 
             df = pd.DataFrame(data_dict)
             # Select an unsampled channel to read out target sampling
             leader_channel = self.adicht_data.channels[
-                non_resampled_channels[0] - 1]
-            time_step = leader_channel.dt[record_id-1]
+                non_resampled_channels[0]]
+            time_step = leader_channel.dt[record_idx]
             df.index = pd.to_timedelta(df.index * time_step, unit='s')
 
-            return df, int(leader_channel.fs[record_id-1])
+            return df, int(leader_channel.fs[record_idx])
 
         except Exception as e:
             print(f"Error extracting the data: {e}")

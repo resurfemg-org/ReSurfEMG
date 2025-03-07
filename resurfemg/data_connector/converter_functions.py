@@ -14,6 +14,7 @@ import pandas as pd
 import numpy as np
 import scipy.io as sio
 from resurfemg.data_connector.tmsisdk_lite import Poly5Reader
+from resurfemg.data_connector.adicht_reader import AdichtReader
 
 
 def load_file(
@@ -77,6 +78,10 @@ def load_file(
     elif file_extension.lower() == 'npy':
         print('Detected .npy')
         data_df, metadata = load_npy(file_path, verbose)
+    elif file_extension.lower() == 'adicht':
+        print('Detected .adicht')
+        data_df, metadata = load_adicht(
+            file_path, record_id=0, channel_ids=None, verbose=verbose)
     else:
         raise UserWarning("No methods availabe for file extension"
                           + f"{file_extension}.")
@@ -244,19 +249,19 @@ def load_csv(file_path, force_col_reading, verbose=True):
         raise UserWarning('The provided .csv is row based. This could yield '
                           + 'significant loading durations. If you want to '
                           + 'proceed, set force_col_reading=True')
+
+    metadata = dict()
+    if row_wise and has_header(file_path):
+        data_df = pd.read_csv(file_path)
+        if verbose:
+            print('Loaded .csv, extracting data ...')
+        metadata['loaded_channels'] = data_df.columns.values
     else:
-        metadata = dict()
-        if row_wise and has_header(file_path):
-            data_df = pd.read_csv(file_path)
-            if verbose:
-                print('Loaded .csv, extracting data ...')
-            metadata['loaded_channels'] = data_df.columns.values
-        else:
-            if verbose:
-                print('Loaded .csv, extracting data ...')
-            csv_data = pd.read_csv(file_path, header=None)
-            data_df = pd.DataFrame(csv_data.to_numpy())
-        print('Loading data completed')
+        if verbose:
+            print('Loaded .csv, extracting data ...')
+        csv_data = pd.read_csv(file_path, header=None)
+        data_df = pd.DataFrame(csv_data.to_numpy())
+    print('Loading data completed')
 
     return data_df, metadata
 
@@ -286,6 +291,45 @@ def load_npy(file_path, verbose=True):
 
     return data_df, metadata
 
+
+def load_adicht(file_path, record_id, channel_ids=None, verbose=True):
+    """
+    This function loads a .adicht file and returns the data as a numpy array.
+    --------------------------------------------------------------------------
+    :param file_path: Path to the file to be loaded
+    :type file_path: str
+    :param verbose: Print verbose output
+    :type verbose: bool
+
+    :returns data_df: Pandas DataFrame of the loaded data
+    :rtype data_df: ~pandas.DataFrame
+    :returns metadata: Metadata of the loaded data
+    :rtype metadata: dict
+    """
+    if verbose:
+        print('Loading .adicht ...')
+
+    # Extract the data
+    data_emg = AdichtReader(file_path)
+    if verbose:
+        print('Loaded .adicht, extracting data ...')
+    if channel_idxs is None:
+        channel_idxs = [*range(len(data_emg.channel_map))]
+    data_df, fs_emg = data_emg.extract_data(
+        channel_idxs=channel_idxs,
+        record_id=record_id,
+        resample_channels=None,
+    )
+    metadata = {
+        'fs': fs_emg,
+        'loaded_channels': data_emg.get_labels(channel_ids),
+        'units': data_emg.get_units(channel_ids, record_id),
+        'record_id': record_id,
+    }
+    if verbose:
+        print('Loading data completed')
+
+    return data_df, metadata
 
 def poly5unpad(to_be_read):
     """Converts a Poly5 read into an array without padding. This padding is a
