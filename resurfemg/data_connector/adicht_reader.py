@@ -31,12 +31,14 @@ class AdichtReader:
         """
         self.file_path = file_path
         self.metadata = None
-        self.channel_map = None         # Dictionary mapping channel names to IDs
-        self.adicht_data = None         # Reader object for the file
+        self.channel_map = None     # Dictionary mapping channel names to IDs
+        self.adicht_data = None     # Reader object for the file
+        self.record_map = None      # Dictionary mapping record idx to IDs
 
         self._validate_file_path()
         self._initialize_reader()
         self._initialize_channel_map()
+        self._initialize_record_map()
 
     def _validate_file_path(self):
         """
@@ -70,6 +72,18 @@ class AdichtReader:
                 for channel in self.adicht_data.channels}
         except Exception as e:
             print(f"Error initializing the channel map: {e}")
+            raise
+
+    def _initialize_record_map(self):
+        """
+        Creates a dictionary mapping the channel names to their IDs.
+        """
+        try:
+            self.record_map = {
+                i: record.id
+                for i, record in enumerate(self.adicht_data.records)}
+        except Exception as e:
+            print(f"Error initializing the record map: {e}")
             raise
 
     def __repr__(self):
@@ -144,7 +158,7 @@ class AdichtReader:
         """
         try:
             units = [
-                self.adicht_data.channels[idx].units[record_idx] 
+                self.adicht_data.channels[idx].units[record_idx]
                 for idx in channel_idxs]
             return units
         except Exception as e:
@@ -173,7 +187,7 @@ class AdichtReader:
             channel_name = _channel.name
             
             # Retrieve sampling details: Original time step
-            time_step = _channel.dt[record_idx]  # 
+            time_step = _channel.dt[record_idx]
             current_rate = 1 / time_step  # Current sampling rate
             if target_rate == current_rate:
                 raise UserWarning("target_rate equals current_rate")
@@ -247,13 +261,12 @@ class AdichtReader:
                 if resample_channels and idx in resample_channels:
                     target_rate = resample_channels[idx]
                     resampled_df = self.resample_channel(
-                        idx, record_idx, target_rate)
+                        idx, self.record_map[record_idx], target_rate)
                     for column in resampled_df.columns:
                         data_dict[column] = resampled_df[column].values
                 else:
                     np_data = self.adicht_data.channels[idx].get_data(
-                        record_idx)
-                    # TODO: Record_idx and Record_id are not the same
+                        self.record_map[record_idx])
                     channel_name = self.adicht_data.channels[idx].name
                     data_dict[channel_name] = np_data
                     non_resampled_channels.append(idx)
