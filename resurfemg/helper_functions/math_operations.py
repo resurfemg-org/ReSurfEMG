@@ -376,3 +376,21 @@ def running_smoother(array):
     zeros = np.zeros(n_samples - 1)
     smoothed_array = np.hstack((new_list, zeros))
     return smoothed_array
+
+def get_dict_key_where_value(dictionary, value):
+    """
+    This function returns the key of a dictionary where the value matches
+    the input value.
+    ---------------------------------------------------------------------------
+    :param dictionary: dictionary to search
+    :type dictionary: dict
+    :param value: value to search for
+    :type value: any
+
+    :returns key: key where value is found
+    :rtype key: any
+    """
+    for key, val in dictionary.items():
+        if val == value:
+            return key
+    return None
