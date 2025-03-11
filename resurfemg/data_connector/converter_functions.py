@@ -9,12 +9,12 @@ an array that can be further processed with other modules.
 
 import os
 import platform
-import glob
 import pandas as pd
 import numpy as np
 import scipy.io as sio
 from resurfemg.data_connector.tmsisdk_lite import Poly5Reader
-from resurfemg.data_connector.adicht_reader import AdichtReader
+if platform.system() == 'Windows':
+    from resurfemg.data_connector.adicht_reader import AdichtReader
 
 
 def load_file(
@@ -78,10 +78,14 @@ def load_file(
     elif file_extension.lower() == 'npy':
         print('Detected .npy')
         data_df, metadata = load_npy(file_path, verbose)
-    elif file_extension.lower() == 'adicht':
-        print('Detected .adicht')
-        data_df, metadata = load_adicht(
-            file_path, record_id=0, channel_ids=None, verbose=verbose)
+    elif file_extension.lower().startswith('adi'):
+        print(f'Detected .{file_extension.lower()}')
+        if platform.system() == 'Windows':
+            data_df, metadata = load_adicht(
+                file_path, record_idx=0, channel_idxs=None, verbose=verbose)
+        else:
+            raise UserWarning(f'.{file_extension.lower()} only availabe on'
+                              + ' Windows.')
     else:
         raise UserWarning("No methods availabe for file extension"
                           + f"{file_extension}.")
@@ -292,7 +296,7 @@ def load_npy(file_path, verbose=True):
     return data_df, metadata
 
 
-def load_adicht(file_path, record_id, channel_ids=None, verbose=True):
+def load_adicht(file_path, record_idx, channel_idxs=None, verbose=True):
     """
     This function loads a .adicht file and returns the data as a numpy array.
     --------------------------------------------------------------------------
@@ -317,14 +321,14 @@ def load_adicht(file_path, record_id, channel_ids=None, verbose=True):
         channel_idxs = [*range(len(data_emg.channel_map))]
     data_df, fs_emg = data_emg.extract_data(
         channel_idxs=channel_idxs,
-        record_id=record_id,
+        record_idx=record_idx,
         resample_channels=None,
     )
     metadata = {
         'fs': fs_emg,
-        'loaded_channels': data_emg.get_labels(channel_ids),
-        'units': data_emg.get_units(channel_ids, record_id),
-        'record_id': record_id,
+        'loaded_channels': data_emg.get_labels(channel_idxs),
+        'units': data_emg.get_units(channel_idxs, record_idx),
+        'record_id': record_idx,
     }
     if verbose:
         print('Loading data completed')
