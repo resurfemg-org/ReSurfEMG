@@ -310,6 +310,8 @@ def load_adicht(file_path, record_idx, channel_idxs=None, verbose=True):
     :returns metadata: Metadata of the loaded data
     :rtype metadata: dict
     """
+    if not platform.system() == 'Windows':
+        raise UserWarning('AdichtReader only availabe on Windows.')
     if verbose:
         print('Loading .adicht ...')
 
