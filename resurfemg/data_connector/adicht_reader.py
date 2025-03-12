@@ -174,70 +174,64 @@ class AdichtReader:
             for idx in channel_idxs]
         return units
 
-    def resample_channel(self, fs_target, channel_idx=None, record_idx=None,
-                         channel_id=None, record_id=None):
+    def resample_channel(
+        self, fs_target, channel_idx=None, record_idx=None, **kwargs):
         """
         Resample the specified channel using a linear interpolation
         method and adds an additional row to the resampled DataFrame.
         -----------------------------------------------------------------------
         :param channel_idx: The channel index to be resampled.
         :type channel_idx: int
-        :param channel_id: The channel ID to be resampled.
-        :type channel_id: int
-        Either channel_idx or channel_id must be set.
         :param record_idx: The record index to be resampled.
         :type record_idx: int
-        :param record_id: The record ID to be resampled.
-        :type record_id: int
         Either record_idx or record_id must be set.
         :param fs_target: The target sampling rate in Hz.
         :type fs_target: int
+        :param kwargs: Additional arguments to specify the channel ID or record
+            ID instead of indices.
+
         :return: Record DataFrame with resampled data for the specified idx.
         :rtype: pd.DataFrame
         """
-        if channel_id is not None and channel_idx is None:
+        if kwargs.get('channel_id') is not None and channel_idx is None:
             channel_idx = get_dict_key_where_value(
-                self.channel_map, channel_id)
-        elif channel_id is None and channel_idx is None:
+                self.channel_map, kwargs.get('channel_id'))
+        elif kwargs.get('channel_id') is None and channel_idx is None:
             raise ValueError("Either channel_idx or channel_id must be set.")
-        if record_idx is None and record_id is not None:
-            record_idx = get_dict_key_where_value(self.record_map, record_id)
-        elif record_idx is None and record_id is None:
+        if record_idx is None and kwargs.get('record_id') is not None:
+            record_idx = get_dict_key_where_value(
+                self.record_map, kwargs.get('record_id'))
+        elif record_idx is None and kwargs.get('record_id') is None:
             raise ValueError("Either record_idx or record_id must be set.")
 
         # Extract data for the specific channel
         if channel_idx not in self.channel_map:
             raise ValueError(f"Channel ID '{channel_idx}' is invalid.")
 
-        # Load channel data
+        # Load channel data and Retrieve sampling details: Original time step
         _channel = self.adicht_data.channels[channel_idx]
-        data = _channel.get_data(record_idx)
-        channel_name = _channel.name
-
-        # Retrieve sampling details: Original time step
-        time_step = _channel.dt[record_idx]
-        fs_current = 1 / time_step  # Current sampling rate
-        if fs_target == fs_current:
+        print(record_idx, _channel.dt)
+        if fs_target == 1 / _channel.dt[record_idx]:
             raise UserWarning("target_rate equals current_rate")
 
         # Create DataFrame and set time index
-        df = pd.DataFrame({channel_name: data})
-        df.index = pd.to_timedelta(df.index * time_step, unit='s')
+        df = pd.DataFrame({_channel.name: _channel.get_data(record_idx)})
+        df.index = pd.to_timedelta(
+            df.index * _channel.dt[record_idx], unit='s')
 
         # New interval based on target rate
-        dt_target = 1 / fs_target 
-        dt_target_timedelta = pd.to_timedelta(dt_target, unit='s')
+        dt_target_timedelta = pd.to_timedelta(1 / fs_target , unit='s')
 
         fs_original = _channel.fs[record_idx]
-        num_of_samples = _channel.n_samples[record_idx]
-        n_samples_target = int(num_of_samples * (fs_target / fs_original))
+        n_samples_target = int(
+            _channel.n_samples[record_idx] * (fs_target / fs_original))
 
         # Create an empty DataFrame with target sample rate
         timedelta_index = pd.to_timedelta(
             np.arange(n_samples_target) * dt_target_timedelta.value)
         empty_df = pd.DataFrame(
-            index=timedelta_index, columns=[channel_name])
-        empty_df[channel_name] = np.nan
+            index=timedelta_index, columns=[_channel.name])
+        empty_df[_channel.name] = np.nan
 
         # Merge DataFrames
         df_combined = empty_df.combine_first(df)
@@ -249,7 +243,7 @@ class AdichtReader:
 
 
     def extract_data(self, channel_idxs=None, record_idx=None,
-                     resample_channels=None, channel_ids=None, record_id=None):
+                     resample_channels=None, **kwargs):
         """
         Extract channel data from specified channels and record. Optionally,
         resample specified channels to equalize sampling rates across channels.
@@ -259,28 +253,31 @@ class AdichtReader:
         -----------------------------------------------------------------------
         :param channel_idxs: List of channel indices.
         :type channel_idxs: list[int]
-
         :param record_idx: The record index to extract the data from.
         :type record_idx: int
         :param resample_channels: Resample specified channels to a new rate.
         :type resample_channels: {channel_idx: target_rate}
             Example: {1: 2000, 3: 2000} - Resample ch 1 and ch 3 to 2000 Hz
+        :param kwargs: Additional arguments to specify the channel IDs or 
+            record IDs instead of indices.
         :return: A tuple containing:
             - A pandas DataFrame with the extracted and resampled data.
             - The sampling rate (in Hz) of the leading channel.
         :rtype: Tuple[pd.DataFrame, int]
         """
-        if channel_ids is not None and channel_idxs is None:
+        if kwargs.get('channel_ids') is not None and channel_idxs is None:
             channel_idxs = [
                 get_dict_key_where_value(self.channel_map, channel_id)
-                for channel_id in channel_ids]
-        elif channel_ids is not None and channel_idxs is None:
+                for channel_id in kwargs.get('channel_ids')]
+        elif kwargs.get('channel_ids') is None and channel_idxs is None:
             raise ValueError("Either channel_idxs or channel_ids must be set.")
-        if record_idx is None and record_id is not None:
-            record_idx = get_dict_key_where_value(self.record_map, record_id)
-        elif record_idx is None and record_id is None:
+        if record_idx is None and kwargs.get('record_id') is not None:
+            record_idx = get_dict_key_where_value(
+                self.record_map, kwargs.get('record_id'))
+        elif record_idx is None and kwargs.get('record_id') is None:
             raise ValueError("Either record_idx or record_id must be set.")
-
+        
+        fs_out = []
         data_dict = {}
         non_resampled_channels = []
         for idx in channel_idxs:
@@ -288,23 +285,28 @@ class AdichtReader:
                 raise ValueError(f"Channel idx '{idx}' is invalid.")
 
             if resample_channels and idx in resample_channels:
-                target_rate = resample_channels[idx]
                 resampled_df = self.resample_channel(
-                    idx, self.record_map[record_idx], target_rate)
+                    resample_channels[idx], idx, self.record_map[record_idx])
+                
                 for column in resampled_df.columns:
                     data_dict[column] = resampled_df[column].values
+                fs_out.append(resample_channels[idx])
             else:
                 np_data = self.adicht_data.channels[idx].get_data(
                     self.record_map[record_idx])
                 channel_name = self.adicht_data.channels[idx].name
                 data_dict[channel_name] = np_data
                 non_resampled_channels.append(idx)
+                fs_out.append(self.metadata[idx]['fs'][0])
+        
+        if len(set(fs_out)) > 1:
+            raise ValueError("Output channels have different sampling rates.")
 
         df = pd.DataFrame(data_dict)
         # Select an unsampled channel to read out target sampling
         leader_channel = self.adicht_data.channels[
             non_resampled_channels[0]]
-        time_step = leader_channel.dt[record_idx]
-        df.index = pd.to_timedelta(df.index * time_step, unit='s')
+        df.index = pd.to_timedelta(
+            df.index * leader_channel.dt[record_idx], unit='s')
 
         return df, int(leader_channel.fs[record_idx])

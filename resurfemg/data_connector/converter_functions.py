@@ -17,14 +17,7 @@ if platform.system() == 'Windows':
     from resurfemg.data_connector.adicht_reader import AdichtReader
 
 
-def load_file(
-    file_path,
-    key_name=None,
-    channels=None,
-    drop_channels=None,
-    force_col_reading=False,
-    verbose=True
-):
+def load_file(file_path, verbose=True, **kwargs):
     """
     This function loads a file from a given path and returns the data as a
     numpy array. The function can handle .poly5, .mat, .csv, and .npy files.
@@ -32,16 +25,13 @@ def load_file(
     --------------------------------------------------------------------------
     :param file_path: Path to the file to be loaded
     :type file_path: str
-    :param key_name: Key name for .mat files
-    :type key_name: str
-    :param channels: List of channel names to rename the loaded channels
-    :type channels: list
-    :param drop_channels: List of channel names or indices to drop
-    :type drop_channels: list
-    :param force_col_reading: Force column reading for row based .csv files
-    :type force_col_reading: bool
-    :param verbose: Print verbose output
-    :type verbose: bool
+    :param kwargs: Additional keyword arguments for specific file loaders:
+    - key_name (str): Key name for loading .mat files.
+    - force_col_reading (bool): If True, force reading columns for .csv files.
+        Default is False.
+    - record_idx (int): Record index for loading .adi* files. Default is 0.
+    - channel_idxs (list): List of channel indices for loading .adi files.
+    - labels (list): List of new channel names to rename the columns.
 
     :returns np_float_data: Numpy array of the loaded data
     :rtype: ~numpy.ndarray
@@ -50,78 +40,69 @@ def load_file(
     :returns metadata: Metadata of the loaded data
     :rtype: dict
     """
-
     if not isinstance(file_path, str):
         raise ValueError('file_path should be a str.')
 
-    if platform.system() == 'Windows':
-        path_sep = "\\"
-    else:
-        path_sep = '/'
-
-    file_name = file_path.split(path_sep)[-1]
-    file_dir = os.path.join(*file_path.split(path_sep)[:-1])
+    file_name = os.path.basename(file_path)
+    file_dir = os.path.dirname(file_path)
     file_extension = file_name.split('.')[-1]
 
     # 1. Load File types: .poly5, .mat, .csv,
-    metadata = dict()
-    if file_extension.lower() == 'poly5':
-        print('Detected .Poly5')
-        data_df, metadata = load_poly5(file_path, verbose=verbose)
-    elif file_extension.lower() == 'mat':
-        print('Detected .mat')
-        data_df = load_mat(file_path, key_name, verbose)
-    elif file_extension.lower() == 'csv':
-        print('Detected .csv')
-        data_df, metadata = load_csv(
-            file_path, force_col_reading, verbose)
-    elif file_extension.lower() == 'npy':
-        print('Detected .npy')
-        data_df, metadata = load_npy(file_path, verbose)
-    elif file_extension.lower().startswith('adi'):
-        print(f'Detected .{file_extension.lower()}')
-        if platform.system() == 'Windows':
-            data_df, metadata = load_adicht(
-                file_path, record_idx=0, channel_idxs=None, verbose=verbose)
-        else:
-            raise UserWarning(f'.{file_extension.lower()} only availabe on'
-                              + ' Windows.')
+    loaders = {
+        'poly5': load_poly5,
+        'mat': lambda fp, v: load_mat(fp, kwargs.get('key_name'), v),
+        'csv': lambda fp, v: load_csv(
+            fp, kwargs.get('force_col_reading', False), v),
+        'npy': load_npy,
+    }
+    file_ext = file_extension.lower()
+    if file_ext in loaders:
+        print(f'Detected .{file_ext}')
+        data_df, metadata = loaders[file_ext](file_path, verbose)
+    elif file_ext.startswith('adi'):
+        print(f'Detected .{file_ext}')
+        data_df, metadata = load_adicht(
+            file_path,
+            record_idx=kwargs.get('record_idx', 0),
+            channel_idxs=kwargs.get('channel_idxs', None),
+            verbose=kwargs.get('verbose', True)
+        )
     else:
-        raise UserWarning("No methods availabe for file extension"
-                          + f"{file_extension}.")
+        raise UserWarning(
+            f"No methods available for file extension {file_extension}.")
 
     metadata['file_name'] = file_name
     metadata['file_dir'] = file_dir
     metadata['file_extension'] = file_extension
-    if isinstance(channels, list) and len(channels) == data_df.shape[1]:
-        if not all(isinstance(channel, str) for channel in channels):
+    labels = kwargs.get('labels')
+    if isinstance(labels, list) and len(labels) == data_df.shape[1]:
+        if not all(isinstance(channel, str) for channel in labels):
             raise TypeError('All channel names should be str')
-        if len(channels) != len(set(channels)):
+        if len(labels) != len(set(labels)):
             raise UserWarning('Channel names should be unique')
-        if verbose:
-            print('Renamed channels:', *zip(data_df.columns, channels), '...')
-        data_df.columns = channels
+        if kwargs.get('verbose', True):
+            print('Renamed channels:', *zip(data_df.columns, labels), '...')
+        data_df.columns = labels
 
-    # 2. Drop channels
-    if isinstance(drop_channels, list):
-        if all(channel in data_df.columns for channel in drop_channels):
-            data_df.drop(columns=drop_channels, inplace=True)
-            metadata['dropped_channels'] = drop_channels
-            if verbose:
-                print('Dropped channels:', drop_channels)
-        elif all((isinstance(channel, int) and channel < len(data_df.columns)
-                  for channel in drop_channels)):
-            data_df.drop(columns=data_df.columns[drop_channels], inplace=True)
-            metadata['dropped_channels'] = data_df.columns[
-                drop_channels].values
-            if verbose:
-                print('Dropped channels:',
-                      metadata['dropped_channels'], '...')
+    # 2. Select specific channels
+    if not file_ext.startswith('adi'):
+        channel_idxs = kwargs.get(
+            'channel_idxs', list(range(data_df.shape[1])))
+        if not isinstance(channel_idxs, list):
+            raise TypeError('channel_idxs should be a list.')
+        # Select specific channels
+        valid_channel_idxs = [
+            idx for idx in channel_idxs 
+                if isinstance(idx, int) and idx < len(data_df.columns)
+        ]
+        if valid_channel_idxs:
+            data_df = data_df.iloc[:, valid_channel_idxs]
+            metadata['selected_channels'] = valid_channel_idxs
+            if kwargs.get('verbose', True):
+                print('Selected channels:', valid_channel_idxs)
         else:
-            raise UserWarning('drop_channels should be a list of channel '
-                              + 'indices (int) or names (str).')
-    else:
-        metadata['dropped_channels'] = []
+            raise UserWarning(
+                'channel_idxs should be a list of valid channel indices (int).')
 
     # 3. Convert remaining float channels to numpy array
     float_data_df = data_df.select_dtypes(include=float)
@@ -202,7 +183,7 @@ def load_mat(file_path, key_name, verbose=True):
     else:
         raise ValueError('No key_name provided.')
 
-    return data_df
+    return data_df, {}
 
 
 def load_csv(file_path, force_col_reading, verbose=True):
