@@ -5,6 +5,11 @@ from glob import glob
 import subprocess
 
 from setuptools import Command, setup
+import mock
+
+MOCK_MODULES = ['adi']
+for mod_name in MOCK_MODULES:
+    sys.modules[mod_name] = mock.Mock()
 
 
 project_dir = os.path.dirname(os.path.realpath(__file__))
