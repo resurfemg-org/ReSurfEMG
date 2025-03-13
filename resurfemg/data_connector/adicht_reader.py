@@ -89,13 +89,14 @@ class AdichtReader:
         """
         table = PrettyTable()
         table.field_names = [
-            "Channel ID", "Name", "Records", "Samples",
+            "idx", "Channel ID", "Name", "Records", "Samples",
             "Sampling Rate (Hz)", "timestep (s)", "Units"]
         table.align["Name"] = "l"
 
         channel_info = []
-        for channel in self.adicht_data.channels:
+        for idx, channel in enumerate(self.adicht_data.channels):
             info = {
+                "idx": idx,
                 "id": channel.id,
                 "name": channel.name,
                 "records": channel.n_records,
@@ -106,6 +107,7 @@ class AdichtReader:
             }
             channel_info.append(info)
             table.add_row([
+                idx,
                 channel.id,
                 channel.name,
                 channel.n_records,
