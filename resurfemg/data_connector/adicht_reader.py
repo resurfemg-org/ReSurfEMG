@@ -15,6 +15,7 @@ import adi
 from prettytable import PrettyTable
 from resurfemg.helper_functions.math_operations import get_dict_key_where_value
 
+
 class AdichtReader:
     """
     Class for loading timeseries data from an ADInstruments devices using
@@ -87,7 +88,7 @@ class AdichtReader:
         """
         table = PrettyTable()
         table.field_names = [
-            "Channel ID", "Name", "Records", "Samples", 
+            "Channel ID", "Name", "Records", "Samples",
             "Sampling Rate (Hz)", "timestep (s)", "Units"]
         table.align["Name"] = "l"
 
@@ -175,7 +176,7 @@ class AdichtReader:
         return units
 
     def resample_channel(
-        self, fs_target, channel_idx=None, record_idx=None, **kwargs):
+            self, fs_target, channel_idx=None, record_idx=None, **kwargs):
         """
         Resample the specified channel using a linear interpolation
         method and adds an additional row to the resampled DataFrame.
@@ -210,17 +211,17 @@ class AdichtReader:
 
         # Load channel data and Retrieve sampling details: Original time step
         _channel = self.adicht_data.channels[channel_idx]
-        print(record_idx, _channel.dt)
         if fs_target == 1 / _channel.dt[record_idx]:
             raise UserWarning("target_rate equals current_rate")
 
         # Create DataFrame and set time index
-        df = pd.DataFrame({_channel.name: _channel.get_data(record_idx)})
+        df = pd.DataFrame({_channel.name: _channel.get_data(
+            self.record_map[record_idx])})
         df.index = pd.to_timedelta(
             df.index * _channel.dt[record_idx], unit='s')
 
         # New interval based on target rate
-        dt_target_timedelta = pd.to_timedelta(1 / fs_target , unit='s')
+        dt_target_timedelta = pd.to_timedelta(1 / fs_target, unit='s')
 
         fs_original = _channel.fs[record_idx]
         n_samples_target = int(
@@ -241,7 +242,6 @@ class AdichtReader:
 
         return df_resampled
 
-
     def extract_data(self, channel_idxs=None, record_idx=None,
                      resample_channels=None, **kwargs):
         """
@@ -258,7 +258,7 @@ class AdichtReader:
         :param resample_channels: Resample specified channels to a new rate.
         :type resample_channels: {channel_idx: target_rate}
             Example: {1: 2000, 3: 2000} - Resample ch 1 and ch 3 to 2000 Hz
-        :param kwargs: Additional arguments to specify the channel IDs or 
+        :param kwargs: Additional arguments to specify the channel IDs or
             record IDs instead of indices.
         :return: A tuple containing:
             - A pandas DataFrame with the extracted and resampled data.
@@ -276,7 +276,7 @@ class AdichtReader:
                 self.record_map, kwargs.get('record_id'))
         elif record_idx is None and kwargs.get('record_id') is None:
             raise ValueError("Either record_idx or record_id must be set.")
-        
+
         fs_out = []
         data_dict = {}
         non_resampled_channels = []
@@ -286,8 +286,8 @@ class AdichtReader:
 
             if resample_channels and idx in resample_channels:
                 resampled_df = self.resample_channel(
-                    resample_channels[idx], idx, self.record_map[record_idx])
-                
+                    resample_channels[idx], idx, record_idx)
+
                 for column in resampled_df.columns:
                     data_dict[column] = resampled_df[column].values
                 fs_out.append(resample_channels[idx])
@@ -298,7 +298,7 @@ class AdichtReader:
                 data_dict[channel_name] = np_data
                 non_resampled_channels.append(idx)
                 fs_out.append(self.metadata[idx]['fs'][0])
-        
+
         if len(set(fs_out)) > 1:
             raise ValueError("Output channels have different sampling rates.")
 

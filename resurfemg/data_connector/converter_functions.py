@@ -92,8 +92,8 @@ def load_file(file_path, verbose=True, **kwargs):
             raise TypeError('channel_idxs should be a list.')
         # Select specific channels
         valid_channel_idxs = [
-            idx for idx in channel_idxs 
-                if isinstance(idx, int) and idx < len(data_df.columns)
+            idx for idx in channel_idxs
+            if isinstance(idx, int) and idx < len(data_df.columns)
         ]
         if valid_channel_idxs:
             data_df = data_df.iloc[:, valid_channel_idxs]
@@ -102,7 +102,7 @@ def load_file(file_path, verbose=True, **kwargs):
                 print('Selected channels:', valid_channel_idxs)
         else:
             raise UserWarning(
-                'channel_idxs should be a list of valid channel indices (int).')
+                'channel_idxs should be a list of valid channel indices (int)')
 
     # 3. Convert remaining float channels to numpy array
     float_data_df = data_df.select_dtypes(include=float)
@@ -317,6 +317,7 @@ def load_adicht(file_path, record_idx, channel_idxs=None, verbose=True):
         print('Loading data completed')
 
     return data_df, metadata
+
 
 def poly5unpad(to_be_read):
     """Converts a Poly5 read into an array without padding. This padding is a

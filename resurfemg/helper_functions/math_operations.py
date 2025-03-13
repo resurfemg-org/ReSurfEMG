@@ -377,6 +377,7 @@ def running_smoother(array):
     smoothed_array = np.hstack((new_list, zeros))
     return smoothed_array
 
+
 def get_dict_key_where_value(dictionary, value):
     """
     This function returns the key of a dictionary where the value matches
