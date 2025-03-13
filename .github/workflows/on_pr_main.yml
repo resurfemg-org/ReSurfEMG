@@ -30,10 +30,9 @@ jobs:
       with:
         python-version: 3.12
     - run: python -m venv .venv
-    - run: .venv\bin\activate
-    - run: pip install wheel setuptools
-    - run: pip install -e .[test]
-    - run: pytest
+    - run: .venv\Scripts\pip install wheel setuptools
+    - run: .venv\Scripts\pip install -e .[test]
+    - run: .venv\bin\python -m pytest
 
   Test-Sanity-OSX:
     runs-on: macos-latest
@@ -46,7 +45,6 @@ jobs:
       with:
         python-version: 3.12
     - run: python3 -m venv .venv
-    - run: .venv/bin/activate
-    - run: python -m pip install wheel setuptools
-    - run: python -m pip install -e .[test]
-    - run: pytest
+    - run: .venv/bin/python -m pip install wheel setuptools
+    - run: .venv/bin/python -m pip install -e .[test]
+    - run: .venv/bin/python -m pytest
