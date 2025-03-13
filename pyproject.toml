@@ -34,7 +34,6 @@ dependencies = [
     'pywavelets>=1.1.1',
     'adi-reader>=0.0.13',
     'prettytable>=3.12.0',
-    'mock',
 ]
 readme = "README.md"
 dynamic = ["version"]
