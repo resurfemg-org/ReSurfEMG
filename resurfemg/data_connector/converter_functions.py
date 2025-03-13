@@ -29,7 +29,7 @@ def load_file(file_path, verbose=True, **kwargs):
     :param kwargs: Additional keyword arguments for specific file loaders:
     - key_name (str): Key name for loading .mat files.
     - force_col_reading (bool): If True, force reading columns for .csv files.
-        Default is False.
+    Default is False.
     - record_idx (int): Record index for loading .adi* files. Default is 0.
     - channel_idxs (list): List of channel indices for loading .adi files.
     - labels (list): List of new channel names to rename the columns.
@@ -41,6 +41,7 @@ def load_file(file_path, verbose=True, **kwargs):
     :returns metadata: Metadata of the loaded data
     :rtype: dict
     """
+
     if not isinstance(file_path, str):
         raise ValueError('file_path should be a str.')
 

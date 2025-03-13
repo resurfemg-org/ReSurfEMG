@@ -138,7 +138,7 @@ class AdichtReader:
         :type channel_idxs: list[int]
         :param channel_ids: List of channel IDs to retrieve the labels for
         :type channel_ids: list
-        Either channel_idxs or channel_ids must be set.
+
         :return: List of channel names.
         :rtype: list[str]
         """
@@ -201,7 +201,7 @@ class AdichtReader:
         :param fs_target: The target sampling rate in Hz.
         :type fs_target: int
         :param kwargs: Additional arguments to specify the channel ID or record
-            ID instead of indices.
+        ID instead of indices.
 
         :return: Record DataFrame with resampled data for the specified idx.
         :rtype: pd.DataFrame
@@ -269,12 +269,12 @@ class AdichtReader:
         :type record_idx: int
         :param resample_channels: Resample specified channels to a new rate.
         :type resample_channels: {channel_idx: target_rate}
-            Example: {1: 2000, 3: 2000} - Resample ch 1 and ch 3 to 2000 Hz
+        Example: {1: 2000, 3: 2000} - Resample ch 1 and ch 3 to 2000 Hz
         :param kwargs: Additional arguments to specify the channel IDs or
-            record IDs instead of indices.
+        record IDs instead of indices.
         :return: A tuple containing:
-            - A pandas DataFrame with the extracted and resampled data.
-            - The sampling rate (in Hz) of the leading channel.
+        - A pandas DataFrame with the extracted and resampled data.
+        - The sampling rate (in Hz) of the leading channel.
         :rtype: Tuple[pd.DataFrame, int]
         """
         if kwargs.get('channel_ids') is not None and channel_idxs is None:
