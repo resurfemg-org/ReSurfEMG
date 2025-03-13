@@ -9,6 +9,7 @@ an array that can be further processed with other modules.
 
 import os
 import platform
+import warnings
 import pandas as pd
 import numpy as np
 import scipy.io as sio
@@ -65,7 +66,8 @@ def load_file(file_path, verbose=True, **kwargs):
             file_path,
             record_idx=kwargs.get('record_idx', 0),
             channel_idxs=kwargs.get('channel_idxs', None),
-            verbose=kwargs.get('verbose', True)
+            resample_channels=kwargs.get('resample_channels', None),
+            verbose=verbose,
         )
     else:
         raise UserWarning(
@@ -88,21 +90,14 @@ def load_file(file_path, verbose=True, **kwargs):
     if not file_ext.startswith('adi'):
         channel_idxs = kwargs.get(
             'channel_idxs', list(range(data_df.shape[1])))
-        if not isinstance(channel_idxs, list):
-            raise TypeError('channel_idxs should be a list.')
-        # Select specific channels
-        valid_channel_idxs = [
-            idx for idx in channel_idxs
-            if isinstance(idx, int) and idx < len(data_df.columns)
-        ]
-        if valid_channel_idxs:
-            data_df = data_df.iloc[:, valid_channel_idxs]
-            metadata['selected_channels'] = valid_channel_idxs
-            if kwargs.get('verbose', True):
-                print('Selected channels:', valid_channel_idxs)
-        else:
-            raise UserWarning(
+        if not all(isinstance(idx, int) and 0 <= idx < data_df.shape[1]
+                   for idx in channel_idxs):
+            raise TypeError(
                 'channel_idxs should be a list of valid channel indices (int)')
+        data_df = data_df.iloc[:, channel_idxs]
+        metadata['selected_channels'] = channel_idxs
+        if verbose:
+            print('Selected channels:', channel_idxs)
 
     # 3. Convert remaining float channels to numpy array
     float_data_df = data_df.select_dtypes(include=float)
@@ -277,7 +272,8 @@ def load_npy(file_path, verbose=True):
     return data_df, metadata
 
 
-def load_adicht(file_path, record_idx, channel_idxs=None, verbose=True):
+def load_adicht(file_path, record_idx, channel_idxs=None,
+                resample_channels=None, verbose=True):
     """
     This function loads a .adicht file and returns the data as a numpy array.
     --------------------------------------------------------------------------
@@ -297,20 +293,31 @@ def load_adicht(file_path, record_idx, channel_idxs=None, verbose=True):
         print('Loading .adicht ...')
 
     # Extract the data
-    data_emg = AdichtReader(file_path)
     if verbose:
         print('Loaded .adicht, extracting data ...')
+    adicht_data = AdichtReader(file_path)
+    adi_meta = adicht_data.generate_metadata()
     if channel_idxs is None:
-        channel_idxs = [*range(len(data_emg.channel_map))]
-    data_df, fs_emg = data_emg.extract_data(
+        channel_idxs = list(adicht_data.channel_map.keys())
+    fs_sel = [adi_meta[idx]['fs'][0] for idx in channel_idxs]
+    if len(set(fs_sel)) > 1:
+        warnings.warn(
+            """\nMultiple sampling rates detected, which cannot be parsed into
+            one numpy array. Please specify the channel_idxs to select a
+            subset of channels with the same sampling rate or resample
+            channels with the resample_channels argument.\n""")
+        max_fs = max(fs_sel)
+        channel_idxs = [i for i, fs in enumerate(fs_sel) if fs == max_fs]
+
+    data_df, fs_emg = adicht_data.extract_data(
         channel_idxs=channel_idxs,
         record_idx=record_idx,
-        resample_channels=None,
+        resample_channels=resample_channels,
     )
     metadata = {
         'fs': fs_emg,
-        'loaded_channels': data_emg.get_labels(channel_idxs),
-        'units': data_emg.get_units(channel_idxs, record_idx),
+        'loaded_channels': adicht_data.get_labels(channel_idxs),
+        'units': adicht_data.get_units(channel_idxs, record_idx),
         'record_id': record_idx,
     }
     if verbose:

@@ -30,6 +30,7 @@ class AdichtReader:
         """
         self.file_path = file_path
         self.metadata = None
+        self.metadata_table = None
         self.channel_map = None     # Dictionary mapping channel names to IDs
         self.adicht_data = None     # Reader object for the file
         self.record_map = None      # Dictionary mapping record idx to IDs
@@ -78,10 +79,10 @@ class AdichtReader:
     def __repr__(self):
         return f"<AdichtReader(file_path={self.file_path})>"
 
-    def print_metadata(self):
+    def generate_metadata(self):
         """
-        Extracts and provides a tabular overview of the channels, samples,
-        records, sampling rates, units, and time step.
+        Extracts metadata on channels, samples, records, sampling rates, units,
+        and time step and sets it in self.metadata and self.metadata_table.
 
         :return: List of metadata dicts per channel
         :rtype: list[dict]
@@ -114,9 +115,20 @@ class AdichtReader:
                 channel.units
             ])
         self.metadata = channel_info
-        print("Available channels and metadata:")
-        print(table)
+        self.metadata_table = table
         return channel_info
+
+    def print_metadata(self):
+        """
+        Extracts and provides a tabular overview of the channels, samples,
+        records, sampling rates, units, and time step.
+
+        :return: List of metadata dicts per channel
+        :rtype: list[dict]
+        """
+        _ = self.generate_metadata()
+        print("Available channels and metadata:")
+        print(self.metadata_table)
 
     def get_labels(self, channel_idxs=None, channel_ids=None):
         """
