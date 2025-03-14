@@ -19,6 +19,7 @@ if platform.system() == 'Windows':
 else:
     raise ImportError("The adicht_reader module is only available on Windows.")
 
+
 class AdichtReader:
     """
     Class for loading timeseries data from an ADInstruments devices using
