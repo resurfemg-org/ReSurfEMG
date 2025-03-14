@@ -16,8 +16,6 @@ from prettytable import PrettyTable
 from resurfemg.helper_functions.math_operations import get_dict_key_where_value
 if platform.system() == 'Windows':
     import adi
-else:
-    raise ImportError("The adicht_reader module is only available on Windows.")
 
 
 class AdichtReader:
@@ -32,6 +30,8 @@ class AdichtReader:
         """
         :param file_path: The file path to the import
         """
+        if platform.system() != 'Windows':
+            raise ImportError("AdichtReader is only available on Windows.")
         self.file_path = file_path
         self.metadata = None
         self.metadata_table = None

@@ -86,8 +86,7 @@ class SphinxDoc(Command):
         confoverrides = {}
         confoverrides['project'] = name
         confoverrides['version'] = version
-        confoverrides['autodoc_mock_imports'] = [
-            "adi", "resurfemg.data_connector.adicht_reader"]
+        confoverrides['autodoc_mock_imports'] = ["adi"]
         confdir = os.path.join(project_dir, 'docs')
         srcdir = confdir
         builder = 'html'
