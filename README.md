@@ -226,7 +226,7 @@ source code.
 
 ## Generating documentation
 
-Online documentation can be found at https://resurfemg.github.io/ReSurfEMG/
+Online documentation can be found at https://resurfemg-org.github.io/ReSurfEMG/
 or on https://readthedocs.org/ by searching for ReSurfEMG. Up-to-date 
 documentation can be generated in command-line as follows in terminal:
 

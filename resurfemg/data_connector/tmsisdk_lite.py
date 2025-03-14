@@ -36,7 +36,7 @@ class Poly5Reader:
     created on TMSi devices and/or in Poly5 format.
 
     """
-    def __init__(self, filename=None, readAll=True):
+    def __init__(self, filename=None, readAll=True, verbose=True):
         if filename is None:
             root = tk.Tk()
 
@@ -45,7 +45,9 @@ class Poly5Reader:
 
         self.filename = filename
         self.readAll = readAll
-        print('Reading file ', filename)
+        self.verbose = verbose
+        if self.verbose:
+            print('Reading file ', filename)
         self._readFile(filename)
 
     def read_data_MNE(self,) -> mne.io.RawArray:
@@ -178,7 +180,8 @@ class Poly5Reader:
                 s._Channel__unit_name for s in self.channels
             ]
             self.samples = samples
-            print('Done reading data.')
+            if self.verbose:
+                print('Done reading data.')
             self.file_obj.close()
 
     def readSamples(self, n_blocks=None):
@@ -228,9 +231,10 @@ class Poly5Reader:
         elif version_number != 203:
             print('Version number of file is invalid.')
         else:
-            print('\t Number of samples:  %s ' % self.num_samples)
-            print('\t Number of channels:  %s ' % self.num_channels)
-            print('\t Sample rate: %s Hz' % self.sample_rate)
+            if self.verbose:
+                print('\t Number of samples:  %s ' % self.num_samples)
+                print('\t Number of channels:  %s ' % self.num_channels)
+                print('\t Sample rate: %s Hz' % self.sample_rate)
 
     def _readSignalDescription(self, f):
         chan_list = []

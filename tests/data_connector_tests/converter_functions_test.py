@@ -16,12 +16,12 @@ base_path = os.path.join(
 class TestLoadFile(unittest.TestCase):
     file_path = os.path.join(base_path, 'emg_data_synth_quiet_breathing')
     def test_load_file_poly5(self):
-        file_name = self.file_path + '.poly5'
+        file_name = self.file_path + '.Poly5'
         np_data, df_data, metadata = load_file(file_name)
         assert isinstance(np_data, np.ndarray)
         assert isinstance(df_data, pd.DataFrame)
         assert isinstance(metadata, dict)
-        assert metadata['file_extension'] == 'poly5'
+        assert metadata['file_extension'] == 'Poly5'
 
     def test_load_file_adidat(self):
         file_name = self.file_path + '.adidat'

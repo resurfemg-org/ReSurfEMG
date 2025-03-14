@@ -58,11 +58,11 @@ def load_file(file_path, verbose=True, **kwargs):
         'npy': load_npy,
     }
     file_ext = file_extension.lower()
-    if file_ext in loaders:
+    if verbose:
         print(f'Detected .{file_ext}')
+    if file_ext in loaders:
         data_df, metadata = loaders[file_ext](file_path, verbose)
     elif file_ext.startswith('adi'):
-        print(f'Detected .{file_ext}')
         data_df, metadata = load_adicht(
             file_path,
             record_idx=kwargs.get('record_idx', 0),
@@ -93,22 +93,23 @@ def load_file(file_path, verbose=True, **kwargs):
             'channel_idxs', list(range(data_df.shape[1])))
         if not all(isinstance(idx, int) and 0 <= idx < data_df.shape[1]
                    for idx in channel_idxs):
-            raise TypeError(
-                'channel_idxs should be a list of valid channel indices (int)')
+            raise TypeError('channel_idxs should be a list of ints')
         data_df = data_df.iloc[:, channel_idxs]
-        metadata['selected_channels'] = channel_idxs
+        metadata['channel_idxs'] = channel_idxs
+        for item in ['labels', 'units']:
+            if item in metadata:
+                metadata[item] = [metadata[item][idx] for idx in channel_idxs]
         if verbose:
             print('Selected channels:', channel_idxs)
 
     # 3. Convert remaining float channels to numpy array
-    float_data_df = data_df.select_dtypes(include=float)
-    np_float_data = np.rot90(float_data_df.to_numpy())
-    metadata['float_channels'] = float_data_df.columns.values
-    if verbose:
-        print('Loaded channels as np.array:',
-              metadata['float_channels'], '...')
+    np_data = np.flipud(np.rot90(data_df.to_numpy(), axes=(0, 1)))
 
-    return np_float_data, data_df, metadata
+    for item in ['fs', 'labels', 'units']:
+        if item not in metadata:
+            print(f'Warning: Metadata {item} not found. Set it manually.')
+
+    return np_data, data_df, metadata
 
 
 def load_poly5(file_path, verbose=True):
@@ -129,16 +130,16 @@ def load_poly5(file_path, verbose=True):
     """
     if verbose:
         print('Loading .Poly5 ...')
-    poly5_data = Poly5Reader(file_path)
+    poly5_data = Poly5Reader(file_path, verbose=verbose)
     if verbose:
         print('Loaded .Poly5, extracting data ...')
     n_samples = poly5_data.num_samples
     loaded_data = poly5_data.samples[:, :n_samples]
     metadata = dict()
     metadata['fs'] = poly5_data.sample_rate
-    metadata['loaded_channels'] = poly5_data.ch_names
+    metadata['labels'] = poly5_data.ch_names
     metadata['units'] = poly5_data.ch_unit_names
-    data_df = pd.DataFrame(loaded_data.T, columns=metadata['loaded_channels'])
+    data_df = pd.DataFrame(loaded_data.T, columns=metadata['labels'])
     if verbose:
         print('Loading data completed')
 
@@ -236,7 +237,7 @@ def load_csv(file_path, force_col_reading, verbose=True):
         data_df = pd.read_csv(file_path)
         if verbose:
             print('Loaded .csv, extracting data ...')
-        metadata['loaded_channels'] = data_df.columns.values
+        metadata['labels'] = data_df.columns.values
     else:
         if verbose:
             print('Loaded .csv, extracting data ...')
@@ -268,7 +269,7 @@ def load_npy(file_path, verbose=True):
         if verbose:
             print('Transposed loaded data.')
     data_df = pd.DataFrame(np_data)
-    metadata = dict()
+    metadata = {}
 
     return data_df, metadata
 
@@ -297,6 +298,8 @@ def load_adicht(file_path, record_idx, channel_idxs=None,
     if verbose:
         print('Loaded .adicht, extracting data ...')
     adicht_data = AdichtReader(file_path)
+    if verbose:
+        adicht_data.print_metadata()
     adi_meta = adicht_data.generate_metadata()
     if channel_idxs is None:
         channel_idxs = list(adicht_data.channel_map.keys())
@@ -317,7 +320,8 @@ def load_adicht(file_path, record_idx, channel_idxs=None,
     )
     metadata = {
         'fs': fs_emg,
-        'loaded_channels': adicht_data.get_labels(channel_idxs),
+        'channel_idxs': channel_idxs,
+        'labels': adicht_data.get_labels(channel_idxs),
         'units': adicht_data.get_units(channel_idxs, record_idx),
         'record_id': record_idx,
     }

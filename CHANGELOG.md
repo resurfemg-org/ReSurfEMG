@@ -1,5 +1,11 @@
 # Change Log
 
+## Release 1.1.0
+* Minor revision
+	- Add .adi* file reader (LabChart, BIOPAC). NB Windows only
+	- Revise basic_emg_pipeline.ipynb for (ventilator supported) breathing activity
+	- Minor bug fixes and performance updates
+
 ## Release 1.0.2
 * Patch
 	- Move ReSurfEMG repo from https://github.com/ReSurfEMG/ReSurfEMG/ to https://github.com/resurfemg-org/ReSurfEMG/
