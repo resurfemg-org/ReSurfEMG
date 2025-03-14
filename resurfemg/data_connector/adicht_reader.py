@@ -9,12 +9,15 @@ This example executes only if the script is run directly by the Python
 interpreter and not when imported as a module.
 """
 import os
+import platform
 import numpy as np
 import pandas as pd
-import adi
 from prettytable import PrettyTable
 from resurfemg.helper_functions.math_operations import get_dict_key_where_value
-
+if platform.system() == 'Windows':
+    import adi
+else:
+    raise ImportError("The adicht_reader module is only available on Windows.")
 
 class AdichtReader:
     """
