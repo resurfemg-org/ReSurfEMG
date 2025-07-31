@@ -79,3 +79,12 @@ testpaths = [
     "tests", 
 ]
      
+[tool.coverage.report]
+include = [
+    "resurfemg/**/*.py"
+]
+omit = [
+    "**/__*.py",
+    "resurfemg/legacy/*",
+    "resurfemg/data_connector/tmsisdk_lite.py",
+    ]
