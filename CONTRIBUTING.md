@@ -4,15 +4,25 @@ We welcome any kind of contribution to our software, from simple comment or ques
 
 A contribution can be one of the following cases:
 
-1. you have a question;
-1. you think you may have found a bug (including unexpected behavior);
-1. you want to make some kind of change to the code base (e.g. to fix a bug, to add a new feature, to update documentation).
+1. You have a question;
+1. You think you may have found a bug (including unexpected behavior);
+1. You want to make some kind of change to the code base (e.g. to fix a bug, to add a new feature, to update documentation).
 
 The sections below outline the steps in each case.
 
+## Reporting Security Vulnerabilities
+
+If you discover a security vulnerability in ReSurfEMG, we kindly ask you to report it responsibly.
+
+- Please **do not** open a public issue.
+- Instead, email us at  e.mos-oppersma@utwente.nl with details.
+- We will acknowledge your report within 14 business days and aim to resolve issues promptly.
+
+Thank you for helping keep ReSurfEMG secure!
+
 ## You have a question
 
-1. use the search functionality [here](https://github.com/resurfemg-org/ReSurfEMG/issues) to see if someone already filed the same issue;
+1. Use the search functionality [here](https://github.com/resurfemg-org/ReSurfEMG/issues) to see if someone already filed the same issue;
 1. in some cases checking the documentation may help but if your issue search did not yield any relevant results, make a new issue; 
 1. apply the "Question" label; apply other labels when relevant.
 
