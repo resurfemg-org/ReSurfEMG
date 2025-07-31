@@ -1,3 +1,5 @@
+# GitHub actions are pinned to commit hashes to ensure stability and security.
+
 name: Sanity
 on: [push]
 jobs:
@@ -8,10 +10,10 @@ jobs:
         os: ['ubuntu-latest']
         python-version: ['3.12']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           submodules: recursive
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: 3.12
       - run: python3 -m venv .venv
@@ -24,11 +26,11 @@ jobs:
     if: |
       github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
           submodules: recursive
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: 3.12
       - run: python3 -m venv .venv
@@ -37,7 +39,7 @@ jobs:
       - run: .venv/bin/python setup.py apidoc
       - run: .venv/bin/python setup.py build_sphinx -W
       - name: Publish Docs to Pages
-        uses: JamesIves/github-pages-deploy-action@4.1.1
+        uses: JamesIves/github-pages-deploy-action@164583b9e44b4fc5910e78feb607ea7c98d3c7b9
         with:
           branch: gh-pages
           folder: build/sphinx/html
@@ -45,7 +47,7 @@ jobs:
   Fair-software:
     runs-on: ubuntu-latest
     steps:
-      - uses: fair-software/howfairis-github-action@0.2.1
+      - uses: fair-software/howfairis-github-action@4c11146488125aa6e1531184eed51d781bcd5871
         name: Measure compliance with fair-software.eu recommendations
         env:
           PYCHARM_HOSTED: "Trick colorama into displaying colored output" 
@@ -56,7 +58,7 @@ jobs:
   # Markdown: 
   #   runs-on: ubuntu-latest
   #   steps:
-  #   - uses: actions/checkout@main
+  #   - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
   #   - uses: gaurav-nelson/github-action-markdown-link-check@v1
   #     with:
   #       config-file: '.github/workflows/mlc-config.json'
