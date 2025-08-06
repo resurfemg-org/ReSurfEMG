@@ -1,6 +1,8 @@
 # GitHub actions are pinned to commit hashes to ensure stability and security.
 
 name: Sanity
+# Declare default permissions as read only.
+permissions: read-all
 on: [push]
 jobs:
   Sanity:

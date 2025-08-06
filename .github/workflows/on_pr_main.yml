@@ -1,6 +1,8 @@
 # GitHub actions are pinned to commit hashes to ensure stability and security.
 
 name: Deployability
+# Declare default permissions as read only.
+permissions: read-all
 on:
     pull_request:
         branches:

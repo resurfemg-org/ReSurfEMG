@@ -1,6 +1,8 @@
 # GitHub actions are pinned to commit hashes to ensure stability and security.
 
 name: Release
+# Declare default permissions as read only.
+permissions: read-all
 on:
   push:
     tags:
@@ -8,6 +10,9 @@ on:
 
 jobs:
   PyPIBuild:
+    permissions:
+      attestations: write
+      
     if: ${{ github.repository == 'resurfemg-org/resurfemg' }}
     name: Tagged Release
     runs-on: ubuntu-latest
@@ -35,6 +40,9 @@ jobs:
           path: dist/*
 
   PublishArtifacts:
+    permissions:
+      contents: write
+      
     runs-on: ubuntu-latest
     needs: [PyPIBuild]
     steps:
