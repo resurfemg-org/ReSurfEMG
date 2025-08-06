@@ -1,4 +1,13 @@
 
+## Reporting Security Vulnerabilities
+
+If you discover a security vulnerability in ReSurfEMG, we kindly ask you to report it responsibly.
+
+- Please **do not** open a public issue.
+- Instead, email us at  e.mos-oppersma@utwente.nl with details.
+- We will acknowledge your report within 14 business days and aim to resolve issues promptly.
+
+Thank you for helping keep ReSurfEMG secure!
 
 ## Secure Development Knowledge
 
