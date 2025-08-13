@@ -11,13 +11,13 @@ maintainers = [
 description = "A package for analysis of respiratory EMG data"
 requires-python = ">=3.9"
 keywords = ["electromyography", "EMG", "respiratory", "Python", "surface EMG"]
-license = {text = "Apache-2.0"}
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
 ]
 dependencies = [
@@ -64,9 +64,6 @@ dev = ['pytest',
        'ipympl',
        'sphinx',
        'twine']
-
-[tool.setuptools]
-license-files = ["LICENSE"]
 
 [tool.setuptools.packages.find]
 include = ["resurfemg*"]
