@@ -1,5 +1,5 @@
 <p align="center">
-    <img style="width: 35%; height: 35%" src="https://github.com/resurfemg-org/ReSurfEMG/blob/main/Logo_rond_tekst.svg">
+    <img style="width: 35%; height: 35%" src="https://raw.githubusercontent.com/resurfemg-org/ReSurfEMG/8ef19f7013553bd3dbdabf994781f0d612114336/Logo_rond_tekst.svg">
 </p>
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6811553.svg)](https://doi.org/10.5281/zenodo.6811553)
