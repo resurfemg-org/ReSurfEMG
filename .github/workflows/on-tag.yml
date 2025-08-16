@@ -29,11 +29,10 @@ jobs:
       - run: python3.12 -m venv .venv
       - run: .venv/bin/python -m pip install build wheel twine
       - run: .venv/bin/python -m build
-      # - run: .venv/bin/python setup.py bdist_egg
       - run: >-
           TWINE_USERNAME=__token__
           TWINE_PASSWORD=${{ secrets.PYPI_TOKEN }}
-          .venv/bin/python -m twine upload --skip-existing ./dist/*.whl
+          .venv/bin/python -m twine upload --skip-existing ./dist/*
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: pypi-build
