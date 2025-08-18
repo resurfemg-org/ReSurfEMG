@@ -43,11 +43,7 @@ jobs:
     
     - name: Upload coverage to Codecov
       run: |
-        codecovcli --verbose upload-process --fail-on-error `
-          -t "${{ secrets.CODECOV_TOKEN }}" `
-          -n "service-${{ github.run_id }}" `
-          -F service `
-          -f "coverage-service.xml"
+        codecovcli --verbose upload-process --fail-on-error -t "${{ secrets.CODECOV_TOKEN }}" -n "service-${{ github.run_id }}" -F service -f "coverage-service.xml"
 
 
   Test-Sanity-OSX:
