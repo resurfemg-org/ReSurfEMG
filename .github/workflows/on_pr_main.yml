@@ -37,17 +37,18 @@ jobs:
     - run: python -m venv .venv
     - run: .venv\Scripts\pip install wheel setuptools
     - run: .venv\Scripts\pip install -e .[tests]
-    - run: .venv\Scripts\python -m pytest --cov
-    - name: Upload coverage reports to Codecov
-      shell: bash
+    - run: .venv\Scripts\python -m pytest --cov .
+    - name: Install Codecov CLI
+      run: pip install codecov-cli
+    
+    - name: Upload coverage to Codecov
       run: |
-        pip install codecov-cli
-        codecovcli --verbose upload-process --fail-on-error --disable-search  -t ${{ secrets.CODECOV_TOKEN }} -n 'service'-${{ github.run_id }} -F service -f coverage-service.xml
-        # # Replace `linux` below with the appropriate OS
-        # # Options are `alpine`, `linux`, `macos`, `windows`
-        # curl -Os https://cli.codecov.io/latest/windows/codecov
-        # chmod +x codecov
-        # .\codecov --verbose upload-process --fail-on-error -t ${{ secrets.CODECOV_TOKEN }} -n 'service'-${{ github.run_id }} -F service -f coverage-service.xml
+        codecovcli --verbose upload-process --fail-on-error `
+          -t "${{ secrets.CODECOV_TOKEN }}" `
+          -n "service-${{ github.run_id }}" `
+          -F service `
+          -f "coverage-service.xml"
+
 
   Test-Sanity-OSX:
     runs-on: macos-latest
