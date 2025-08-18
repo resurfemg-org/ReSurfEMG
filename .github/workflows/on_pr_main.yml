@@ -22,7 +22,10 @@ jobs:
     - run: .venv/bin/python -m pip install -e .[docs]
     - run: .venv/bin/python setup.py apidoc
     - run: .venv/bin/python setup.py build_sphinx -W
+
   Test-Sanity-Windows:
+    permissions:
+      id-token: write
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
