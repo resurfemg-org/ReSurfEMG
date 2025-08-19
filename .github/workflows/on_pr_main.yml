@@ -37,13 +37,12 @@ jobs:
     - run: python -m venv .venv
     - run: .venv\Scripts\pip install wheel setuptools
     - run: .venv\Scripts\pip install -e .[tests]
-    - run: .venv\Scripts\python -m pytest --cov .
-    - name: Install Codecov CLI
-      run: pip install codecov-cli
-    
-    - name: Upload coverage to Codecov
-      run: |
-        codecovcli --verbose upload-process --fail-on-error -t "${{ secrets.CODECOV_TOKEN }}" -n "service-${{ github.run_id }}" -F service -f "coverage-service.xml"
+    - run: .venv\Scripts\python -m pytest --cov . --cov-report=xml
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        slug: resurfemg-org/ReSurfEMG
 
 
   Test-Sanity-OSX:
