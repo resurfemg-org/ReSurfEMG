@@ -57,7 +57,20 @@ class TestTimeSeriesGroup(unittest.TestCase):
     # Find supported breath pressures
     v_vent = vent_timeseries[vent_timeseries.v_vent_idx]
     vent_timeseries.find_ventilator_peaks()
-    def test_find_find_ventilator_peaks(self):
+    def test_find_ventilator_peaks_unspec(self):
+        peak_df = self.p_vent.peaks['ventilator_breaths'].peak_df
+        self.assertEqual(
+            len(peak_df['peak_idx']),
+            151
+        )
+
+    vent_timeseries.find_ventilator_peaks(
+        channel_io=(
+            vent_timeseries.v_vent_idx,
+            [vent_timeseries.p_vent_idx, vent_timeseries.v_vent_idx]),
+            overwrite=True
+    )
+    def test_find_ventilator_peaks_spec(self):
         peak_df = self.p_vent.peaks['ventilator_breaths'].peak_df
         self.assertEqual(
             len(peak_df['peak_idx']),

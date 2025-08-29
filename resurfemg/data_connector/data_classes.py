@@ -1349,32 +1349,26 @@ class VentilatorDataGroup(TimeSeriesGroup):
         """
         if channel_io is None:
             channel_idx_i = self.v_vent_idx or self.p_vent_idx or 0
-            channel_idx_list_o = []
-            if self.p_vent_idx is not None:
-                channel_idx_list_o.append(self.p_vent_idx)
-            if self.v_vent_idx is not None:
-                channel_idx_list_o.append(self.v_vent_idx)
-
+            channel_idx_list_o = [
+                idx for idx in [self.p_vent_idx, self.v_vent_idx]
+                if idx is not None]
         elif isinstance(channel_io, tuple) and len(channel_io) == 2:
-            if isinstance(channel_io[0], int):
-                channel_idx_i = channel_io[0]
-            elif isinstance(channel_io[0], str):
-                channel_idx_i = self.labels.index(channel_io[0])
-            else:
-                raise ValueError("channel_io[0] must be int or str")
-            if isinstance(channel_io[1], int):
-                channel_idx_list_o = [channel_io[1]]
-            elif isinstance(channel_io[1], str):
-                channel_idx_list_o = [self.labels.index(channel_io[1])]
-            elif isinstance(channel_io[1], list):
+            channel_idx_i = (channel_io[0] if isinstance(channel_io[0], int)
+                             else self.labels.index(channel_io[0]))
+            out = channel_io[1]
+            if isinstance(out, int):
+                channel_idx_list_o = [out]
+            elif isinstance(out, str):
+                channel_idx_list_o = [self.labels.index(out)]
+            elif isinstance(out, list):
                 channel_idx_list_o = [
-                    self.labels.index(ch) for ch in channel_io[1]]
+                    self.labels.index(ch) if isinstance(ch, str)
+                    else ch for ch in out]
             else:
                 raise ValueError("channel_io[1] must be int, str or list")
-
         else:
-            raise ValueError("channel_io must be a tuple of (input_channel,"
-                             " output_channel)")
+            raise ValueError("channel_io must be a tuple of (input_channel, "
+                             + "output_channel)")
 
         signal_raw = self.channels[channel_idx_i]['raw']
 
