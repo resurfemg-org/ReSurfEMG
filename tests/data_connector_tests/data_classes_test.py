@@ -56,8 +56,8 @@ class TestTimeSeriesGroup(unittest.TestCase):
 
     # Find supported breath pressures
     v_vent = vent_timeseries[vent_timeseries.v_vent_idx]
-    vent_timeseries.find_tidal_volume_peaks()
-    def test_find_tidal_volume_peaks(self):
+    vent_timeseries.find_ventilator_peaks()
+    def test_find_find_ventilator_peaks(self):
         peak_df = self.p_vent.peaks['ventilator_breaths'].peak_df
         self.assertEqual(
             len(peak_df['peak_idx']),

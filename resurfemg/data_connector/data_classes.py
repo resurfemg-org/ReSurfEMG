@@ -1328,45 +1328,76 @@ class VentilatorDataGroup(TimeSeriesGroup):
             signal=self.channels[pressure_idx]['raw'], peak_idxs=peak_idxs,
             peak_set_name='Pocc', overwrite=overwrite)
 
-    def find_tidal_volume_peaks(
-        self, volume_idx=None, pressure_idx=None, overwrite=False, **kwargs,
-    ):
+    def find_ventilator_peaks(
+            self, channel_io=None, overwrite=False, **kwargs):
         """
-        Find tidal-volume peaks in ventilator volume signal. Peaks are stored
-        in PeaksSet named 'ventilator_breaths' in ventilator pressure and
-        volume TimeSeries.
+        Detect breath-related peaks in a specified ventilator signal
+        Peaks are stored in the corresponding TimeSeries under the same signal.
         -----------------------------------------------------------------------
-        :param volume_idx: Channel index of the ventilator volume data
-        :type volume_idx: int
-        :param pressure_idx: Channel index of the ventilator pressure data
-        :type pressure_idx: int
-        For other arguments, see postprocessing.event_detection submodule.
+        :param channel_io: tuple of the input and output channels,
+            the first element is the input channel for peak detection,
+            the found peaks are stored in the channels listed in the
+            second element. If none, the volume or pressure channel is used as
+            input. In absence of these, the first channel is used.
+        :type channel_io: tuple(str/int,str/int/list)
+        :param overwrite: Whether to overwrite existing peak set
+        :type overwrite: bool
+        Other kwargs are passed to the peak detection function.
 
         :returns: None
         :rtype: None
         """
-        volume_idx = (kwargs.pop('volume_idx') if 'volume_idx' in kwargs
-                      else self.v_vent_idx)
-        if volume_idx is None:
-            raise ValueError('volume_idx and v_vent_idx not defined')
-        kwargs['v_vent'] = self.channels[volume_idx]['raw']
+        if channel_io is None:
+            channel_idx_i = self.v_vent_idx or self.p_vent_idx or 0
+            channel_idx_list_o = []
+            if self.p_vent_idx is not None:
+                channel_idx_list_o.append(self.p_vent_idx)
+            if self.v_vent_idx is not None:
+                channel_idx_list_o.append(self.v_vent_idx)
+
+        elif isinstance(channel_io, tuple) and len(channel_io) == 2:
+            if isinstance(channel_io[0], int):
+                channel_idx_i = channel_io[0]
+            elif isinstance(channel_io[0], str):
+                channel_idx_i = self.labels.index(channel_io[0])
+            else:
+                raise ValueError("channel_io[0] must be int or str")
+            if isinstance(channel_io[1], int):
+                channel_idx_list_o = [channel_io[1]]
+            elif isinstance(channel_io[1], str):
+                channel_idx_list_o = [self.labels.index(channel_io[1])]
+            elif isinstance(channel_io[1], list):
+                channel_idx_list_o = [
+                    self.labels.index(ch) for ch in channel_io[1]]
+            else:
+                raise ValueError("channel_io[1] must be int, str or list")
+
+        else:
+            raise ValueError("channel_io must be a tuple of (input_channel,"
+                             " output_channel)")
+
+        signal_raw = self.channels[channel_idx_i]['raw']
 
         kwargs['start_idx'] = kwargs.setdefault('start_idx', 0)
-        kwargs['end_idx'] = kwargs.setdefault(
-            'end_idx', len(self.channels[volume_idx]['raw']) - 1)
+        kwargs['end_idx'] = kwargs.setdefault('end_idx', len(signal_raw) - 1)
         kwargs['width_s'] = kwargs.setdefault('width_s', self.param['fs'] // 4)
-        peak_idxs = (evt.detect_ventilator_breath(**kwargs)
-                     + kwargs['start_idx'])
 
-        self.channels[volume_idx].set_peaks(
-            signal=self.channels[volume_idx]['raw'], peak_idxs=peak_idxs,
-            peak_set_name='ventilator_breaths', overwrite=overwrite)
+        # Detect peaks
+        peak_idxs = evt.detect_ventilator_breath(
+            signal_raw,
+            start_idx=kwargs['start_idx'],
+            end_idx=kwargs['end_idx'],
+            width_s=kwargs['width_s'],
+            threshold=kwargs.get('threshold'),
+            prominence=kwargs.get('prominence'),
+            threshold_new=kwargs.get('threshold_new'),
+            prominence_new=kwargs.get('prominence_new'))
 
-        pressure_idx = pressure_idx or self.p_vent_idx
-        if pressure_idx is not None:
-            self.channels[pressure_idx].set_peaks(
-                signal=self.channels[pressure_idx]['raw'], peak_idxs=peak_idxs,
-                peak_set_name='ventilator_breaths', overwrite=overwrite)
-        else:
-            warnings.warn("\n".join(wrap(dedent(
-                'pressure_idx and self.p_vent_idx not defined.'))))
+        # Store peaks in the same signal
+        for _channel_idx in channel_idx_list_o:
+            self.channels[_channel_idx].set_peaks(
+                signal=signal_raw,
+                peak_idxs=peak_idxs,
+                peak_set_name='ventilator_breaths',
+                overwrite=True
+            )
