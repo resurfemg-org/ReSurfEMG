@@ -1335,10 +1335,10 @@ class VentilatorDataGroup(TimeSeriesGroup):
         Peaks are stored in the corresponding TimeSeries under the same signal.
         -----------------------------------------------------------------------
         :param channel_io: tuple of the input and output channels,
-            the first element is the input channel for peak detection,
-            the found peaks are stored in the channels listed in the
-            second element. If none, the volume or pressure channel is used as
-            input. In absence of these, the first channel is used.
+        the first element is the input channel for peak detection,
+        the found peaks are stored in the channels listed in the
+        second element. If none, the volume or pressure channel is used as
+        input. In absence of these, the first channel is used.
         :type channel_io: tuple(str/int,str/int/list)
         :param overwrite: Whether to overwrite existing peak set
         :type overwrite: bool
