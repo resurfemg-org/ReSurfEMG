@@ -1,5 +1,5 @@
 """
-sanity tests for the postprocessing.event_detection submodule of the resurfemg 
+sanity tests for the postprocessing.event_detection submodule of the resurfemg
 library
 """
 import unittest
@@ -112,7 +112,7 @@ class TestEventDetection(unittest.TestCase):
 
     def test_detect_ventilator_breath(self):
         ventilator_breath_idxs = evt.detect_ventilator_breath(
-            v_vent=self.breathing_signal,
+            signal=self.breathing_signal,
             start_idx=1,
             end_idx=10000,
             width_s=1
