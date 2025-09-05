@@ -1347,30 +1347,32 @@ class VentilatorDataGroup(TimeSeriesGroup):
         :returns: None
         :rtype: None
         """
-        if channel_io is None:
-            channel_idx_i = self.v_vent_idx or self.p_vent_idx or 0
-            channel_idx_list_o = [
-                idx for idx in [self.p_vent_idx, self.v_vent_idx]
-                if idx is not None]
-        elif isinstance(channel_io, tuple) and len(channel_io) == 2:
-            channel_idx_i = (channel_io[0] if isinstance(channel_io[0], int)
-                             else self.labels.index(channel_io[0]))
-            out = channel_io[1]
-            if isinstance(out, int):
-                channel_idx_list_o = [out]
-            elif isinstance(out, str):
-                channel_idx_list_o = [self.labels.index(out)]
-            elif isinstance(out, list):
-                channel_idx_list_o = [
-                    self.labels.index(ch) if isinstance(ch, str)
-                    else ch for ch in out]
-            else:
-                raise ValueError("channel_io[1] must be int, str or list")
-        else:
-            raise ValueError("channel_io must be a tuple of (input_channel, "
-                             + "output_channel)")
+        channel_key_i = (self.v_vent_idx or self.p_vent_idx or 0) if (
+            channel_io is None or channel_io[0] is None) else channel_io[0]
+        if not isinstance(channel_key_i, (int, str)):
+            raise ValueError("channel_io[0] must be int or str")
+        try:
+            signal_raw = self.channels[channel_key_i]['raw']
+        except KeyError as e:
+            raise ValueError("channel_io[0] is not a valid channel.") from e
 
-        signal_raw = self.channels[channel_idx_i]['raw']
+        if channel_io is None:
+            channel_keys_o = [idx for idx in [
+                self.p_vent_idx, self.v_vent_idx] if idx is not None]
+        else:
+            if isinstance(channel_io[1], (int, str)):
+                channel_keys_o = [channel_io[1]]
+            elif isinstance(channel_io[1], list):
+                for ch in channel_io[1]:
+                    try:
+                        self[ch]
+                    except (KeyError, IndexError) as e:
+                        raise ValueError("channel_io[1] contains an invalid"
+                                         + " channel.") from e
+                channel_keys_o = channel_io[1]
+            else:
+                raise ValueError("channel_io must be a tuple of (input_channel"
+                                 + ", output_channel)")
 
         kwargs['start_idx'] = kwargs.setdefault('start_idx', 0)
         kwargs['end_idx'] = kwargs.setdefault('end_idx', len(signal_raw) - 1)
@@ -1388,10 +1390,10 @@ class VentilatorDataGroup(TimeSeriesGroup):
             prominence_new=kwargs.get('prominence_new'))
 
         # Store peaks in the same signal
-        for _channel_idx in channel_idx_list_o:
-            self.channels[_channel_idx].set_peaks(
+        for _channel_key in channel_keys_o:
+            self.channels[_channel_key].set_peaks(
                 signal=signal_raw,
                 peak_idxs=peak_idxs,
                 peak_set_name='ventilator_breaths',
-                overwrite=True
+                overwrite=overwrite
             )

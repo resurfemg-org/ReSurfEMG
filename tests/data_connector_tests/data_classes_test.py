@@ -63,7 +63,7 @@ class TestTimeSeriesGroup(unittest.TestCase):
             len(peak_df['peak_idx']),
             151
         )
-
+    
     vent_timeseries.find_ventilator_peaks(
         channel_io=(
             vent_timeseries.v_vent_idx,
@@ -76,6 +76,16 @@ class TestTimeSeriesGroup(unittest.TestCase):
             len(peak_df['peak_idx']),
             151
         )
+    def test_find_ventilator_peaks_spec_other_channel(self):
+        with self.assertRaises(ValueError) as context:
+            self.vent_timeseries.find_ventilator_peaks(
+                channel_io=(
+                    self.vent_timeseries.v_vent_idx,
+                    [self.vent_timeseries.p_vent_idx, 3]),
+                overwrite=True
+            )
+        self.assertIn("channel_io[1] contains an invalid channel.",
+                      str(context.exception))
 
     # Calculate PTPs
     p_vent.calculate_time_products(
