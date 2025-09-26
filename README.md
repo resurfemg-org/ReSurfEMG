@@ -24,119 +24,41 @@ The library was initially built for surface EMG, however many functions will als
 invasively measured respiratory EMG.  This library supports the ongoing research at University of Twente on respiratory EMG.
 
 
-### Program files
-
-The core functions of ReSurfEMG are in the folder [resurfemg](https://github.com/resurfemg-org/ReSurfEMG/tree/main/resurfemg):
-
--   **cli:** Scripts for the command line interface
--   **data_connector:**  Converter functions for discovering, loading, simulating and handling data.
--   **helper_functions:** General functions to support the functions in this repository
--   **preprocessing:** Process the raw respiratory EMG signal
-      - filtering: low-, high- and bandpass filters, notch filter, computer power loss
-      - ecg-removal: gating and wavelet denoising
-      - envelope: root-mean-square (RMS), average rectified (ARV)
--   **postprocessing:** Aspects of pre-processed the respiratory EMG data:
-      - moving baselines
-      - event detection: find pneumatic and EMG breaths, on- and offset detection
-      - features: amplitude, area under the curve, slope, area under the baseline, respiratory rate
-      - quality assessment: signal-to-noise ratio, end-expiratory occlussion manoeuvre quality, interpeak distance, area under the baseline, consecutive manoeuvres, bell-curve error, relative peak timing, relative area under the baseline, relative ETP
-
-
-### Folders and Notebooks
-
-Our [guide to notebooks](https://github.com/resurfemg-org/ReSurfEMG/blob/main/notebooks_guide.md) is under construction. To look around keep in mind the following distinction on folders:
-
-dev:
-- These notebooks are used in feature development and debugging by core members of the ReSurfEMG team. They can provide a basic example how to use some of the functionality.
-
-open_work:
-- This folder contains experimental work by core members of the ReSurfEMG
-  team that is not deployed yet.
-
-researcher_interface:
-- These are a growing series of interactive notebooks that allow
-  researchers to investigate questions about their own EMG data
-
-### Data sets
-
-The notebooks are configured to run on various datasets.  Contact
-Dr. Eline Mos-Oppersma( 📫 e.mos-oppersma@utwente.nl) to discuss any
-questions on data configuration for your datasets.
-
-If you want to use a standardized dataset for any purpose we recommend
-the data in the [ReSurfEMG/test_data](https://github.com/resurfemg-org/ReSurfEMG/blob/main/test_data), which is also used in testing the ReSurfEMG functions. 
-Data there can be used with any respiratory EMG algorithms in any program. Thus that data can function as a benchmarking set to compare algorithms across different programs.
-
-Alternatively, the data in the ReSurfEMG/synthetic_data repository:
-
-[![DOI](https://zenodo.org/badge/635680008.svg)](https://zenodo.org/badge/latestdoi/635680008)
-
-
-### Configuring (to work with your data)
-
-In order to preprocess and/or to train  models the code needs to be
-able to locate the raw data you want it to find.
-
-There are several ways to specify the location of the following
-directories:
-
--   **root_data:** Special directory. The rest of the directory layout can be derived from its location.
--   **preprocessed_data:** The directory that will be used by preprocessing
-    code to output to.
--   **test_data:** The directory for running sanity tests.
-
-You can store this information persistently in several locations.
-
-1.  In the same directory where you run the script (or the notebook).
-    e.g. `./config.json`.
-2.  In home directory, e.g. `~/.resurfemg/config.json`.
-3.  In global directory, e.g. `/etc/resurfemg/config.json`.
-
-However, we highly recommend using the home directory.
-This file can have this or similar contents:
-```
-{
-    "root_data": "/mnt/data",
-    "patient_data": "/mnt/patient_data",
-    "simulated_data": "/mnt/simulated_data",
-    "preprocessed_data": "/mnt/data/preprocessed",
-    "output_data": "/mnt/data/output",
-}
-```
-The file is read as follows: if the files specifies `root_data`
-directory, then the missing entries are assumed to be relative to
-the root.  You do not need to specify all entries.
-
-### Test data
-
-Test data is provided in the repository in the test_data folder.
+## Getting Started
 
 ### Supported Platforms
 
 ReSurfEMG is a pure Python package. Below is the list of
 platforms that should work. Other platforms may work, but have had less extensive testing.
 Please note that where python.org Python stated as supported, it means
-that versions 3.9 - 3.12 are supported.
+that versions 3.10 - 3.13 are supported.
 
 #### AMD64 (x86)
 
 |                             | Linux     | Win       | OSX       |
 |:---------------------------:|:---------:|:---------:|:---------:|
-| ![p](etc/python-logo.png)   | Supported | Supported | Supported |
+| ![p](etc/python-logo.png)   | 3.10 - 3.13 | 3.10 - 3.13* | 3.10 - 3.13 |
 | ![a](etc/anaconda-logo.png) | Discontinued | Discontinued | Discontinued |
+
+* For Python 3.13 on Windows there is a bug in the adi-reader package. For a succesfull install, please run the following command:
+``` sh
+pip install git+https://github.com/rspwarnaarUT/adinstruments_sdk_python.git@e15eb62862d3a8054eb3438c2a8f8d6480bf93b4
+```
+before running:
+``` sh
+pip install resurfemg
+```
 
 ### Installation for all supported platforms
 
-Installation with Anaconda/conda and/or mamba are the preffered methods.
-They are covered in [the "Getting Started" section](#Getting-Started). 
+Installation in a virtual environment is the preffered method. They are covered in the ["Virtual environment setup"](### Virtual environment setup) section. 
 If you wish to install with pip:
 
-1. Create and activate a virtual environment (see developer setup section for more details) 
-2. Install ResurfEMG package by running `pip install resurfemg`.
+``` sh
+pip install resurfemg
+```
 
-
-## Getting Started
-### With the recommended Python venv setup
+### Virtual environment setup (recommended)
 
 How to get the notebooks running? Assuming the raw data set and
 metadata is available.
@@ -158,18 +80,21 @@ python3 -m venv .venv
 ### 0b. Activate the virtual environment and install ReSurfEMG
 
   #### On Linux/OSX:
-``` sh
-source .venv/bin/activate
-pip install resurfemg[dev]
-```
+  ``` sh
+  source .venv/bin/activate
+  ```
     
   #### On Windows:
   ``` sh
   .venv\Scripts\activate.bat
+  ```
+### 1. Install ReSurfEMG
+
+  ``` sh
   pip install resurfemg[dev]
   ```
 
-### 1. Open a notebook
+### 2. Open a notebook
    Start a local Jupyter Notebook server by running the `jupyter notebook` 
    command in your terminal. This opens a browser window where you can browse, 
    open and run the notebooks. (We use [Jupyter notebooks](https://jupyter.org/try-jupyter/retro/notebooks/?path=notebooks/Intro.ipynb))
@@ -225,6 +150,94 @@ applied to your environment.
 Now you should have everything necessary to start working on the
 source code.
 
+## Repository structure
+
+### Program files
+
+The core functions of ReSurfEMG are in the folder [resurfemg](https://github.com/resurfemg-org/ReSurfEMG/tree/main/resurfemg):
+
+-   **cli:** Scripts for the command line interface
+-   **data_connector:**  Converter functions for discovering, loading, simulating and handling data.
+-   **helper_functions:** General functions to support the functions in this repository
+-   **preprocessing:** Process the raw respiratory EMG signal
+      - filtering: low-, high- and bandpass filters, notch filter, computer power loss
+      - ecg-removal: gating and wavelet denoising
+      - envelope: root-mean-square (RMS), average rectified (ARV)
+-   **postprocessing:** Aspects of pre-processed the respiratory EMG data:
+      - moving baselines
+      - event detection: find pneumatic and EMG breaths, on- and offset detection
+      - features: amplitude, area under the curve, slope, area under the baseline, respiratory rate
+      - quality assessment: signal-to-noise ratio, end-expiratory occlussion manoeuvre quality, interpeak distance, area under the baseline, consecutive manoeuvres, bell-curve error, relative peak timing, relative area under the baseline, relative ETP
+
+
+### Folders and Notebooks
+
+Our [guide to notebooks](https://github.com/resurfemg-org/ReSurfEMG/blob/main/notebooks_guide.md) is under construction. To look around keep in mind the following distinction on folders:
+
+dev:
+- These notebooks are used in feature development and debugging by core members of the ReSurfEMG team. They can provide a basic example how to use some of the functionality.
+
+open_work:
+- This folder contains experimental work by core members of the ReSurfEMG
+  team that is not deployed yet.
+
+researcher_interface:
+- These are a growing series of interactive notebooks that allow
+  researchers to investigate questions about their own EMG data
+
+## Data sets
+
+The notebooks are configured to run on various datasets.  Contact
+Dr. Eline Mos-Oppersma( 📫 e.mos-oppersma@utwente.nl) to discuss any
+questions on data configuration for your datasets.
+
+If you want to use a standardized dataset for any purpose we recommend
+the data in the [ReSurfEMG/test_data](https://github.com/resurfemg-org/ReSurfEMG/blob/main/test_data), which is also used in testing the ReSurfEMG functions. 
+Data there can be used with any respiratory EMG algorithms in any program. Thus that data can function as a benchmarking set to compare algorithms across different programs.
+
+Alternatively, the data in the ReSurfEMG/synthetic_data repository:
+
+[![DOI](https://zenodo.org/badge/635680008.svg)](https://zenodo.org/badge/latestdoi/635680008)
+
+
+### Configuring (to work with your data)
+
+In order to preprocess and/or to train  models the code needs to be
+able to locate the raw data you want it to find.
+
+There are several ways to specify the location of the following
+directories:
+
+-   **root_data:** Special directory. The rest of the directory layout can be derived from its location.
+-   **preprocessed_data:** The directory that will be used by preprocessing
+    code to output to.
+-   **test_data:** The directory for running sanity tests.
+
+You can store this information persistently in several locations.
+
+1.  In the same directory where you run the script (or the notebook).
+    e.g. `./config.json`.
+2.  In home directory, e.g. `~/.resurfemg/config.json`.
+3.  In global directory, e.g. `/etc/resurfemg/config.json`.
+
+However, we highly recommend using the home directory.
+This file can have this or similar contents:
+```
+{
+    "root_data": "/mnt/data",
+    "patient_data": "/mnt/patient_data",
+    "simulated_data": "/mnt/simulated_data",
+    "preprocessed_data": "/mnt/data/preprocessed",
+    "output_data": "/mnt/data/output",
+}
+```
+The file is read as follows: if the files specifies `root_data`
+directory, then the missing entries are assumed to be relative to
+the root.  You do not need to specify all entries.
+
+### Test data
+
+Test data is provided in the repository in the test_data folder.
 
 ## Generating documentation
 
