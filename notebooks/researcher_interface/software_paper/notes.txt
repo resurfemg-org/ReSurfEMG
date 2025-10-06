@@ -1,0 +1,23 @@
+Notebooks accompanying the paper:
+"""
+    ReSurfEMG: a Python package for comprehensive analysis of respiratory
+    surface EMG
+"""
+
+All analyses were run with ReSurfEMG 1.0.2. The Jupyter Notebooks for these
+analyses can be found in the folder `ReSurfEMG_1_0_2`
+
+The Notebooks in the folder `ReSurfEMG_1_1_0` are adapted to run on ReSurfEMG
+1.1.0 to improve forward compatability and re-use. As compared to ReSurfEMG
+1.0.2, with which the analysis for the paper was conducted, this
+includes refactoring of methods and no signal analytical adapations:
+- Signal indexing:
+    TimeSeries.y_raw
+    -->
+    TimeSeries['raw]
+- Convert signal_type to signal_io arguments:
+    signal_type='raw'
+    -->
+    signal_io=('raw', 'filt')
+- Split gating and wavelet_denoising in ECG peak detection (.get_ecg_peaks)
+    and ECG removal (.gating, .wavelet_denoising)
