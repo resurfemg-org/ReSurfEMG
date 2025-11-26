@@ -279,7 +279,7 @@ def onoffpeak_slope_extrapolation(
 
 
 def detect_ventilator_breath(
-    v_vent,
+    signal,
     start_idx,
     end_idx,
     width_s,
@@ -292,8 +292,8 @@ def detect_ventilator_breath(
     of ventilator peak breath indices, in two steps of peak detection.
     Input of threshold and prominence values is optional.
     ---------------------------------------------------------------------------
-    :param v_vent: Ventilator volume signal
-    :type v_vent: ~numpy.ndarray
+    :param signal: Ventilator signal
+    :type signal: ~numpy.ndarray
     :param start_idx: start sample of the window in which to be searched
     :type start_idx: ~int
     :param end_idx: end sample of the window in which to be searched
@@ -314,7 +314,7 @@ def detect_ventilator_breath(
     :rtype ventilator_breath_idxs: list[int]
     """
 
-    v_t_slice = v_vent[int(start_idx):int(end_idx)]
+    v_t_slice = signal[int(start_idx):int(end_idx)]
     if threshold is None:
         threshold = 0.25 * np.percentile(v_t_slice, 90)
     if prominence is None:
