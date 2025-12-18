@@ -89,6 +89,7 @@ class Config:
         self.repo_root = find_repo_root(self.example)
         self.force = force
         self.created_config = False
+        self.relative_paths = []
         # In the ResurfEMG project, the test data is stored in ./test_data
         if self.repo_root is not None:
             test_path = os.path.join(self.repo_root, 'test_data')
@@ -143,7 +144,7 @@ class Config:
             }}
 
             The default directory layout is expected to be based on the above
-            `root_data` directory and adding subdirectories.
+            "root_data" directory and adding subdirectories.
 
             You can override any individual directory (or subdirectory) by
             specifying it in the config.json file.
@@ -154,6 +155,24 @@ class Config:
             '''
         ).format(convert_to_os_path('\n'.join(self.default_locations)),
                  convert_to_os_path('/path/to/storage'))
+
+    def print_config(self):
+        """
+        This function prints the current configuration.
+        -----------------------------------------------------------------------
+        """
+        print(79*'-')
+        print(f'  {"Name": <15}\t{"Path": <50}')
+        print(79*'-')
+        print(f'  {"root_data": <15}\t{self._loaded["root_data"]: <50}')
+        print(79*'-')
+        for key, value in self._loaded.items():
+            if key != 'root_data':
+                _rel_flag = '* ' if key in self.relative_paths else '  '
+                print(_rel_flag + f'{key: <15}'+ f'\t{value: <50}')
+        print(79*'-')
+        if len(self.relative_paths) > 0:
+            print('* Path is relative to root_path')
 
     def create_config_from_example(
         self,
@@ -220,48 +239,42 @@ class Config:
             else:
                 raise ValueError(self.usage())
 
+        # Check if user specified all required directories.
+        required = dict(self.default_layout)
+        for directory in required:
+            if directory not in self._raw:
+                raise ValueError(self.usage())
+
+        # Convert all paths to OS readable paths.
         root = self._raw.get('root_data')
-        self._loaded = dict(self._raw)
+        root = convert_to_os_path(root)
         config_path = os.path.abspath(_path.replace('config.json', ''))
         if isinstance(root, str) and root.startswith('.'):
             root = root.replace('.', config_path, 1)
-        root = convert_to_os_path(root)
+        self._loaded = dict(self._raw)
         self._loaded['root_data'] = root
-        if root is None:
-            required = dict(self.default_layout)
-            del required['root_data']
-            for directory in required:
-                if directory not in self._raw:
-                    raise ValueError(self.usage())
-            # User specified all required directories.
-        else:
-            for key, value in self._raw.items():
-                if isinstance(value, str) and value.startswith('.'):
-                    new_value = value.replace('.', config_path, 1)
-                    self._loaded[key] = convert_to_os_path(new_value)
-                else:
-                    self._loaded[key] = convert_to_os_path(value)
-            # User possibly specified only a subset of optional directories.
-            # The missing directories will be back-filled with the default
-            # layout relative to the root directory.
-            missing = set(self.default_layout.keys()) - set(self._raw.keys())
-            for m in missing:
-                self._loaded[m] = convert_to_os_path(
-                    self.default_layout[m].format(root))
+        for key, value in self._raw.items():
+            if isinstance(value, str) and value.startswith('.'):
+                new_value = value.replace('.', root, 1)
+                self._loaded[key] = convert_to_os_path(new_value)
+                self.relative_paths.append(key)
+            else:
+                self._loaded[key] = convert_to_os_path(value)
+        # User possibly specified only a subset of optional directories.
+        # The missing directories will be back-filled with the default
+        # layout relative to the root directory.
+        missing = set(self.default_layout.keys()) - set(self._raw.keys())
+        for m in missing:
+            self._loaded[m] = convert_to_os_path(
+                self.default_layout[m].format(root))
 
         if self.created_config:
             print(f'Created config. See and edit it at:\n {_path}\n')
         elif verbose:
             print(f'Loaded config from:\n {_path}\n')
         if verbose or self.created_config:
-            print('The following paths were configured:')
-            print(79*'-')
-            print(f' {"Name": <15}\t{"Path": <50}')
-            print(79*'-')
-            print(f' {"root": <15}\t{root: <50}')
-            for key, value in self._loaded.items():
-                if key != 'root_data':
-                    print(f' {key: <15}\t{value: <50}')
+            print('The following paths are configured:')
+            self.print_config()
 
     def validate(self):
         """
@@ -291,17 +304,9 @@ class Config:
         if value is None:
             if directory in self._loaded:
                 return self._loaded[directory]
-            else:
-                print(f"Directory `{directory}` not found in config. The "
-                      "following directories are configured:"
-                      )
-                print(79*'-')
-                print(f' {"Name": <15}\t{"Path": <50}')
-                print(79*'-')
-                print(f' {"root": <15}\t{self._loaded["root_data"]: <50}')
-                for key, value in self._loaded.items():
-                    if key != 'root_data':
-                        print(f' {key: <15}\t{value: <50}')
+        print(f"Directory `{directory}` not found in config.\n"
+              + "The following directories are configured:")
+        self.print_config()
         return value
 
     def get_config(self):
