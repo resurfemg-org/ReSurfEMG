@@ -14,6 +14,11 @@ import os
 import textwrap
 import hashlib
 import glob
+
+from pathlib import Path
+from typing import Optional, Sequence
+
+from importlib.resources import files
 import pandas as pd
 
 
@@ -31,27 +36,57 @@ def convert_to_os_path(
     return readable_path
 
 
-def find_repo_root(marker_file='config_example.json'):
+def find_project_root(
+        current_dir=Path.cwd(), marker_file=None, prefer_build_markers=True):
     """
-    Find the root directory of the repository by looking for a marker file.
+    Walks upward from `current_dir` to find a plausible Python project root.
+    Returns the path if found, else None. If `marker_file` is provided,
+    it is uses the `marker_file` in favor of looking for standard build/
+    VCS markers. If `prefer_build_markers` is True, prioritize pyproject/setup
+    files over .git.
+    :param current_dir: The directory to start searching from.
+    :type current_dir: Path
     :param marker_file: The marker file to look for (default is
     'config_example.json').
-    -----------------------------------------------------------------------
-    :type marker_file: str
+    :type marker_file: Optional[str]
+    :param prefer_build_markers: Whether to prefer build markers over VCS
+    markers.
+    :type prefer_build_markers: bool
     :return: The absolute path to the root directory of the repository.
-    :rtype: str
+    :rtype: Optional[Path]
     """
-    current_dir = os.path.abspath(os.path.dirname(__file__))
+    start = current_dir.resolve()
+    if marker_file is not None:
+        build_markers = {marker_file}
+        vcs_markers = set()
+        prefer_build_markers = True
+    else:
+        build_markers = {"pyproject.toml", "setup.cfg", "setup.py",
+                         "poetry.lock", "Pipfile", "requirements.txt",
+                         "tox.ini"}
+        vcs_markers = {".git"}
 
-    while True:
-        if os.path.exists(os.path.join(current_dir, marker_file)):
-            return current_dir
-        parent_dir = os.path.abspath(os.path.join(current_dir, os.pardir))
-        if parent_dir == current_dir:
-            print(f"Marker file '{marker_file}' not found in any parent "
-                  + "directory.")
-            return None
-        current_dir = parent_dir
+    candidate_by_priority = None
+
+    for current in [start, *start.parents]:
+        items = ({p.name for p in current.iterdir()}
+                 if current.exists() else set())
+
+        # Build-markers = Check intersection between items and build markers
+        if prefer_build_markers and items & build_markers:
+            return current
+
+        # Record .git as a candidate (don’t return immediately if preferring
+        # build markers)
+        if marker_file is None and items & vcs_markers:
+            candidate_by_priority = candidate_by_priority or current
+
+    # If we didn’t find a build marker, use .git candidate
+    if candidate_by_priority:
+        return candidate_by_priority
+    if marker_file is not None:
+        print(f"Marker file '{marker_file}' not found in any parent directory")
+    return None
 
 
 class Config:
@@ -85,13 +120,13 @@ class Config:
         """
         self._raw = None
         self._loaded = None
-        self.example = 'config_example_resurfemg.json'
-        self.repo_root = find_repo_root(self.example)
+        self.example = 'config_example.json'
+        self.repo_root = find_project_root()
         self.force = force
         self.created_config = False
         self.relative_paths = []
-        # In the ResurfEMG project, the test data is stored in ./test_data
         if self.repo_root is not None:
+            # In the ResurfEMG project, the test data is stored in ./test_data
             test_path = os.path.join(self.repo_root, 'test_data')
             if len(glob.glob(test_path)) == 1:
                 test_data_path = os.path.join(self.repo_root, 'test_data')
@@ -119,8 +154,16 @@ class Config:
                 'preprocessed_data': '{}/preprocessed',
                 'output_data': '{}/output',
             }
-        self.load(location, verbose=verbose)
-        self.validate()
+        _path =self.load(location)
+        self.parse_paths(_path)
+        if self.created_config:
+            print(f'Created config. See and edit it at:\n {_path}\n')
+        elif verbose:
+            print(f'Loaded config from:\n {_path}\n')
+        if verbose or self.created_config:
+            print('The following name-path combinations are configured:')
+            self.print_config()
+        self.validate(_path, force=force)
 
     def usage(self):
         """
@@ -169,16 +212,12 @@ class Config:
         for key, value in self._loaded.items():
             if key != 'root_data':
                 _rel_flag = '* ' if key in self.relative_paths else '  '
-                print(_rel_flag + f'{key: <15}'+ f'\t{value: <50}')
+                print(_rel_flag + f'{key: <15}' + f'\t{value: <50}')
         print(79*'-')
         if len(self.relative_paths) > 0:
-            print('* Path is relative to root_path')
+            print('* Path is relative to root_data')
 
-    def create_config_from_example(
-        self,
-        location: str,
-        force=False,
-    ):
+    def create_config_from_example(self, location: str, force=False):
         """
         This function creates a config file from an example file.
         -----------------------------------------------------------------------
@@ -186,18 +225,36 @@ class Config:
         :type location: str
         :raises ValueError: If the example file is not found.
         """
-        config_path = location.replace(self.example, 'config.json')
+        example_path = files("resurfemg").joinpath(
+            "data_connector/config_example.json")
+        config_path = os.path.join(location, 'config.json')
         if os.path.isfile(config_path) and not force:
             raise ValueError(
                 f'Config file already exists at {config_path}.'
                 + ' Use `force=True` to overwrite.')
-        else:
-            with open(location, 'r') as f:
-                example = json.load(f)
-            with open(config_path, 'w') as f:
-                json.dump(example, f, indent=4, sort_keys=True)
+        with open(example_path, 'r') as f:
+            example = json.load(f)
+        # Adjust root_path to an absolute path
+        if example['root_data'].startswith('.'):
+            example['root_data'] = os.path.join(
+                location, example['root_data'][2:])
+        # Write the example config to the config path
+        with open(config_path, 'w') as f:
+            json.dump(example, f, indent=4, sort_keys=False)
+        self.created_config = True
+        # Create the root data directory if it does not exist
+        if not os.path.isdir(example['root_data']):
+            if force:
+                os.makedirs(example['root_data'])
+                print(f'Created root directory at:\n {example["root_data"]}\n')
+            else:
+                raise ValueError(
+                    'Root data directory specified in the config file does '
+                    + 'not exist. Create it yourself or re-run with '
+                    + '`force=True` to create the root data directory at:\n '
+                    + f'{example["root_data"]}')
 
-    def load(self, location, verbose=False):
+    def load(self, location):
         """
         This function loads the configuration file. If no location is specified
         it will try to load the configuration file from the default locations:
@@ -224,26 +281,26 @@ class Config:
             except Exception as e:
                 logging.info('Failed to load %s: %s', _path, e)
         else:
-            if (self.repo_root is not None and os.path.isfile(
-                    os.path.join(self.repo_root, self.example))):
+            if self.repo_root is not None:
                 self.create_config_from_example(
-                    os.path.join(self.repo_root, self.example),
+                    self.repo_root,
                     force=self.force,)
-                root_path = os.path.join(self.repo_root, 'not_pushed')
-                if not os.path.isdir(root_path):
-                    os.makedirs(root_path)
-                    print(f'Created root directory at:\n {root_path}\n')
                 with open(os.path.join(self.repo_root, 'config.json')) as f:
                     self._raw = json.load(f)
-                self.created_config = True
             else:
                 raise ValueError(self.usage())
+        return _path
 
+    def parse_paths(self, _path):
+        """
+        This function parses the paths in the configuration file.
+        -----------------------------------------------------------------------
+        """
         # Check if user specified all required directories.
-        required = dict(self.default_layout)
-        for directory in required:
+        for directory in self.required_directories:
             if directory not in self._raw:
-                raise ValueError(self.usage())
+                raise ValueError(f'Missing required directory `{directory}` '
+                                 + 'in config file.' + self.usage())
 
         # Convert all paths to OS readable paths.
         root = self._raw.get('root_data')
@@ -268,15 +325,8 @@ class Config:
             self._loaded[m] = convert_to_os_path(
                 self.default_layout[m].format(root))
 
-        if self.created_config:
-            print(f'Created config. See and edit it at:\n {_path}\n')
-        elif verbose:
-            print(f'Loaded config from:\n {_path}\n')
-        if verbose or self.created_config:
-            print('The following paths are configured:')
-            self.print_config()
 
-    def validate(self):
+    def validate(self, _path, force=False):
         """
         This function validates the configuration file. It checks if the
         required directories exist.
@@ -285,9 +335,18 @@ class Config:
         """
         for req_dir in self.required_directories:
             if not os.path.isdir(self._loaded[req_dir]):
-                logging.error('Required directory %s does not exist',
-                              self._loaded[req_dir])
-                raise ValueError(self.usage())
+                if force:
+                    os.makedirs(self._loaded[req_dir])
+                    print(f'Created required directory at:\n '
+                        + f'{self._loaded[req_dir]}\n')
+                    continue
+                logging.error(
+                    f'Required directory {req_dir} specified in the config '
+                    + 'file does not exist. Create it yourself or re-run with '
+                    + '`force=True` to create the root data directory at:\n '
+                    + f'{self._loaded[req_dir]}\n'
+                    + 'Alternatively, edit the config file at:\n '
+                    + f'{_path}\n')
 
     def get_directory(self, directory, value=None):
         """
