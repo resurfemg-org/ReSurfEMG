@@ -154,7 +154,7 @@ class Config:
                 'preprocessed_data': '{}/preprocessed',
                 'output_data': '{}/output',
             }
-        _path =self.load(location)
+        _path = self.load(location)
         self.parse_paths(_path)
         if self.created_config:
             print(f'Created config. See and edit it at:\n {_path}\n')
@@ -325,7 +325,6 @@ class Config:
             self._loaded[m] = convert_to_os_path(
                 self.default_layout[m].format(root))
 
-
     def validate(self, _path, force=False):
         """
         This function validates the configuration file. It checks if the
@@ -338,7 +337,7 @@ class Config:
                 if force:
                     os.makedirs(self._loaded[req_dir])
                     print(f'Created required directory at:\n '
-                        + f'{self._loaded[req_dir]}\n')
+                          + f'{self._loaded[req_dir]}\n')
                     continue
                 logging.error(
                     f'Required directory {req_dir} specified in the config '
