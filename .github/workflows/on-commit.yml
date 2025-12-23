@@ -54,7 +54,7 @@ jobs:
       - uses: fair-software/howfairis-github-action@4c11146488125aa6e1531184eed51d781bcd5871
         name: Measure compliance with fair-software.eu recommendations
         env:
-          HTTP_TIMEOUT: 90  # Setting timeout to 30 seconds
+          HTTP_TIMEOUT: 90  # Setting timeout to 90 seconds
           PYCHARM_HOSTED: "Trick colorama into displaying colored output" 
         with:
           MY_REPO_URL: "https://github.com/${{ github.repository }}"
