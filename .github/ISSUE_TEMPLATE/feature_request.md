@@ -1,5 +1,5 @@
 ---
-name: 🌟 Feature Request
+name: "\U0001F31F Feature Request"
 about: Suggest a new feature or enhancement for ReSurfEMG
 title: "[FEATURE] <short description>"
 labels: enhancement
