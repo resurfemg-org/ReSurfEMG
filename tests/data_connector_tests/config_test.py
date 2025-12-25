@@ -122,7 +122,6 @@ class TestFindProjectRoot(TestCase):
 
             # Test finding the project root from the subdirectory
             found_root = find_project_root(current_dir=Path(sub_dir))
-            
             dir_a = Path(project_root)
             dir_b = Path(found_root)
             assert dir_a.samefile(dir_b)
@@ -137,4 +136,17 @@ class TestFindProjectRoot(TestCase):
 
             # Test that it returns None when no project root is found
             found_root = find_project_root(current_dir=Path(sub_dir))
+            self.assertIsNone(found_root)
+
+    def test_find_non_existent_marker_file(self):
+        with TemporaryDirectory() as td:
+            # Create a mock project structure
+            project_root = os.path.join(td, 'project')
+            os.mkdir(project_root)
+            sub_dir = os.path.join(project_root, 'subdir')
+            os.mkdir(sub_dir)
+
+            # Test finding the project root from the subdirectory
+            found_root = find_project_root(
+                current_dir=Path(sub_dir), marker_file='non_existent_file.txt')
             self.assertIsNone(found_root)
