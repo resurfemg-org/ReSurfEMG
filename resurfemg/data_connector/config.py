@@ -305,7 +305,7 @@ class Config:
             root = root.replace('.', config_path, 1)
         self._loaded = dict(self._raw)
         self._loaded['root_data'] = root
-        for key, value in self._raw.items():
+        for key, value in self._loaded.items():
             if isinstance(value, str) and value.startswith('.'):
                 new_value = value.replace('.', root, 1)
                 self._loaded[key] = convert_to_os_path(new_value)
