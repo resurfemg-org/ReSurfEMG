@@ -28,6 +28,7 @@ dependencies = [
     'scipy',
     'matplotlib',
     'h5py',
+    'ipywidgets',
     'numpy>=1.24.4',
     'scikit-learn>=1.3.2',
     'neurokit2>=0.2.7',
@@ -50,11 +51,9 @@ tests = ['pytest',
          'pytest-cov',
          'pycodestyle', 
          'isort',
-         'wheel',
-         'ipywidgets']
+         'wheel']
 docs = ['wheel',
-        'sphinx',
-        'ipywidgets']
+        'sphinx']
 dev = ['pytest', 
        'pytest-cov',
        'pycodestyle', 
