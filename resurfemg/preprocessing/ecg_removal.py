@@ -78,6 +78,7 @@ def gating(
     peak_idxs,
     gate_width=205,
     method=1,
+    **kwargs
 ):
     """
     Eliminate peaks (e.g. QRS) from emg_raw using gates
@@ -106,35 +107,41 @@ def gating(
     half_gate_width = gate_width // 2
     if method == 0:
         # Method 0: Fill with zeros
-        # TODO: can rewrite with slices from numpy irange to be more efficient
-        gate_samples = []
-        for _, peak in enumerate(peak_idxs):
-            for k in range(
-                max(0, peak - half_gate_width),
-                min(max_sample, peak + half_gate_width),
-            ):
-                gate_samples.append(k)
+        # Vectorized construction of gate sample indices
+        peaks = np.asarray(peak_idxs, dtype=int).ravel()
+        if peaks.size == 0:
+            gate_samples = np.array([], dtype=int)
+        else:
+            starts = np.maximum(0, peaks - half_gate_width)
+            ends = np.minimum(max_sample, peaks + half_gate_width)
+            # build ranges per peak and concat, then unique to avoid duplicates
+            gate_samples = np.concatenate(
+                [np.arange(s, e) for s, e in zip(starts, ends)])
+            gate_samples = np.unique(gate_samples).astype(int)
 
         emg_raw_gated[gate_samples] = 0
     elif method == 1:
         # Method 1: Fill with interpolation pre- and post gate sample
-        # TODO: rewrite with numpy interpolation for efficiency
-        for _, peak in enumerate(peak_idxs):
-            pre_ave_emg = emg_raw[peak-half_gate_width-1]
+        peaks = np.asarray(peak_idxs, dtype=int).ravel()
+        if peaks.size > 0:
+            max_sample = emg_raw_gated.shape[0]
+            for peak in peaks:
+                pre_idx = peak - half_gate_width - 1
+                pre_val = emg_raw[pre_idx] if (
+                    pre_idx >= 0 and pre_idx < max_sample) else 0
 
-            if (peak + half_gate_width + 1) < emg_raw_gated.shape[0]:
-                post_ave_emg = emg_raw[peak+half_gate_width+1]
-            else:
-                post_ave_emg = 0
+                post_idx = peak + half_gate_width + 1
+                post_val = emg_raw[post_idx] if (
+                    post_idx >= 0 and post_idx < max_sample) else 0
 
-            k_start = max(0, peak-half_gate_width)
-            k_end = min(
-                peak+half_gate_width, emg_raw_gated.shape[0]
-            )
-            for k in range(k_start, k_end):
-                frac = (k - peak + half_gate_width)/gate_width
-                loup = (1 - frac) * pre_ave_emg + frac * post_ave_emg
-                emg_raw_gated[k] = loup
+                k_start = max(0, peak - half_gate_width)
+                k_end = min(peak + half_gate_width, max_sample)
+                if k_start >= k_end:
+                    continue
+
+                ks = np.arange(k_start, k_end)
+                frac = (ks - peak + half_gate_width) / float(gate_width)
+                emg_raw_gated[ks] = (1.0 - frac) * pre_val + frac * post_val
 
     elif method == 2:
         # Method 2: Fill with window length mean over prior section
@@ -156,51 +163,121 @@ def gating(
 
     elif method == 3:
         # Method 3: Fill with moving average over RMS
-        gate_samples = []
-        for _, peak in enumerate(peak_idxs):
-            for k in range(
-                max([0, int(peak-gate_width/2)]),
-                min([max_sample, int(peak+gate_width/2)])
-            ):
-                gate_samples.append(k)
+        peaks = np.asarray(peak_idxs, dtype=int).ravel()
+        if peaks.size > 0:
+            # Build boolean mask of gate samples
+            gate_mask = np.zeros(max_sample, dtype=bool)
+            half_w = gate_width / 2
+            starts = np.maximum(0, (peaks - half_w).astype(int))
+            ends = np.minimum(max_sample, (peaks + half_w).astype(int))
+            for s, e in zip(starts, ends):
+                if s < e:
+                    gate_mask[s:e] = True
 
-        emg_raw_gated_base = copy.deepcopy(emg_raw_gated)
-        emg_raw_gated_base[gate_samples] = np.nan
-        emg_raw_gated_rms = evl.full_rolling_rms(
-            emg_raw_gated_base,
-            gate_width,)
+            # Compute RMS with gated samples as NaN
+            emg_raw_gated_base = emg_raw_gated.copy()
+            emg_raw_gated_base[gate_mask] = np.nan
+            emg_raw_gated_rms = evl.full_rolling_rms(
+                emg_raw_gated_base, gate_width)
 
-        interpolate_samples = list()
-        for _, peak in enumerate(peak_idxs):
-            k_start = max([0, int(peak-gate_width/2)])
-            k_end = min([int(peak+gate_width/2), max_sample])
+            # Compute local mean of the RMS over a window of ~3*gate_widths
+            w = max(1, 2 * int(1.5 * gate_width) + 1)
+            if gate_width % 2 == 0:
+                closed = "neither"
+            else:
+                closed = "left"
+            local_mean = pd.Series(emg_raw_gated_rms).rolling(
+                window=w,
+                min_periods=1,
+                center=True,
+                closed=closed).mean().values
 
-            for k in range(k_start, k_end):
-                leftf = max([0, int(k-1.5*gate_width)])
-                rightf = min([int(k+1.5*gate_width), max_sample])
-                if any(np.logical_not(np.isnan(
-                        emg_raw_gated_rms[leftf:rightf]))):
-                    emg_raw_gated[k] = np.nanmean(
-                        emg_raw_gated_rms[leftf:rightf]
-                    )
-                else:
-                    interpolate_samples.append(k)
+            # Assign local_mean where available within gates
+            mask_available = gate_mask & (~np.isnan(local_mean))
+            emg_raw_gated[mask_available] = local_mean[mask_available]
 
-        if len(interpolate_samples) > 0:
-            interpolate_samples = np.array(interpolate_samples)
-            if 0 in interpolate_samples:
-                emg_raw_gated[0] = 0
+            # Remaining gate samples to interpolate
+            interp_mask = gate_mask & np.isnan(local_mean)
+            # NB: Interpolation is combined below for methods 3 and 4
+    elif method == 4:
+        # Method 4: Fill with quadratic fit to RMS
+        peaks = np.asarray(peak_idxs, dtype=int).ravel()
+        if peaks.size > 0:
+            # Build boolean mask of gate samples
+            gate_mask = np.zeros(max_sample, dtype=bool)
+            half_w = gate_width / 2
+            starts = np.maximum(0, (peaks - half_w).astype(int))
+            ends = np.minimum(max_sample, (peaks + half_w).astype(int))
+            for s, e in zip(starts, ends):
+                if s < e:
+                    gate_mask[s:e] = True
 
-            if len(emg_raw_gated)-1 in interpolate_samples:
-                emg_raw_gated[-1] = 0
+            # Compute RMS with gated samples as NaN
+            emg_raw_gated_base = emg_raw_gated.copy()
+            emg_raw_gated_base[gate_mask] = np.nan
+            emg_raw_gated_rms = evl.full_rolling_rms(
+                emg_raw_gated_base, gate_width)
+            emg_raw_gated[gate_mask] = np.nan
 
-            x_samp = np.array([x_i for x_i in range(len(emg_raw_gated))])
-            other_samples = x_samp[~np.isin(x_samp, interpolate_samples)]
-            emg_raw_gated_interp = np.interp(
-                x_samp[interpolate_samples],
-                x_samp[other_samples],
-                emg_raw_gated[other_samples])
-            emg_raw_gated[interpolate_samples] = emg_raw_gated_interp
+            # Fit a local cubic (or lower-degree if needed) to RMS using
+            local_mean = np.full(max_sample, np.nan)
+            # identify contiguous gated segments
+            gated_idx = np.nonzero(gate_mask)[0]
+            if gated_idx.size > 0:
+                # find breaks in the gated indices to get segments
+                breaks = np.where(np.diff(gated_idx) != 1)[0]
+                seg_starts = gated_idx[np.concatenate(([0], breaks + 1))]
+                seg_ends = gated_idx[np.concatenate((
+                    breaks, [gated_idx.size - 1]))]
+                poly_width = kwargs.get('poly_width', 5 * gate_width)
+
+                for gs, ge in zip(seg_starts, seg_ends):
+                    pre_s = max(0, gs - poly_width // 2)
+                    post_e = min(max_sample, ge + 1 + poly_width // 2)
+
+                    # support indices and values from RMS (skip NaNs)
+                    idx_pre = np.arange(pre_s, gs)
+                    idx_post = np.arange(ge + 1, post_e)
+                    support_idx = np.concatenate((idx_pre, idx_post))
+                    support_vals = emg_raw_gated_rms[support_idx]
+                    valid_mask = ~np.isnan(support_vals)
+                    valid_idx = support_idx[valid_mask]
+                    valid_vals = support_vals[valid_mask]
+
+                    # fit polynomial to valid RMS support
+                    fit_available = valid_idx.size >= 2
+                    if fit_available:
+                        deg = min(2, valid_idx.size - 1)
+                        p_seg = np.polyfit(
+                            valid_idx, valid_vals, deg)
+                        ks = np.arange(gs, ge + 1)
+                        emg_raw_gated[gs:ge + 1] = np.polyval(p_seg, ks)
+            # NB: Interpolation is combined below for methods 3 and 4
+            interp_mask = gate_mask & np.isnan(emg_raw_gated)
+    if method in [3, 4]:
+        if np.any(interp_mask):
+            interp_idx = np.nonzero(interp_mask)[0]
+            other_idx = np.nonzero(~interp_mask)[0]
+
+            # Boundary handling: Set endpoints to 0 if part of interp_idx
+            if 0 in interp_idx:
+                emg_raw_gated[0] = 0.0
+                interp_mask[0] = False
+            if (max_sample - 1) in interp_idx:
+                emg_raw_gated[-1] = 0.0
+                interp_mask[-1] = False
+
+            interp_idx = np.nonzero(interp_mask)[0]
+            other_idx = np.nonzero(~interp_mask)[0]
+
+            if other_idx.size > 0 and interp_idx.size > 0:
+                # Ensure there are values to interpolate from
+                emg_raw_gated_interp = np.interp(
+                    interp_idx,
+                    other_idx,
+                    emg_raw_gated[other_idx]
+                )
+                emg_raw_gated[interp_idx] = emg_raw_gated_interp
 
     return emg_raw_gated
 
