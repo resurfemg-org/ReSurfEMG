@@ -15,7 +15,7 @@ jobs:
   Test-Sphinx:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
       with:
         submodules: recursive
     - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
@@ -32,7 +32,7 @@ jobs:
       id-token: write
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
       with:
         submodules: recursive
     - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
@@ -43,7 +43,7 @@ jobs:
     - run: .venv\Scripts\pip install -e .[tests]
     - run: .venv\Scripts\python -m pytest --cov . --cov-report=xml
     - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7
+      uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         slug: resurfemg-org/ReSurfEMG
@@ -52,7 +52,7 @@ jobs:
   Test-Sanity-OSX:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
       with:
         submodules: recursive
     - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548

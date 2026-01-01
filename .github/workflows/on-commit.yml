@@ -12,7 +12,7 @@ jobs:
         os: ['ubuntu-latest']
         python-version: ['3.12']
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
         with:
           submodules: recursive
       - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
@@ -30,7 +30,7 @@ jobs:
     if: |
       github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
         with:
           fetch-depth: 0
           submodules: recursive
@@ -43,7 +43,7 @@ jobs:
       - run: .venv/bin/python setup.py apidoc
       - run: .venv/bin/python setup.py build_sphinx -W
       - name: Publish Docs to Pages
-        uses: JamesIves/github-pages-deploy-action@4a3abc783e1a24aeb44c16e869ad83caf6b4cc23
+        uses: JamesIves/github-pages-deploy-action@9d877eea73427180ae43cf98e8914934fe157a1a
         with:
           branch: gh-pages
           folder: build/sphinx/html
@@ -63,7 +63,7 @@ jobs:
   # Markdown: 
   #   runs-on: ubuntu-latest
   #   steps:
-  #   - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+  #   - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
   #   - uses: gaurav-nelson/github-action-markdown-link-check@v1
   #     with:
   #       config-file: '.github/workflows/mlc-config.json'
