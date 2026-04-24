@@ -77,8 +77,7 @@ def gating(
     emg_raw,
     peak_idxs,
     gate_width=205,
-    method=1,
-    **kwargs
+    method=3,
 ):
     """
     Eliminate peaks (e.g. QRS) from emg_raw using gates
@@ -198,63 +197,7 @@ def gating(
 
             # Remaining gate samples to interpolate
             interp_mask = gate_mask & np.isnan(local_mean)
-            # NB: Interpolation is combined below for methods 3 and 4
-    elif method == 4:
-        # Method 4: Fill with quadratic fit to RMS
-        peaks = np.asarray(peak_idxs, dtype=int).ravel()
-        if peaks.size > 0:
-            # Build boolean mask of gate samples
-            gate_mask = np.zeros(max_sample, dtype=bool)
-            half_w = gate_width / 2
-            starts = np.maximum(0, (peaks - half_w).astype(int))
-            ends = np.minimum(max_sample, (peaks + half_w).astype(int))
-            for s, e in zip(starts, ends):
-                if s < e:
-                    gate_mask[s:e] = True
 
-            # Compute RMS with gated samples as NaN
-            emg_raw_gated_base = emg_raw_gated.copy()
-            emg_raw_gated_base[gate_mask] = np.nan
-            emg_raw_gated_rms = evl.full_rolling_rms(
-                emg_raw_gated_base, gate_width)
-            emg_raw_gated[gate_mask] = np.nan
-
-            # Fit a local cubic (or lower-degree if needed) to RMS using
-            local_mean = np.full(max_sample, np.nan)
-            # identify contiguous gated segments
-            gated_idx = np.nonzero(gate_mask)[0]
-            if gated_idx.size > 0:
-                # find breaks in the gated indices to get segments
-                breaks = np.where(np.diff(gated_idx) != 1)[0]
-                seg_starts = gated_idx[np.concatenate(([0], breaks + 1))]
-                seg_ends = gated_idx[np.concatenate((
-                    breaks, [gated_idx.size - 1]))]
-                poly_width = kwargs.get('poly_width', 5 * gate_width)
-
-                for gs, ge in zip(seg_starts, seg_ends):
-                    pre_s = max(0, gs - poly_width // 2)
-                    post_e = min(max_sample, ge + 1 + poly_width // 2)
-
-                    # support indices and values from RMS (skip NaNs)
-                    idx_pre = np.arange(pre_s, gs)
-                    idx_post = np.arange(ge + 1, post_e)
-                    support_idx = np.concatenate((idx_pre, idx_post))
-                    support_vals = emg_raw_gated_rms[support_idx]
-                    valid_mask = ~np.isnan(support_vals)
-                    valid_idx = support_idx[valid_mask]
-                    valid_vals = support_vals[valid_mask]
-
-                    # fit polynomial to valid RMS support
-                    fit_available = valid_idx.size >= 2
-                    if fit_available:
-                        deg = min(2, valid_idx.size - 1)
-                        p_seg = np.polyfit(
-                            valid_idx, valid_vals, deg)
-                        ks = np.arange(gs, ge + 1)
-                        emg_raw_gated[gs:ge + 1] = np.polyval(p_seg, ks)
-            # NB: Interpolation is combined below for methods 3 and 4
-            interp_mask = gate_mask & np.isnan(emg_raw_gated)
-    if method in [3, 4]:
         if np.any(interp_mask):
             interp_idx = np.nonzero(interp_mask)[0]
             other_idx = np.nonzero(~interp_mask)[0]
