@@ -7,11 +7,14 @@ name = "resurfemg"
 maintainers = [
     {name = "Eline Mos-Oppersma", email = "e.oppersma@utwente.nl"},
     {name = "Rob Warnaar", email = "r.s.p.warnaar@utwente.nl"},
+    {name = "Chiara Maninetti", email = "c.maninetti@utwente.nl"},
 ]
 description = "A package for analysis of respiratory EMG data"
+readme = "README.md"
 requires-python = ">=3.9"
 keywords = ["electromyography", "EMG", "respiratory", "Python", "surface EMG"]
-license = "Apache-2.0"
+license = { text = "Apache-2.0" }
+dynamic = ["version"]
 license-files = ["LICENSE"]
 classifiers = [
     "Programming Language :: Python :: 3.9",
@@ -21,22 +24,21 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    'pyxdf',
-    'mne>=0.23.4',
-    'textdistance',
-    'pandas',
-    'scipy',
-    'matplotlib',
-    'h5py',
-    'numpy>=1.24.4',
-    'scikit-learn>=1.3.2',
-    'neurokit2>=0.2.7',
-    'pywavelets>=1.1.1',
-    'adi-reader>=0.0.13',
-    'prettytable>=3.12.0',
+    "pyxdf",
+    "mne >= 0.23.4",
+    "textdistance",
+    "pandas",
+    "scipy",
+    "matplotlib",
+    "h5py",
+    "numpy >= 1.24.4",
+    "scikit-learn >= 1.3.2",
+    "neurokit2 >= 0.2.7",
+    "pywavelets >= 1.1.1",
+    "adi-reader >= 0.0.13",
+    "prettytable >= 3.12.0",
 ]
-readme = "README.md"
-dynamic = ["version"]
+
 
 [project.urls]
 Homepage = "https://github.com/ReSurfEMG-org"
@@ -44,27 +46,6 @@ Documentation = "https://resurfemg-org.github.io/ReSurfEMG/"
 Repository = "https://github.com/resurfemg-org/ReSurfEMG"
 Issues = "https://github.com/resurfemg-org/ReSurfEMG/issues"
 Changelog = "https://github.com/resurfemg-org/ReSurfEMG/blob/main/CHANGELOG.md"
-
-[project.optional-dependencies]
-tests = ['pytest', 
-         'pytest-cov',
-         'pycodestyle', 
-         'isort',
-         'wheel',
-         'ipywidgets']
-docs = ['wheel',
-        'sphinx',
-        'ipywidgets']
-dev = ['pytest', 
-       'pytest-cov',
-       'pycodestyle', 
-       'isort', 
-       'wheel', 
-       'jupyter', 
-       'ipympl',
-       'sphinx',
-       'twine']
-
 [tool.setuptools.packages.find]
 include = ["resurfemg*"]
 
@@ -85,3 +66,69 @@ omit = [
     "resurfemg/legacy/*",
     "resurfemg/data_connector/tmsisdk_lite.py",
     ]
+
+[tool.ruff]
+output-format = "concise"
+line-length = 120
+extend-include = ["*.ipynb"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+pydocstyle.convention = "google" # docstring settings
+ignore = [
+    # Unwanted (potentially)
+    "FBT",    # Using boolean arguments
+    "ANN002", # Missing type annotation for `*args`
+    "ANN003", # Missing type annotation for `**kwargs`
+    "ANN204", # Missing return type annotation for special (dunder) method
+    "S105",   # Possible hardcoded password
+    "S311",   # insecure random generators
+    "PT011",  # pytest-raises-too-broad
+    "PD011",  # Use of .values. Assumes .values refers to pandas dataframes, not object attributes
+    "TD",     # TODOs
+    "FIX002", # Resolve TODOs
+    "B028",   # No explicit `stacklevel` keyword argument found in warning
+    # "SIM108", # Use ternary operator (not sure if we want to ignore this)
+    # Unneeded docstrings
+    "D100",   # Missing module docstring
+    "D104",   # Missing public package docstring
+    "D105",   # Missing docstring in magic method
+    "D107",   # Missing docstring in `__init__`
+    "COM812", # missing trailing comma
+    "ISC001", # single line implicit string concatenation
+]
+
+# Set autofixing.
+fixable = ["ALL"]
+unfixable = [
+    "F401",   # unused imports (should not disappear while editing)
+    "RUF100", # unused noqa (should not disappear while editing)
+    "B905",   # autofill strictness of zip (think about preferred behavior)
+]
+extend-safe-fixes = [
+    "D415",   # First line should end with a period, question mark, or exclamation point
+    "D300",   # Use triple double quotes `"""`
+    "D200",   # One-line docstring should fit on one line
+    "TC",     # Format type checking only imports
+    "ISC001", # Implicitly concatenated strings on a single line
+    "EM",     # Exception message variables
+    "RUF013", # Implicit Optional
+    "B006",   # Mutable default argument
+    "TID252", # Absolute imports over relative imports
+]
+
+# Override default settings for specific rules
+pylint.max-args = 9
+flake8-tidy-imports.ban-relative-imports = "all" # Disallow all relative imports.
+isort.known-first-party = ["resurfemg"]
+
+[tool.ruff.lint.per-file-ignores]
+"*.ipynb" = ["ERA001", "T203", "T201"] # Commented out code
+"tests/*" = [
+    "S101",    # Use of `assert` detected
+    "ANN201",  # Missing return type
+    "D103",    # Missing function docstring
+    "PLR2004", # Comparison against unnamed value
+    "SLF001",  # Private member accessed
+]
+"docs/*" = ["ALL"]
