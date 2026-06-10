@@ -10,7 +10,7 @@ on:
   pull_request:
     branches: [ "main" ]
   schedule:
-    - cron: '0 0 * * 1'
+    - cron: '0 0 * * 1'  # Runs weekly on Mondays at 00:00 UTC
 
 # Declare default permissions as read only.
 permissions: read-all
