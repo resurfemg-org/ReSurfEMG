@@ -1,0 +1,47 @@
+# GitHub actions are pinned to commit hashes to ensure stability and security.
+# This custom CodeQL workflow replaces the default setup to avoid authentication
+# errors introduced in github/codeql-action@v4 during feature-enablement checks.
+
+name: "CodeQL"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '0 0 * * 1'
+
+# Declare default permissions as read only.
+permissions: read-all
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: python
+            build-mode: none
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@0daab03d71ff584ef619d027a3fd9146679c5d84 # v3.35.3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@0daab03d71ff584ef619d027a3fd9146679c5d84 # v3.35.3
+        with:
+          category: "/language:${{ matrix.language }}"
