@@ -598,17 +598,20 @@ For other arguments, see postprocessing.event_detection submodule.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="resurfemg.data_connector.data_classes.VentilatorDataGroup.find_tidal_volume_peaks">
-<span class="sig-name descname"><span class="pre">find_tidal_volume_peaks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">volume_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pressure_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.data_connector.data_classes.VentilatorDataGroup.find_tidal_volume_peaks" title="Link to this definition">¶</a></dt>
-<dd><p>Find tidal-volume peaks in ventilator volume signal. Peaks are stored
-in PeaksSet named ‘ventilator_breaths’ in ventilator pressure and
-volume TimeSeries.
+<dt class="sig sig-object py" id="resurfemg.data_connector.data_classes.VentilatorDataGroup.find_ventilator_peaks">
+<span class="sig-name descname"><span class="pre">find_ventilator_peaks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel_io</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.data_connector.data_classes.VentilatorDataGroup.find_ventilator_peaks" title="Link to this definition">¶</a></dt>
+<dd><p>Detect breath-related peaks in a specified ventilator signal
+Peaks are stored in the corresponding TimeSeries under the same signal.
 ———————————————————————–
-:param volume_idx: Channel index of the ventilator volume data
-:type volume_idx: int
-:param pressure_idx: Channel index of the ventilator pressure data
-:type pressure_idx: int
-For other arguments, see postprocessing.event_detection submodule.</p>
+:param channel_io: tuple of the input and output channels,
+the first element is the input channel for peak detection,
+the found peaks are stored in the channels listed in the
+second element. If none, the volume or pressure channel is used as
+input. In absence of these, the first channel is used.
+:type channel_io: tuple(str/int,str/int/list)
+:param overwrite: Whether to overwrite existing peak set
+:type overwrite: bool
+Other kwargs are passed to the peak detection function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
@@ -682,7 +685,7 @@ For other arguments, see postprocessing.event_detection submodule.</p>
 <li><a class="reference internal" href="#resurfemg.data_connector.data_classes.VentilatorDataGroup"><code class="docutils literal notranslate"><span class="pre">VentilatorDataGroup</span></code></a><ul>
 <li><a class="reference internal" href="#resurfemg.data_connector.data_classes.VentilatorDataGroup.find_occluded_breaths"><code class="docutils literal notranslate"><span class="pre">VentilatorDataGroup.find_occluded_breaths()</span></code></a></li>
 <li><a class="reference internal" href="#resurfemg.data_connector.data_classes.VentilatorDataGroup.find_peep"><code class="docutils literal notranslate"><span class="pre">VentilatorDataGroup.find_peep()</span></code></a></li>
-<li><a class="reference internal" href="#resurfemg.data_connector.data_classes.VentilatorDataGroup.find_tidal_volume_peaks"><code class="docutils literal notranslate"><span class="pre">VentilatorDataGroup.find_tidal_volume_peaks()</span></code></a></li>
+<li><a class="reference internal" href="#resurfemg.data_connector.data_classes.VentilatorDataGroup.find_ventilator_peaks"><code class="docutils literal notranslate"><span class="pre">VentilatorDataGroup.find_ventilator_peaks()</span></code></a></li>
 </ul>
 </li>
 </ul>
