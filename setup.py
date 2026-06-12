@@ -1,107 +1,124 @@
 #!/usr/bin/env python
 import os
-import sys
-from glob import glob
+import shutil
 import subprocess
+import sys
+from pathlib import Path
+from typing import ClassVar
 
 from setuptools import Command, setup
 
-project_dir = os.path.dirname(os.path.realpath(__file__))
+project_dir = Path(__file__).parent.resolve()
 
 
 class SphinxApiDoc(Command):
+    """Generate reStructuredText files from docstrings."""
 
-    description = 'run apidoc to generate documentation'
+    description = "run apidoc to generate documentation"
 
-    user_options = []
+    user_options: ClassVar[list] = []
 
-    def initialize_options(self):
-        pass
+    def initialize_options(self) -> None:
+        """Set default values for options."""
 
-    def finalize_options(self):
-        pass
+    def finalize_options(self) -> None:
+        """Post-process options."""
 
-    def run(self):
-        from sphinx.ext.apidoc import main
+    def run(self) -> None:
+        """Run command."""
+        from sphinx.ext.apidoc import main  # noqa: PLC0415
 
-        src = os.path.join(project_dir, 'docs')
+        src = Path(project_dir) / "docs"
         special = (
-            'index.rst',
-            'developers.rst',
-            'medical-professionals.rst',
+            "index.rst",
+            "developers.rst",
+            "medical-professionals.rst",
         )
 
-        for f in glob(os.path.join(src, '*.rst')):
+        for f in Path(src).glob("*.rst"):
             for end in special:
-                if f.endswith(end):
+                if str(f).endswith(end):
                     os.utime(f, None)
                     break
             else:
-                os.unlink(f)
+                Path(f).unlink()
 
-        sys.exit(main([
-            '-o', src,
-            '-f', os.path.join(project_dir, 'resurfemg'),
-            '-d', '4',
-            '--separate',
-        ]))
+        sys.exit(
+            main(
+                [
+                    "-o",
+                    str(src),
+                    "-f",
+                    str(Path(project_dir) / "resurfemg"),
+                    "-d",
+                    "4",
+                    "--separate",
+                ]
+            )
+        )
 
 
 class SphinxDoc(Command):
+    """Build Sphinx documentation."""
 
-    description = 'generate documentation'
+    description = "generate documentation"
 
-    user_options = [('wall', 'W', ('Warnings are errors'))]
+    user_options: ClassVar[list] = [("wall", "W", "Warnings are errors")]
 
-    def initialize_options(self):
+    def initialize_options(self) -> None:
+        """Set default values for options."""
         self.wall = True
 
-    def finalize_options(self):
-        pass
+    def finalize_options(self) -> None:
+        """Post-process options."""
 
-    def run(self):
-        from sphinx.util.console import nocolor
-        from sphinx.util.docutils import docutils_namespace, patch_docutils
-        from sphinx.application import Sphinx
-        from sphinx.cmd.build import handle_exception
+    def run(self) -> None:
+        """Run command."""
+        from sphinx.application import Sphinx  # noqa: PLC0415
+        from sphinx.cmd.build import handle_exception  # noqa: PLC0415
+        from sphinx.util.console import nocolor  # noqa: PLC0415
+        from sphinx.util.docutils import docutils_namespace, patch_docutils  # noqa: PLC0415
 
-        name = 'resurfemg'
+        name = "resurfemg"
         try:
-            tag = subprocess.check_output(
-                [
-                    'git',
-                    '--no-pager',
-                    'describe',
-                    '--abbrev=0',
-                    '--tags',
-                ],
-                stderr=subprocess.DEVNULL,
-            ).strip().decode()
+            tag = (
+                subprocess.check_output(  # noqa: S603
+                    [
+                        shutil.which("git") or "git",
+                        "--no-pager",
+                        "describe",
+                        "--abbrev=0",
+                        "--tags",
+                    ],
+                    stderr=subprocess.DEVNULL,
+                )
+                .strip()
+                .decode()
+            )
         except subprocess.CalledProcessError:
-            tag = 'v0.0.0'
+            tag = "v0.0.0"
 
         version = tag[1:]
 
         nocolor()
         confoverrides = {}
-        confoverrides['project'] = name
-        confoverrides['version'] = version
-        confoverrides['autodoc_mock_imports'] = ["adi"]
-        confdir = os.path.join(project_dir, 'docs')
+        confoverrides["project"] = name
+        confoverrides["version"] = version
+        confoverrides["autodoc_mock_imports"] = ["adi"]
+        confdir = Path(project_dir) / "docs"
         srcdir = confdir
-        builder = 'html'
-        build = self.get_finalized_command('build')
-        build_dir = os.path.join(os.path.abspath(build.build_base), 'sphinx')
-        builder_target_dir = os.path.join(build_dir, builder)
+        builder = "html"
+        build_dir = Path(project_dir) / "build" / "sphinx"
+        builder_target_dir = build_dir / builder
         app = None
 
         try:
-            with patch_docutils(confdir), docutils_namespace():
+            with patch_docutils(str(confdir)), docutils_namespace():
                 app = Sphinx(
                     srcdir,
                     confdir,
                     builder_target_dir,
-                    os.path.join(build_dir, 'doctrees'),
+                    build_dir / "doctrees",
                     builder,
                     confoverrides,
                     sys.stdout,
@@ -113,21 +130,21 @@ class SphinxDoc(Command):
                 app.build(force_all=False)
                 if app.statuscode:
                     sys.stderr.write(
-                        'Sphinx builder {} failed.'.format(app.builder.name),
+                        f"Sphinx builder {app.builder.name} failed.",
                     )
-                    raise SystemExit(8)
+                    raise SystemExit(8)  # noqa: TRY301
         except Exception as e:
             handle_exception(app, self, e, sys.stderr)
             raise
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     setup(
         use_scm_version=True,
-        long_description=open('README.md').read(),
+        long_description=(project_dir / "README.md").read_text(),
         long_description_content_type="text/markdown",
         cmdclass={
-            'apidoc': SphinxApiDoc,
-            'build_sphinx': SphinxDoc,
+            "apidoc": SphinxApiDoc,
+            "build_sphinx": SphinxDoc,
         },
     )

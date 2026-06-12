@@ -57,6 +57,9 @@ testpaths = [
     "tests", 
 ]
      
+[tool.pylance]
+pythonVersion = "3.9"   # check with minimum supported version
+
 [tool.coverage.report]
 include = [
     "resurfemg/**/*.py"

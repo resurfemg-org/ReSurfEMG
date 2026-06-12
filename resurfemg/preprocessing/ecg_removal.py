@@ -199,7 +199,7 @@ def _gate_fill_rms(
 
 def gating(
     emg_raw: np.ndarray,
-    peak_idxs: list,
+    peak_idxs: list | np.ndarray,
     gate_width: int = 205,
     method: int = 1,
 ) -> np.ndarray:
@@ -217,7 +217,7 @@ def gating(
     :param emg_raw: Signal to process
     :type emg_raw: ~numpy.ndarray
     :param peak_idxs: list of individual peak index places to be gated
-    :type peak_idxs: ~list
+    :type peak_idxs: ~list | ~numpy.ndarray
     :param gate_width: width of the gate
     :type gate_width: int
     :param method: filling method of gate
@@ -394,7 +394,7 @@ def wavelet_denoising(
         return gate_windows
 
     def threshold_wavelets(
-        data: np.ndarray, hard_thresholding: bool, threshold: float
+        data: np.ndarray, hard_thresholding: bool, threshold: float | np.ndarray
     ) -> np.ndarray:
         """Threshold wavelet coefficients.
 
@@ -451,7 +451,7 @@ def wavelet_denoising(
         threshold = fixed_threshold * s[k, :]
         thresholds[k, :] = threshold
         wxd[k, 1, :] = threshold_wavelets(
-            wav_dec_unpacked[k, 1, :], hard_thresholding, float(threshold)
+            wav_dec_unpacked[k, 1, :], hard_thresholding, threshold
         )
 
     # # Wavelet reconstruction

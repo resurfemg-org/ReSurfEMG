@@ -27,7 +27,9 @@ def full_rolling_rms(emg_clean: np.ndarray, window_length: int) -> np.ndarray:
     """
     emg_clean_sqr = pd.Series(np.power(emg_clean, 2))
     return np.sqrt(
-        emg_clean_sqr.rolling(window=window_length, min_periods=1, center=True).mean()
+        emg_clean_sqr.rolling(window=window_length, min_periods=1, center=True)
+        .mean()
+        .to_numpy()
     )
 
 
