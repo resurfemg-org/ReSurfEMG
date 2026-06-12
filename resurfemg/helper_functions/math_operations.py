@@ -27,23 +27,22 @@ logger = logging.getLogger(__name__)
 class Range(NamedTuple):
     """Utility class for working with ranges (intervals).
 
-    :param start: Start of the range
-    :type start: ~int
-    :param end: End of the range
-    :type end: ~int
+    Args:
+        start (int): Start of the range.
+        end (int): End of the range.
     """
 
     end: int
     start: int
 
     def intersects(self, other: Self) -> bool:
-        """Returns `True` if this range intersects `other` range.
+        """Return True if this range intersects other range.
 
-        :param other: Another range to compare this one to
-        :type other: ~resurfemg.helper_functions.Range
+        Args:
+            other (Range): Another range to compare this one to.
 
-        :returns: `True` if this range intersects another range
-        :rtype: bool
+        Returns:
+            bool: True if this range intersects another range.
         """
         return (
             ((self.end >= other.end) and (self.start < other.end))
@@ -52,23 +51,22 @@ class Range(NamedTuple):
         )
 
     def precedes(self, other: Self) -> bool:
-        """Returns `True` if this range precedes `other` range.
+        """Return True if this range precedes other range.
 
-        :param other: Another range to compare this one to
-        :type other: ~resurfemg.helper_functions.Range
+        Args:
+            other (Range): Another range to compare this one to.
 
-        :returns: `True` if this range strictly precedes another range
-        :rtype: bool
+        Returns:
+            bool: True if this range strictly precedes another range.
         """
         return self.end < other.start
 
     def to_slice(self) -> slice:
-        """Converts this range to a :class:`slice`.
+        """Convert this range to a slice.
 
-        :returns: A slice with its start set to this range's start and end set
-            to this range's end
-
-        :rtype: slice
+        Returns:
+            slice: A slice with its start set to this range's start and end
+                set to this range's end.
         """
         return slice(*map(int, self))  # maps whole tuple set
 
@@ -79,13 +77,12 @@ def zero_one_for_jumps_base(array: np.ndarray, cut_off: float) -> list:
     This function takes an array and makes it binary (0, 1) based
     on a cut-off value.
 
-    :param array: An array
-    :type array: ~numpy.ndarray
-    :param cut_off: The number defining a cut-off line for binarization
-    :type cut_off: float
+    Args:
+        array (numpy.ndarray): An array.
+        cut_off (float): The number defining a cut-off line for binarization.
 
-    :returns array_list: Binarized list that can be turned into array
-    :rtype array_list: list
+    Returns:
+        list: Binarized list that can be turned into array.
     """
     return [i >= cut_off for i in array]
 
@@ -93,21 +90,17 @@ def zero_one_for_jumps_base(array: np.ndarray, cut_off: float) -> list:
 def slices_slider(
     array_sample: np.ndarray, slice_len: int
 ) -> Generator[np.ndarray, None, None]:
-    """Produces sequential slices over an array of a certain length.
+    """Produce sequential slices over an array of a certain length.
 
     This function produces continuous sequential slices over an
-    array of a certain length.  The inputs are the following -
-    `array_sample`, the signal and `slice_len` - the
-    window which you wish to slide with. The function yields, does
-    not return these slices.
+    array of a certain length. The function yields, does not return these slices.
 
-    :param array_sample: array containing the signal
-    :type array_sample: ~numpy.ndarray
-    :param slice_len: the length of window on the array
-    :type slice_len: int
+    Args:
+        array_sample (numpy.ndarray): Array containing the signal.
+        slice_len (int): The length of window on the array.
 
-    :returns: Actually yields, no return
-    :rtype: ~numpy.ndarray
+    Yields:
+        numpy.ndarray: Sequential slices of length slice_len.
     """
     for i in range(len(array_sample) - slice_len + 1):
         yield array_sample[i : i + slice_len]
@@ -116,37 +109,35 @@ def slices_slider(
 def slices_jump_slider(
     array_sample: np.ndarray, slice_len: int, jump: int
 ) -> Generator[np.ndarray, None, None]:
-    """Produces sequential slices over an array of a certain length with jumps.
+    """Produce sequential slices over an array of a certain length with jumps.
 
     This function produces continuous sequential slices over an
     array of a certain length spaced out by a 'jump'.
     The function yields, does not return these slices.
 
-    :param array_sample: array containing the signal
-    :type array_sample: ~numpy.ndarray
-    :param slice_len: the length of window on the array
-    :type slice_len: int
-    :param jump: the amount by which the window is moved at iteration
-    :type jump: int
+    Args:
+        array_sample (numpy.ndarray): Array containing the signal.
+        slice_len (int): The length of window on the array.
+        jump (int): The amount by which the window is moved at iteration.
 
-    :returns: Actually yields, no return
-    :rtype: ~numpy.ndarray
+    Yields:
+        numpy.ndarray: Sequential slices of length slice_len.
     """
     for i in range(len(array_sample) - (slice_len)):
         yield array_sample[(jump * i) : ((jump * i) + slice_len)]
 
 
 def ranges_of(array: np.ndarray) -> tuple[Range, ...]:
-    """Selects ranges of 1s in a binary array and returns tuples of boundaries.
+    """Select ranges of 1s in a binary array and return tuples of boundaries.
 
-    This function is made to work with :class:`Range` class objects, such
-    that is selects ranges and returns tuples of boundaries.
+    This function is made to work with Range class objects, such
+    that it selects ranges and returns tuples of boundaries.
 
-    :param array: array
-    :type  array: ~numpy.ndarray
+    Args:
+        array (numpy.ndarray): Array.
 
-    :return: range_return
-    :rtype: tuple
+    Returns:
+        tuple[Range, ...]: Tuple of Range objects representing boundaries.
     """
     marks = np.logical_xor(array[1:], array[:-1])
     boundaries = np.hstack(
@@ -160,19 +151,18 @@ def ranges_of(array: np.ndarray) -> tuple[Range, ...]:
 
 
 def intersections(left: list[Range], right: list[Range]) -> list[Range]:
-    """Picks ranges from the left that intersect ranges from the right.
+    """Pick ranges from the left that intersect ranges from the right.
 
-    This function works over two arrays, `left` and
-    `right`, and allows a picking based on intersections.  It
-    only takes ranges on the left that intersect ranges on the right.
+    This function works over two arrays, left and right, and allows
+    a picking based on intersections. It only takes ranges on the left
+    that intersect ranges on the right.
 
-    :param left: List of ranges
-    :type left: List[Range]
-    :param right: List of ranges
-    :type right: List[Range]
+    Args:
+        left (list[Range]): List of ranges.
+        right (list[Range]): List of ranges.
 
-    :returns result: Ranges from the left that intersect ranges from the right.
-    :rtype result: List[Range]
+    Returns:
+        list[Range]: Ranges from the left that intersect ranges from the right.
     """
     i, j = 0, 0
     result = []
@@ -194,13 +184,12 @@ def raw_overlap_percent(signal1: np.ndarray, signal2: np.ndarray) -> float:
     This function takes two binary 0 or 1 signal arrays and gives
     the percentage of overlap.
 
-    :param signal1: Binary signal 1
-    :type signal1: ~numpy.ndarray
-    :param rsignal2: Binary signal 2
-    :type rsignal2: ~numpy.ndarray
+    Args:
+        signal1 (numpy.ndarray): Binary signal 1.
+        signal2 (numpy.ndarray): Binary signal 2.
 
-    :returns _raw_overlap_percent: Raw overlap percent
-    :rtype _raw_overlap_percent: float
+    Returns:
+        float: Raw overlap percent.
     """
     if len(signal1) != len(signal2):
         logger.warning("Warning: length of arrays is not matched")
@@ -212,15 +201,14 @@ def raw_overlap_percent(signal1: np.ndarray, signal2: np.ndarray) -> float:
 
 
 def merge(left: list, right: list) -> list:
-    """Merge two lists based linear order.
+    """Merge two lists based on linear order.
 
-    :param left: First list
-    :type left: List
-    :param right: Second list
-    :type right: List
+    Args:
+        left (list): First list.
+        right (list): Second list.
 
-    :returns output: Merged lists
-    :rtpe output: List
+    Returns:
+        list: Merged lists.
     """
     # Initialize an empty list output that will be populated
     # with sorted elements.
@@ -256,35 +244,34 @@ def scale_arrays(array: np.ndarray, maximum: float, minimum: float) -> np.ndarra
     This function will scale all arrays along the vertical axis to have an
     absolute maximum value of the maximum parameter.
 
-    :param array: Original signal array with any number of layers
-    :type array: ~numpy.ndarray
-    :param maximum: the absolute maximum below which the new array exists
-    :type maximum: float
-    :param minimum: the absolute maximum below which the new array exists
-    :type minimum: float
+    Args:
+        array (numpy.ndarray): Original signal array with any number of layers.
+        maximum (float): The absolute maximum below which the new array exists.
+        minimum (float): The absolute minimum above which the new array exists.
 
-    :returns reformed: a new array with absolute max of maximum
-    :rtype reformed: ~numpy.ndarray
+    Returns:
+        numpy.ndarray: A new array with absolute max of maximum.
     """
     return np.interp(array, (array.min(), array.max()), (maximum, minimum))
 
 
 def delay_embedding(data: np.ndarray, emb_dim: int, lag: int = 1) -> np.ndarray:
-    """Performs a time-delay embedding of a time series.
+    """Perform a time-delay embedding of a time series.
 
     The following code is adapted from openly licensed code written by
     Christopher Schölzel in his package nolds (NOnLinear measures for Dynamical
-    Systems).It performs a time-delay embedding of a time series.
+    Systems). It performs a time-delay embedding of a time series.
 
-    :param data: array-like
-    :type data: array
-    :param emb_dim: the embedded dimension
-    :type emb_dim: int
-    :param lag: the lag between elements in the embedded vectors
-    :type lag: int
+    Args:
+        data (numpy.ndarray): Array-like time series data.
+        emb_dim (int): The embedded dimension.
+        lag (int): The lag between elements in the embedded vectors.
 
-    :returns matrix_vectors: the embedded vectors
-    :rtype matrix_vectors: ~nd.array
+    Returns:
+        numpy.ndarray: The embedded vectors.
+
+    Raises:
+        ValueError: If the data is too short for the embedding parameters.
     """
     data = np.asarray(data)
     min_len = (emb_dim - 1) * lag + 1
@@ -303,15 +290,10 @@ def save_preprocessed(array: np.ndarray, out_fname: str, force: bool) -> None:
     This function is written to be called by the cli module.
     It stores arrays in a directory.
 
-    :param array: array to be stored
-    :type array: ~nd.array
-    :param out_fname: output file name
-    :type out_fname: str
-    :param force: force writing the file
-    :type force: bool
-
-    :returns: None
-    :rtype: None
+    Args:
+        array (numpy.ndarray): Array to be stored.
+        out_fname (str): Output file name.
+        force (bool): Force writing the file.
     """
     if not force and Path(out_fname).exists():
         return
@@ -321,19 +303,17 @@ def save_preprocessed(array: np.ndarray, out_fname: str, force: bool) -> None:
 
 
 def derivative(signal: np.ndarray, fs: int, window_s: int | None = None) -> np.ndarray:
-    """This function calculates the first derivative of a signal.
+    """Calculate the first derivative of a signal.
 
     If window_s is given, the signal is smoothed before derivative calculation.
 
-    :param signal: signal to calculate the derivate over
-    :type signal: ~numpy.ndarray
-    :param fs: sampling rate
-    :type fs: int
-    :param window_s: centralised averaging window length in samples
-    :type window_s: int
+    Args:
+        signal (numpy.ndarray): Signal to calculate the derivative over.
+        fs (int): Sampling rate.
+        window_s (int, optional): Centralised averaging window length in samples.
 
-    :returns dsignal_dt: The 1st derivative of the signal length len(signal)-1.
-    :rtype dsignal_dt: ~numpy.ndarray
+    Returns:
+        numpy.ndarray: The 1st derivative of the signal, length len(signal)-1.
     """
     if window_s is not None:
         # Moving average over signal
@@ -349,34 +329,31 @@ def derivative(signal: np.ndarray, fs: int, window_s: int | None = None) -> np.n
 
 
 def bell_curve(x: np.ndarray, a: float, b: float, c: float) -> np.ndarray:
-    """Calculate a shifter, smoothed and amplified bell curve.
+    """Calculate a shifted, smoothed and amplified bell curve.
 
-    This function calculates a bell curve on the samples of `x`, shifted by
+    This function calculates a bell curve on the samples of x, shifted by
     b, amplified by a for a standard amplitude of 1.
 
-    :param x: x values to calculate the bell_curve for
-    :type x: ~numpy.ndarray
-    :param a: amplitude of the bell-curve
-    :type a: ~float
-    :param b: time shift of the bell-curve along the x-axis.
-    :type b: ~float
-    :param c: steepness factor of bell-curve.
-    :type c: ~float
+    Args:
+        x (numpy.ndarray): X values to calculate the bell_curve for.
+        a (float): Amplitude of the bell-curve.
+        b (float): Time shift of the bell-curve along the x-axis.
+        c (float): Steepness factor of bell-curve.
 
-    :returns: bell curve
-    :rtype: ~numpy.ndarray
+    Returns:
+        numpy.ndarray: Bell curve values.
     """
     return a * np.exp(-((x - b) ** 2) / c**2)
 
 
 def running_smoother(array: np.ndarray) -> np.ndarray:
-    """This is the smoother to use in time calculations.
+    """Smooth array for use in time calculations.
 
-    :param array: array to be smoothed
-    :type array: ~numpy.ndarray
+    Args:
+        array (numpy.ndarray): Array to be smoothed.
 
-    :returns smoothed_array: smoothed array
-    :rtype smoothed_array: ~numpy.ndarray
+    Returns:
+        numpy.ndarray: Smoothed array.
     """
     n_samples = len(array) // 10
     new_list = np.convolve(abs(array), np.ones(n_samples), "valid") / n_samples
@@ -385,15 +362,14 @@ def running_smoother(array: np.ndarray) -> np.ndarray:
 
 
 def get_dict_key_where_value(dictionary: dict[_KT, _VT], value: _VT) -> _KT | None:
-    """This function returns the key of a dictionary where the value matches the input value.
+    """Return the key of a dictionary where the value matches the input value.
 
-    :param dictionary: dictionary to search
-    :type dictionary: dict
-    :param value: value to search for
-    :type value: any
+    Args:
+        dictionary (dict): Dictionary to search.
+        value: Value to search for.
 
-    :returns key: key where value is found
-    :rtype key: any
+    Returns:
+        Key where value is found, or None if not found.
     """
     for key, val in dictionary.items():
         if val == value:

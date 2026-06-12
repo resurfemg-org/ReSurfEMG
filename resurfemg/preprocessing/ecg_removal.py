@@ -36,26 +36,18 @@ def detect_ecg_peaks(
 ) -> np.ndarray:
     """Detect ECG peaks in EMG signal.
 
-    ---------------------------------------------------------------------------
-    :param ecg_raw: ecg signals to detect the ECG peaks in.
-    :type ecg_raw: ~numpy.ndarray
-    :param emg_raw: emg signals to gate
-    :type emg_raw: ~numpy.ndarray
-    :param fs: Sampling rate of the emg signals.
-    :type fs: int
-    :param peak_fraction: ECG peaks amplitude threshold relative to the
-        specified fraction of the min-max values in the ECG signal
-    :type peak_fraction: float
-    :param peak_width_s: ECG peaks width threshold in samples.
-    :type peak_width_s: int
-    :param peak_distance: Minimum time between ECG peaks in samples.
-    :type peak_distance: int
-    :param filter: Bandpass filter the ecg_raw between 1-500 Hz before peak
-        detection.
-    :type filter: bool
+    Args:
+        ecg_raw (numpy.ndarray): ECG signals to detect the ECG peaks in.
+        fs (int): Sampling rate of the EMG signals.
+        peak_fraction (float): ECG peaks amplitude threshold relative to the
+            specified fraction of the min-max values in the ECG signal.
+        peak_width_s (int, optional): ECG peaks width threshold in samples.
+        peak_distance (int, optional): Minimum time between ECG peaks in samples.
+        bp_filter (bool): Bandpass filter the ecg_raw between 1-500 Hz before
+            peak detection.
 
-    :returns ecg_peak_idxs: ECG peak indices
-    :rtype ecg_peak_idxs: numpy.ndarray[int]
+    Returns:
+        numpy.ndarray: ECG peak indices.
     """
     if peak_width_s is None:
         peak_width_s = fs // 1000
@@ -91,17 +83,14 @@ def _windowed_masked_mean(
     out-of-bounds positions and NaN values via a MaskedArray. Fully-empty
     windows return NaN.
 
-    :param source: 1D array to window over
-    :type source: ~numpy.ndarray
-    :param starts: window start index per row
-    :type starts: ~numpy.ndarray
-    :param width: window length
-    :type width: int
-    :param max_sample: length of `source` (out-of-bounds bound)
-    :type max_sample: int
+    Args:
+        source (numpy.ndarray): 1D array to window over.
+        starts (numpy.ndarray): Window start index per row.
+        width (int): Window length.
+        max_sample (int): Length of source (out-of-bounds bound).
 
-    :returns: per-window mean, NaN where the window is fully masked
-    :rtype: ~numpy.ndarray
+    Returns:
+        numpy.ndarray: Per-window mean, NaN where the window is fully masked.
     """
     idx = starts[:, None] + np.arange(width)  # (K, width)
     oob = (idx < 0) | (idx >= max_sample)
@@ -213,18 +202,15 @@ def gating(
     2: Fill with average of prior segment if exists
     otherwise fill with post segment
     3: Fill with running average of RMS (default)
-    ---------------------------------------------------------------------------
-    :param emg_raw: Signal to process
-    :type emg_raw: ~numpy.ndarray
-    :param peak_idxs: list of individual peak index places to be gated
-    :type peak_idxs: ~list | ~numpy.ndarray
-    :param gate_width: width of the gate
-    :type gate_width: int
-    :param method: filling method of gate
-    :type method: int
+    Args:
+        emg_raw (numpy.ndarray): Signal to process.
+        peak_idxs (list or numpy.ndarray): List of individual peak index places to
+            be gated.
+        gate_width (int): Width of the gate.
+        method (int): Filling method of gate.
 
-    :returns emg_raw_gated: the gated result
-    :rtype emg_raw_gated: numpy.ndarray
+    Returns:
+        numpy.ndarray: The gated result.
     """
     peaks = np.asarray(peak_idxs)
     emg_raw_gated = copy.deepcopy(emg_raw)
@@ -310,41 +296,32 @@ def wavelet_denoising(
     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
     DEALINGS IN THE SOFTWARE.
-    ---------------------------------------------------------------------------
-    :param emg_raw: 1D raw EMG data
-    :type emg_raw: numpy.ndarray
-    :param ecg_peak_idxs: list of R-peaks indices
-    :type ecg_peak_idxs: numpy.ndarray
-    :param fs: Sampling rate of emg_raw
-    :type fs: int
-    :param hard_thresholding: True: hard (default), False: soft
-    :type hard_thresholding: bool
-    :param n: True: decomposition level (default: 4)
-    :type n: int
-    :param wavelet_type: wavelet type (default: 'db2', see pywt.swt help)
-    :type wavelet_type: str
+    Args:
+        emg_raw (numpy.ndarray): 1D raw EMG data.
+        ecg_peak_idxs (numpy.ndarray): List of R-peak indices.
+        fs (int): Sampling rate of emg_raw.
+        hard_thresholding (bool): True for hard thresholding (default), False for soft.
+        n (int): Decomposition level (default: 4).
+        wavelet_type (str): Wavelet type (default: 'db2', see pywt.swt help).
+        fixed_threshold (float): Fixed threshold multiplier for wavelet coefficients.
 
-    :returns emg_clean: cleaned EMG signal
-    :rtype emg_clean: numpy.ndarray
-    :returns wav_dec: wavelet decomposition
-    :rtype wav_dec: numpy.ndarray
-    :returns thresholds: threshold values
-    :rtype thresholds: numpy.ndarray
-    :returns gate_bool_array: gated signal based on R-peaks, where gate == 1
-    :rtype gate_bool_array: numpy.ndarray
+    Returns:
+        tuple:
+            - numpy.ndarray: Cleaned EMG signal.
+            - numpy.ndarray: Wavelet decomposition.
+            - numpy.ndarray: Threshold values.
+            - numpy.ndarray: Gated signal based on R-peaks, where gate == 1.
     """
 
     def estimate_noise(signal: np.ndarray, window_length: int) -> np.ndarray:
         """Estimate noise level.
 
-        -----------------------------------------------------------------------
-        :param signal: wavelet-decomposed signal
-        :type signal: numpy.ndarray
-        :param window_length: window length for noise estimation
-        :type window_length: int
+        Args:
+            signal (numpy.ndarray): Wavelet-decomposed signal.
+            window_length (int): Window length for noise estimation.
 
-        :returns std_estimated: estimated noise level
-        :rtype std_estimated: numpy.ndarray[float]
+        Returns:
+            numpy.ndarray: Estimated noise level.
         """
         nb_level = signal.shape[0]
         std_estimated = np.zeros(signal.shape)
@@ -371,14 +348,12 @@ def wavelet_denoising(
     def get_gate_windows(rpeak_bool_vec: np.ndarray, window_length: int) -> np.ndarray:
         """Generate gate windows for the peaks.
 
-        -----------------------------------------------------------------------
-        :param rpeak_bool_vec: 1D raw, where R-peak location == 1
-        :type rpeak_bool_vec: numpy.ndarray
-        :param window_length: number of samples to gate around peaks
-        :type window_length: int
+        Args:
+            rpeak_bool_vec (numpy.ndarray): 1D array, where R-peak location == 1.
+            window_length (int): Number of samples to gate around peaks.
 
-        :returns gate_windows: gated signal based on R-peaks, where gate == 1
-        :rtype gate_windows: numpy.ndarray[int]
+        Returns:
+            numpy.ndarray: Gated signal based on R-peaks, where gate == 1.
         """
         window_length = int(np.floor(window_length / 2) * 2)
         rpeak_idxs = np.where(rpeak_bool_vec == 1)[0]
@@ -398,17 +373,15 @@ def wavelet_denoising(
     ) -> np.ndarray:
         """Threshold wavelet coefficients.
 
-        Apply thresholding to data based on 'soft' or 'hard' option
-        -----------------------------------------------------------------------
-        :param data: input data
-        :type data: numpy.ndarray
-        :param hard_thresholding: True: hard (default), False: soft
-        :type hard_thresholding: bool
-        :param threshold: threshold value
-        :type threshold: ~float
+        Apply thresholding to data based on 'soft' or 'hard' option.
 
-        :returns data: thresholded data
-        :rtype data: numpy.ndarray
+        Args:
+            data (numpy.ndarray): Input data.
+            hard_thresholding (bool): True for hard thresholding, False for soft.
+            threshold (float): Threshold value.
+
+        Returns:
+            numpy.ndarray: Thresholded data.
         """
         if hard_thresholding is True:
             # Hard thresholding

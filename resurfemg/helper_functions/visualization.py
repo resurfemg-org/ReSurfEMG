@@ -23,19 +23,17 @@ def show_power_spectrum(
     Sample should be one single row
     (1-dimensional array)
 
-    :param signal: The signal array
-    :type signal: ~numpy.ndarray
-    :param fs_emg: emg sampling rate
-    :type fs_emg: int
-    :param t_window_s: The end of window over which values will be plotted
-    :type t_window_s: int
-    :param axis_spec: 1 for logaritmic axis, 0 for linear axis
-    :type axis_spec: int
-    :param signal_unit: Unit of y-axis, default is uV
-    :type signal_unit: str
+    Args:
+        signal (numpy.ndarray): The signal array.
+        fs_emg (int): EMG sampling rate.
+        t_window_s (int): The end of window over which values will be plotted.
+        axis_spec (int): 1 for logarithmic axis, 0 for linear axis.
+        signal_unit (str): Unit of y-axis, default is uV.
 
-    :return (yf, xf): Fourier transformed array and frequencies axis
-    :rtype (yf, xf): (np.ndarray, np.ndarray)
+    Returns:
+        tuple:
+            - numpy.ndarray: Fourier transformed array.
+            - numpy.ndarray: Frequencies axis.
     """
     n_samples = len(signal)
     # for our emgs sampling rate is usually 2048
@@ -74,19 +72,17 @@ def show_psd_welch(
     modified periodogram for each segment, and then averaging these
     periodograms.
 
-    :param signal: the signal array
-    :type signal: ~numpy.ndarray
-    :param fs_emg: Number of samples per second
-    :type fs_emg: int
-    :param t_window_s:Length of segments in which  original signal is divided
-    :type t_window_s: int
-    :param axis_spec: 1 for logaritmic axis, 0 for linear axis
-    :type axis_spec: int
-    :param signal_unit: Unit of signal for labeling the PSD axis, default uV
-    :type signal_unit: str
+    Args:
+        signal (numpy.ndarray): The signal array.
+        fs_emg (int): Number of samples per second.
+        t_window_s (int): Length of segments in which original signal is divided.
+        axis_spec (int): 1 for logarithmic axis, 0 for linear axis.
+        signal_unit (str): Unit of signal for labeling the PSD axis, default uV.
 
-    :return (f, Pxx_den): Frequencies and power spectral density
-    :rtype (f, Pxx_den): (np.ndarray, np.ndarray)
+    Returns:
+        tuple:
+            - numpy.ndarray: Frequencies.
+            - numpy.ndarray: Power spectral density.
     """
     if signal.ndim != 1:
         msg = "Sample array must be 1-dimensional"
@@ -116,17 +112,16 @@ def show_periodogram(
 ) -> tuple[np.ndarray, np.ndarray]:
     """This function calculates and shows the periodogram.
 
-    :param signal: the signal array
-    :type signal: ~numpy.ndarray
-    :param fs_emg: emg sampling rate
-    :type fs_emg: int
-    :param axis_spec: 1 for logaritmic axis, 0 for linear axis
-    :type axis_spec: int
-    :param signal_unit: Unit of y-axis, default is uV
-    :type signl_unit: str
+    Args:
+        signal (numpy.ndarray): The signal array.
+        fs_emg (int): EMG sampling rate.
+        axis_spec (int): 1 for logarithmic axis, 0 for linear axis.
+        signal_unit (str): Unit of y-axis, default is uV.
 
-    :return (f, Pxx_den): Frequencies and power spectral density
-    :rtype (f, Pxx_den): (np.ndarray, np.ndarray)
+    Returns:
+        tuple:
+            - numpy.ndarray: Frequencies.
+            - numpy.ndarray: Power spectral density.
     """
     f, pxx_den = periodogram(signal, fs_emg)
     psd_label = f"PSD [{signal_unit}**2/Hz]"

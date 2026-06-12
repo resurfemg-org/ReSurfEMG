@@ -21,23 +21,18 @@ def simulate_raw_emg(
 ) -> np.ndarray:
     """Generate realistic synthetic respiratory EMG data remixed with ECG.
 
-    :param t_end: length of synthetic EMG tracing in seconds
-    :type t_end: int
-    :param fs_emg: Sampling rate
-    :type fs_emg: int
-    :param emg_amp: EMG amplitude
-    :type emg_amp: ~float
-    :param rr: Respiratory rate (/min)
-    :type rr: float
-    :param ``**kwargs``: Optional arguments: ie_ratio, tau_mus_up,
-        tau_mus_down, t_p_occs, drift_amp, noise_amp, ecg_acceleration,
-        ecg_amplitude. See data_connector.synthetic_data
-        respiratory_pattern_generator, simulate_muscle_dynamics, and
-        simulate_emg functions for specifics
-    :type ``**kwargs``: float, float, float, list[int], float, float, float
+    Args:
+        t_end (int): Length of synthetic EMG tracing in seconds.
+        fs_emg (int): Sampling rate.
+        emg_amp (float): EMG amplitude.
+        rr (float): Respiratory rate (/min).
+        **kwargs: Optional arguments — ie_ratio, tau_mus_up, tau_mus_down,
+            t_p_occs, drift_amp, noise_amp, ecg_acceleration, ecg_amplitude. See
+            data_connector.synthetic_data respiratory_pattern_generator,
+            simulate_muscle_dynamics, and simulate_emg functions for specifics.
 
-    :returns emg_raw: The realistic synthetic EMG
-    :rtype emg_raw: numpy.ndarray
+    Returns:
+        numpy.ndarray: The realistic synthetic EMG.
     """
     sim_parameters = {
         "ie_ratio": 1 / 2,  # ratio btw insp + expir phase
@@ -94,24 +89,17 @@ def synthetic_emg_cli(n_emg: int, output_directory: str, **kwargs) -> None:
 
     Generate realistic, single lead, synthetic respiratory EMG data remixed
     with ECG through command line using the cli.
-    ---------------------------------------------------------------------------
-    :param file_directory: file directory where synthetic ecg are
-    :type file_directory: str
-    :param n_emg: number of EMGs to simulate
-    :type n_emg: int
-    :param output_directory: file directory where synthetic emg will be put
-    :type output_directory: str
+    Args:
+        n_emg (int): Number of EMGs to simulate.
+        output_directory (str): File directory where synthetic EMG will be saved.
+        **kwargs: Optional arguments — t_end, fs_emg, emg_amp, rr, ie_ratio,
+            tau_mus_up, tau_mus_down, t_p_occs, drift_amp, noise_amp, heart_rate,
+            ecg_acceleration, ecg_amplitude. See data_connector.synthetic_data
+            respiratory_pattern_generator, simulate_muscle_dynamics, and
+            simulate_emg functions for specifics.
 
-    :param ``**kwargs``: Optional arguments: t_end, fs_emg, emg_amp, rr,
-        ie_ratio, tau_mus_up, tau_mus_down, t_p_occs, drift_amp, noise_amp,
-        heart_rate, ecg_acceleration, ecg_amplitude. See
-        data_connector.synthetic_data respiratory_pattern_generator,
-        simulate_muscle_dynamics, and simulate_emg functions for specifics
-    :type ``**kwargs``: float, float, float, float, float, float, float,
-        list[int], float, float, float, float, float
-
-    :returns: None
-    :rtype: None
+    Returns:
+        None
     """
     sim_parameters = {
         "t_end": 7 * 60,
@@ -153,26 +141,22 @@ def simulate_ventilator_data(
 ) -> tuple[np.ndarray, np.ndarray]:
     """Generate realistic synthetic ventilator tracings.
 
-    :param t_end: length of synthetic ventilator tracings in seconds
-    :type t_end: int
-    :param fs_vent: Sampling rate
-    :type fs_vent: int
-    :param p_mus_amp: Respiratory muscle pressure amplitude (positive)
-    :type p_mus_amp: float
-    :param rr: Respiratory rate
-    :type rr: float
-    :param ``**kwargs``: Optional arguments: ie_ratio, tau_mus_up,
-        tau_mus_down, t_p_occs, c, r, peep, flow_cycle, flow_trigger,
-        tau_dp_up, tau_dp_down. See data_connector.synthetic_data
-        respiratory_pattern_generator, simulate_muscle_dynamics,
-        simulate_ventilator_data functions for specifics
-    :type ``**kwargs``: float, float, float, list[int], float, float, float,
-        float, float, float, float
+    Args:
+        t_end (int): Length of synthetic ventilator tracings in seconds.
+        fs_vent (int): Sampling rate.
+        p_mus_amp (float): Respiratory muscle pressure amplitude (positive).
+        rr (float): Respiratory rate.
+        dp (float): Driving pressure.
+        **kwargs: Optional arguments — ie_ratio, tau_mus_up, tau_mus_down,
+            t_p_occs, c, r, peep, flow_cycle, flow_trigger, tau_dp_up,
+            tau_dp_down. See data_connector.synthetic_data
+            respiratory_pattern_generator, simulate_muscle_dynamics,
+            and simulate_ventilator_data functions for specifics.
 
-    :returns y_vent: The realistic synthetic ventilator data
-    :rtype y_vent: numpy.ndarray
-    :returns p_mus: The respiratory muscle pressure
-    :rtype p_mus: numpy.ndarray
+    Returns:
+        tuple:
+            - numpy.ndarray: The realistic synthetic ventilator data.
+            - numpy.ndarray: The respiratory muscle pressure.
     """
     sim_parameters = {
         "ie_ratio": 1 / 2,  # ratio btw insp + expir phase
@@ -251,24 +235,17 @@ def synthetic_ventilator_data_cli(
 
     Generate realistic synthetic ventilator data through
     command line using the cli.
-    ---------------------------------------------------------------------------
-    :param file_directory: file directory where synthetic ecg are
-    :type file_directory: str
-    :param n_emg: number of EMGs to simulate
-    :type n_emg: int
-    :param output_directory: file directory where synthetic emg will be put
-    :type output_directory: str
+    Args:
+        n_datasets (int): Number of datasets to simulate.
+        output_directory (str): File directory where synthetic data will be saved.
+        **kwargs: Optional arguments — t_end, fs_vent, p_mus_amp, rr, dp,
+            ie_ratio, tau_mus_up, tau_mus_down, t_p_occs, c, r, peep, flow_cycle,
+            flow_trigger, tau_dp_up, tau_dp_down. See data_connector.synthetic_data
+            respiratory_pattern_generator, simulate_muscle_dynamics, and
+            simulate_ventilator_data functions for specifics.
 
-    :param ``**kwargs``: Optional arguments: t_end, fs_vent, p_mus_amp, rr, dp,
-        ie_ratio, tau_mus_up, tau_mus_down, t_p_occs, c, r, peep, flow_cycle,
-        flow_trigger, tau_dp_up, tau_dp_down. See data_connector.synthetic_data
-        respiratory_pattern_generator, simulate_muscle_dynamics,
-        simulate_ventilator_data functions for specifics
-    :type ``**kwargs``: float, float, float, float, float, float, float, float,
-        list[int], float, float, float, float, float, float
-
-    :returns: None
-    :rtype: None
+    Returns:
+        None
     """
     sim_parameters = {
         "t_end": 7 * 60,

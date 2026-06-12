@@ -36,12 +36,11 @@ def entropical(sig: np.ndarray) -> float:
     to read over slices. Note it is not a true entropy, and works best with
     very small numbers.
 
-    :param sig: array containin the signal
-    :type sig: ~numpy.ndarray
+    Args:
+        sig (numpy.ndarray): Array containing the signal.
 
-    :returns sum_e_x: number for an entropy-like signal using math.log w/base 2
-    :rtype sum_e_x: float
-
+    Returns:
+        float: Number for an entropy-like signal using math.log w/base 2.
     """
     probabilit = [n_x / len(sig) for x, n_x in collections.Counter(sig).items()]
     e_x = [-p_x * math.log2(p_x) for p_x in probabilit]
@@ -55,11 +54,12 @@ def entropy_scipy(sli: np.ndarray, base: float | None = None) -> float:
     for use in the resurfemg library, it can be used in a slice iterator
     as a drop-in substitute for the hf.entropical but it is a true entropy.
 
-    :param sli: array
-    :type sli: ~numpy.ndarray
+    Args:
+        sli (numpy.ndarray): Array.
+        base (float, optional): Logarithm base for entropy calculation.
 
-    :returns entropy_count: the entropy of the slice
-    :rtype entropy_count: float
+    Returns:
+        float: The entropy of the slice.
     """
     _, counts = np.unique(sli, return_counts=True)
     return float(entropy(counts / len(counts), base=base))
@@ -100,33 +100,19 @@ def sampen(
     American Journal of Physiology-Heart and Circulatory Physiology,
     vol. 278, no. 6, pp. H2039-H2049, 2000.
 
-    Kwargs are
-    emb_dim (int):
-    the embedding dimension (length of vectors to compare)
-    tolerance (float):
-    distance threshold for two template vectors to be considered equal
-    (default: 0.2 * std(data) at emb_dim = 2, corrected for
-    dimension effect for other values of emb_dim)
-    dist (function (2d-array, 1d-array) -> 1d-array):
-    distance function used to calculate the distance between template
-    vectors. Sampen is defined using ``rowwise_chebyshev``. You should only
-    use something else, if you are sure that you need it.
-    closed (boolean):
-    if True, will check for vector pairs whose distance is in the closed
-    interval [0, r] (less or equal to r), otherwise the open interval
-    [0, r) (less than r) will be used
+    Args:
+        data (numpy.ndarray): Array-like time series data.
+        emb_dim (int): The embedding dimension (length of vectors to compare).
+        tolerance (float, optional): Distance threshold for two template vectors
+            to be considered equal. Defaults to 0.2 * std(data) at emb_dim=2,
+            corrected for dimension effect for other values of emb_dim.
+        dist (callable): Distance function used to calculate the distance between
+            template vectors. Defaults to rowwise_chebyshev.
+        closed (bool): If True, checks for vector pairs whose distance is in the
+            closed interval [0, r]; otherwise uses the open interval [0, r).
 
-    :param data: array-like
-    :type data: array
-    :param emb_dim: the embedded dimension
-    :type emb_dim: int
-    :param tolerance: distance threshold for two template vectors
-    :type tolerance: float
-    :param distance: function to calculate distance
-    :type distance: function
-
-    :returns saen: sample entropy
-    :rtype saen: float
+    Returns:
+        float: Sample entropy of the data.
     """
     data = np.asarray(data)
 
@@ -177,8 +163,7 @@ def sampen(
         if counts[1] == 0:
             zcounts.append("emb_dim + 1")
         print_message = (
-            "Zero vectors are within tolerance for {}. "
-            "Consider raising tolerance parameter to avoid {} result."
+            "Zero vectors are within tolerance for {}. Consider raising tolerance parameter to avoid {} result."
         )
         warnings.warn(
             print_message.format(
@@ -196,9 +181,7 @@ def sampen(
     return saen
 
 
-def sampen_optimized(
-    data: np.ndarray, tolerance: float | None = None, closed: bool = False
-) -> float:
+def sampen_optimized(data: np.ndarray, tolerance: float | None = None, closed: bool = False) -> float:
     """Computes the sample entropy of time sequence data, optimized for emb_dim=1.
 
     The following code is adapted from openly licensed code written by
@@ -226,15 +209,15 @@ def sampen_optimized(
     Kwargs are pre-set and not available. For more extensive
     you should use the sampen function.
 
-    :param data: array-like
-    :type data: array
-    :param tolerance: distance threshold for two template vectors
-    :type tolerance: float
-    :param distance: function to calculate distance
-    :type distance: function
+    Args:
+        data (numpy.ndarray): Array-like time series data.
+        tolerance (float, optional): Distance threshold for two template vectors
+            to be considered equal.
+        closed (bool): If True, checks for vector pairs in the closed interval
+            [0, r]; otherwise uses the open interval [0, r).
 
-    :returns: saen
-    :rtype: float
+    Returns:
+        float: Sample entropy of the data.
     """
     # TODO: this function can still be further optimized
     data = np.asarray(data)
@@ -249,11 +232,7 @@ def sampen_optimized(
     # TODO(): This can be done with just using NumPy
     t_vecs = delay_embedding(np.asarray(data), 3, lag=1)
 
-    counts = (
-        calc_closed_sampent(t_vecs, n, tolerance)
-        if closed
-        else calc_open_sampent(t_vecs, n, tolerance)
-    )
+    counts = calc_closed_sampent(t_vecs, n, tolerance) if closed else calc_open_sampent(t_vecs, n, tolerance)
 
     if counts[0] > 0 and counts[1] > 0:
         saen = -np.log(1.0 * counts[1] / counts[0])
@@ -265,8 +244,7 @@ def sampen_optimized(
         if counts[1] == 0:
             zcounts.append("2")
         print_message = (
-            "Zero vectors are within tolerance for {}. "
-            "Consider raising tolerance parameter to avoid {} result."
+            "Zero vectors are within tolerance for {}. Consider raising tolerance parameter to avoid {} result."
         )
         warnings.warn(
             print_message.format(
@@ -285,16 +263,16 @@ def sampen_optimized(
 
 
 def calc_closed_sampent(
-    t_vecs: np.ndarray, n: int, tolerance: float  # noqa: ARG001
+    t_vecs: np.ndarray,  # noqa: ARG001
+    n: int,  # noqa: ARG001
+    tolerance: float,  # noqa: ARG001
 ) -> tuple[float, float]:
     """Calculate the counts for closed sample entropy."""
     # TODO(someone?): Analogous to calc_open_sampent
     return np.nan, np.nan
 
 
-def calc_open_sampent(
-    t_vecs: np.ndarray, n: int, tolerance: float
-) -> tuple[float, float]:
+def calc_open_sampent(t_vecs: np.ndarray, n: int, tolerance: float) -> tuple[float, float]:
     """Calculate the counts for open sample entropy."""
     triplets = t_vecs[: n - 2, :3]
 

@@ -21,17 +21,15 @@ def time_to_peak(
 ) -> tuple[np.ndarray, np.ndarray]:
     """Calculates the absolute and relative time to peak.
 
-    :param emg_env: an single lead EMG envelope
-    :type emg_env: np.array
-    :param start_idxs: list of individual peak start indices
-    :type start_idxs: ~[int]
-    :param end_idxs: list of individual peak end indices
-    :type end_idxs: ~[int]
+    Args:
+        emg_env (numpy.ndarray): A single lead EMG envelope.
+        start_idxs (list[int]): List of individual peak start indices.
+        end_idxs (list[int]): List of individual peak end indices.
 
-    :returns abs_times: absolute time-to_peak
-    :rtype abs_times: numpy.ndarray[int]
-    :returns percent_times: relative time-to_peak
-    :rtype percent_times: numpy.ndarray[float]
+    Returns:
+        tuple:
+            - numpy.ndarray: Absolute time-to-peak.
+            - numpy.ndarray: Relative time-to-peak.
     """
     start_idxs_np = np.array(start_idxs)
     end_idxs_np = np.array(end_idxs)
@@ -58,18 +56,14 @@ def pseudo_slope(
     EMG signal. The slope is returned in units/samples (in abs values), not
     true slope. The true slope will depend on sampling rate and pre-
     processing. Therefore, only within sample comparison is recommended.
-    ---------------------------------------------------------------------------
-    :param emg_env: an single lead EMG envelope
-    :type emg_env: np.array
-    :param start_idxs: list of individual peak start indices
-    :type start_idxs: ~[int]
-    :param end_idxs: list of individual peak end indices
-    :type end_idxs: ~[int]
-    :param smoothing: smoothing which can or can not run before calculations
-    :type smoothing: bool
+    Args:
+        emg_env (numpy.ndarray): A single lead EMG envelope.
+        start_idxs (list[int]): List of individual peak start indices.
+        end_idxs (list[int]): List of individual peak end indices.
+        smoothing (bool): Whether to apply smoothing before calculations.
 
-    :returns pseudoslope: initial slope of the peak
-    :rtype pseudoslope: np.ndarray[float]
+    Returns:
+        numpy.ndarray: Initial slope of each peak.
     """
     start_idxs_np = np.array(start_idxs)
     end_idxs_np = np.array(end_idxs)
@@ -97,16 +91,13 @@ def amplitude(
     Calculate the peak height of signal and the baseline for the windows
     at the peak_idxs relative to the baseline. If no baseline is provided, the
     peak height relative to zero is determined.
-    ---------------------------------------------------------------------------
-    :param signal: signal to determine the peak heights in
-    :type signal: ~numpy.ndarray[float]
-    :param peak_idxs: list of individual peak start indices
-    :type peak_idxs: ~np.ndarray[int]
-    :param baseline: running baseline of the signal
-    :type baseline: ~numpy.ndarray[float]
+    Args:
+        signal (numpy.ndarray): Signal to determine the peak heights in.
+        peak_idxs (numpy.ndarray): List of individual peak indices.
+        baseline (numpy.ndarray, optional): Running baseline of the signal.
 
-    :returns amplitudes: list of peak amplitudes
-    :rtype amplitudes: ~np.ndarray[float]
+    Returns:
+        numpy.ndarray: List of peak amplitudes.
     """
     if baseline is None:
         baseline = np.zeros(signal.shape)
@@ -124,20 +115,15 @@ def time_product(
 
     Calculate the time product between the signal and the baseline for the
     windows defined by the start_idx and end_idx sample pairs.
-    ---------------------------------------------------------------------------
-    :param signal: signal to calculate the time product over
-    :type signal: ~numpy.ndarray[float]
-    :param fs: sampling frequency
-    :type fs: ~int
-    :param start_idxs: list of individual peak start indices
-    :type start_idxs: ~list[int]
-    :param end_idxs: list of individual peak end indices
-    :type end_idxs: ~list[int]
-    :param baseline: running Baseline of the signal
-    :type baseline: ~numpy.ndarray[float]
+    Args:
+        signal (numpy.ndarray): Signal to calculate the time product over.
+        fs (int): Sampling frequency.
+        start_idxs (list[int]): List of individual peak start indices.
+        end_idxs (list[int]): List of individual peak end indices.
+        baseline (numpy.ndarray, optional): Running baseline of the signal.
 
-    :returns time_products: the calculated time products
-    :rtype time_products: numpy.ndarray[float]
+    Returns:
+        numpy.ndarray: The calculated time products.
     """
     if baseline is None:
         baseline = np.zeros(signal.shape)
@@ -175,29 +161,21 @@ def area_under_baseline(
     Calculate the time product between the baseline and the nadir of the
     reference signal in the aub_window_s for the windows defined by the
     start_idx and end_idx sample pairs.
-    ---------------------------------------------------------------------------
-    :param signal: signal to calculate the time product over
-    :type signal: ~numpy.ndarray[float]
-    :param fs: sampling frequency
-    :type fs: ~int
-    :param peak_idxs: list of individual peak indices
-    :type peak_idxs: ~list[int]
-    :param start_idxs: list of individual peak start indices
-    :type start_idxs: ~list[int]
-    :param end_idxs: list of individual peak end indices
-    :type end_idxs: ~list[int]
-    :param aub_window_s: number of samples before and after peak_idxs to look
-    for the nadir
-    :type aub_window_s: ~int
-    :param baseline: running baseline of the signal
-    :type baseline: ~numpy.ndarray[float]
-    :param ref_signal: signal in which the nadir is searched
-    :type ref_signal: ~numpy.ndarray[float]
+    Args:
+        signal (numpy.ndarray): Signal to calculate the time product over.
+        fs (int): Sampling frequency.
+        peak_idxs (list[int]): List of individual peak indices.
+        start_idxs (list[int]): List of individual peak start indices.
+        end_idxs (list[int]): List of individual peak end indices.
+        aub_window_s (int): Number of samples before and after peak_idxs to look
+            for the nadir.
+        baseline (numpy.ndarray): Running baseline of the signal.
+        ref_signal (numpy.ndarray, optional): Signal in which the nadir is searched.
 
-    :returns aubs: the calculated areas under the baseline
-    :rtype: numpy.ndarray[float]
-    :returns y_ref: the reference signal
-    :rtype: numpy.ndarray[float]
+    Returns:
+        tuple:
+            - numpy.ndarray: The calculated areas under the baseline.
+            - numpy.ndarray: The reference signal nadir values.
     """
     if ref_signal is None:
         ref_signal = signal
@@ -248,21 +226,16 @@ def respiratory_rate(
     Estimate respiratory rate based from breath indices. Breath-by-breath
     respiratory rate larger than the outlier_percentile * outlier_factor are
     excluded.
-    ---------------------------------------------------------------------------
-    :param breath_idxs: breath indices
-    :type breath_idxs: ~numpy.ndarray[int]
-    :param fs: sampling frequency
-    :type fs: ~int
-    :param outlier_percentile: Respiratory rate outlier percentile
-    :type outlier_percentile: ~float
-    :param outlier_percentile: Respiratory rate outlier factor
-    :type outlier_percentile: ~float
+    Args:
+        breath_idxs (numpy.ndarray): Breath indices.
+        fs (int): Sampling frequency.
+        outlier_percentile (float): Respiratory rate outlier percentile.
+        outlier_factor (float): Respiratory rate outlier factor.
 
-    :returns rr_median: median respiratory rate
-    :rtype: ~float
-    :returns rr_b2b: breath-to-breath respiratory rate
-    :rtype rr_b2b: numpy.ndarray[~float]
-
+    Returns:
+        tuple:
+            - float: Median respiratory rate.
+            - numpy.ndarray: Breath-to-breath respiratory rate.
     """
     breath_interval = np.array(breath_idxs[1:]) - np.array(breath_idxs[:-1])
     rr_b2b = 60 * fs / breath_interval
