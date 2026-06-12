@@ -37,7 +37,7 @@ class SphinxApiDoc(Command):
         for f in Path(src).glob("*.rst"):
             for end in special:
                 if str(f).endswith(end):
-                    os.utime(f, None)
+                    Path(f).touch()
                     break
             else:
                 Path(f).unlink()

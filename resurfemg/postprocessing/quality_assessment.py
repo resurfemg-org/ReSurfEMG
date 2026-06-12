@@ -109,9 +109,7 @@ def pocc_quality(
     return valid_poccs, criteria_matrix
 
 
-def interpeak_dist(
-    ecg_peak_idxs: np.ndarray, emg_peak_idxs: np.ndarray, threshold: float = 1.1
-) -> bool:
+def interpeak_dist(ecg_peak_idxs: np.ndarray, emg_peak_idxs: np.ndarray, threshold: float = 1.1) -> bool:
     """Calculate the interpeak distance ratio of ECG and EMG peaks.
 
     Calculate the median interpeak distances for ECG and EMG and check if their
@@ -127,13 +125,9 @@ def interpeak_dist(
         bool: Boolean value indicating if the interpeak distance is valid.
     """
     # Calculate median interpeak distance for ECG
-    t_delta_ecg_med = np.median(
-        np.array(ecg_peak_idxs[1:]) - np.array(ecg_peak_idxs[:-1])
-    )
+    t_delta_ecg_med = np.median(np.array(ecg_peak_idxs[1:]) - np.array(ecg_peak_idxs[:-1]))
     # # Calculate median interpeak distance for EMG
-    t_delta_emg_med = np.median(
-        np.array(emg_peak_idxs[1:]) - np.array(emg_peak_idxs[:-1])
-    )
+    t_delta_emg_med = np.median(np.array(emg_peak_idxs[1:]) - np.array(emg_peak_idxs[:-1]))
     # Check if each median interpeak distance is above the threshold
     t_delta_relative = t_delta_emg_med / t_delta_ecg_med
 
@@ -249,9 +243,7 @@ def detect_extreme_time_products(
     )
 
 
-def detect_non_consecutive_manoeuvres(
-    ventilator_breath_idxs: np.ndarray, manoeuvres_idxs: np.ndarray
-) -> np.ndarray:
+def detect_non_consecutive_manoeuvres(ventilator_breath_idxs: np.ndarray, manoeuvres_idxs: np.ndarray) -> np.ndarray:
     """Detect non-consecutive manoeuvres.
 
     Detect manoeuvres (for example Pocc) with no supported breaths
@@ -332,9 +324,7 @@ def evaluate_bell_curve_error(
     percentage_bell_error = np.zeros((len(peak_idxs),))
     fitted_parameters = np.zeros((len(peak_idxs), 3))
     y_min = np.zeros((len(peak_idxs),))
-    for idx, (peak_idx, start_idx, end_i, tp) in enumerate(
-        zip(peak_idxs, start_idxs, end_idxs, time_products)
-    ):
+    for idx, (peak_idx, start_idx, end_i, tp) in enumerate(zip(peak_idxs, start_idxs, end_idxs, time_products)):
         baseline_start_idx = max(0, peak_idx - bell_window_s)
         baseline_end_i = min(len(signal) - 1, peak_idx + bell_window_s)
         y_min[idx] = np.min(signal[baseline_start_idx:baseline_end_i])
@@ -346,12 +336,7 @@ def evaluate_bell_curve_error(
         x_data = t[start_idx : end_i + 1 + plus_idx]
         y_data = signal[start_idx : end_i + 1 + plus_idx] - y_min[idx]
 
-        if (
-            np.any(np.isnan(x_data))
-            or np.any(np.isnan(y_data))
-            or np.any(np.isinf(x_data))
-            or np.any(np.isinf(y_data))
-        ):
+        if np.any(np.isnan(x_data)) or np.any(np.isnan(y_data)) or np.any(np.isinf(x_data)) or np.any(np.isinf(y_data)):
             msg = f"NaNs or Infs detected in data for peak index {idx}. Skipping this peak."
             logger.info(msg)
             bell_error[idx] = np.nan
@@ -375,10 +360,7 @@ def evaluate_bell_curve_error(
             continue
 
         bell_error[idx] = trapezoid(
-            np.abs(
-                signal[start_idx : end_i + 1]
-                - (mo.bell_curve(t[start_idx : end_i + 1], *popt) + y_min[idx])
-            ),
+            np.abs(signal[start_idx : end_i + 1] - (mo.bell_curve(t[start_idx : end_i + 1], *popt) + y_min[idx])),
             dx=1 / fs,
         )
         percentage_bell_error[idx] = bell_error[idx] / tp * 100

@@ -195,9 +195,7 @@ class Poly5Reader:
         if n_blocks is None:
             n_blocks = self.num_data_blocks
 
-        sample_buffer = np.zeros(
-            self.num_channels * n_blocks * self.num_samples_per_block
-        )
+        sample_buffer = np.zeros(self.num_channels * n_blocks * self.num_samples_per_block)
 
         for i in range(n_blocks):
             data_block = self._readSignalBlock(

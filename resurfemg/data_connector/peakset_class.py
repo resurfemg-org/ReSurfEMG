@@ -54,12 +54,8 @@ class PeaksSet:
             msg = "Invalid peak indices: 'peak_idxs'."
             raise TypeError(msg)
         self.peak_df: pd.DataFrame = pd.DataFrame(data=peak_idxs, columns=["peak_idx"])
-        self.quality_values_df: pd.DataFrame = pd.DataFrame(
-            data=peak_idxs, columns=["peak_idx"]
-        )
-        self.quality_outcomes_df: pd.DataFrame = pd.DataFrame(
-            data=peak_idxs, columns=["peak_idx"]
-        )
+        self.quality_values_df: pd.DataFrame = pd.DataFrame(data=peak_idxs, columns=["peak_idx"])
+        self.quality_outcomes_df: pd.DataFrame = pd.DataFrame(data=peak_idxs, columns=["peak_idx"])
         self.time_products: np.ndarray | None = None
 
     def __len__(self):
@@ -95,9 +91,7 @@ class PeaksSet:
         peak_idxs = self.peak_df["peak_idx"].to_numpy()
 
         if method in {"default", "baseline_crossing"}:
-            start_idxs, end_idxs, _, _, valid_list = onoffpeak_baseline_crossing(
-                self.signal, baseline, peak_idxs
-            )
+            start_idxs, end_idxs, _, _, valid_list = onoffpeak_baseline_crossing(self.signal, baseline, peak_idxs)
 
         elif method == "slope_extrapolation":
             if fs is None:
@@ -137,12 +131,8 @@ class PeaksSet:
             df_old = self.quality_values_df
             pre_existing_keys = list(set(tests_df_new.keys()) & set(df_old.keys()))
             df_old = df_old.drop(columns=pre_existing_keys)
-            tests_df_merge = df_old.merge(
-                tests_df_new, left_index=True, right_index=True
-            )
-            if not self.quality_values_df["peak_idx"].equals(
-                tests_df_merge["peak_idx"]
-            ):
+            tests_df_merge = df_old.merge(tests_df_new, left_index=True, right_index=True)
+            if not self.quality_values_df["peak_idx"].equals(tests_df_merge["peak_idx"]):
                 msg = "Mismatched 'peak_idx' between old and new dataframes."
                 raise ValueError(msg)
             self.quality_values_df = tests_df_merge
@@ -164,12 +154,8 @@ class PeaksSet:
             df_old = self.quality_outcomes_df
             pre_existing_keys = list(set(tests_df_new.keys()) & set(df_old.keys()))
             df_old = df_old.drop(columns=pre_existing_keys)
-            tests_df_merge = df_old.merge(
-                tests_df_new, left_index=True, right_index=True
-            )
-            if not self.quality_outcomes_df["peak_idx"].equals(
-                tests_df_merge["peak_idx"]
-            ):
+            tests_df_merge = df_old.merge(tests_df_new, left_index=True, right_index=True)
+            if not self.quality_outcomes_df["peak_idx"].equals(tests_df_merge["peak_idx"]):
                 msg = "Mismatched 'peak_idx' between old and new dataframes."
                 raise ValueError(msg)
             self.quality_outcomes_df = tests_df_merge
@@ -189,9 +175,5 @@ class PeaksSet:
         """
         valid_idxs = self.peak_df["valid"].to_numpy()
         self.peak_df = self.peak_df.loc[valid_idxs].reset_index(drop=True)
-        self.quality_outcomes_df = self.quality_outcomes_df.loc[valid_idxs].reset_index(
-            drop=True
-        )
-        self.quality_values_df = self.quality_values_df.loc[valid_idxs].reset_index(
-            drop=True
-        )
+        self.quality_outcomes_df = self.quality_outcomes_df.loc[valid_idxs].reset_index(drop=True)
+        self.quality_values_df = self.quality_values_df.loc[valid_idxs].reset_index(drop=True)

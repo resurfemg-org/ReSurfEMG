@@ -81,9 +81,7 @@ def _resolve_emg_cutoff(cutoff: dict | str | None, fs: int, skip_tests: list) ->
     return cutoff
 
 
-def _resolve_peaks(
-    timeseries: TimeSeries, peak_set_name: str, skip_tests: list | None
-) -> tuple[PeaksSet, list]:
+def _resolve_peaks(timeseries: TimeSeries, peak_set_name: str, skip_tests: list | None) -> tuple[PeaksSet, list]:
     if peak_set_name not in timeseries.peaks:
         msg = "Non-existent PeaksSet key"
         raise KeyError(msg)
@@ -143,9 +141,7 @@ def test_interpeak_distance(
     See TimeSeries.test_emg_quality method in resurfemg.data_connector.data_classes for more information.
     """
     if parameter_names["ecg"] not in timeseries.peaks:
-        msg = (
-            "ECG peaks not determined, but required for interpeak distance evaluation."
-        )
+        msg = "ECG peaks not determined, but required for interpeak distance evaluation."
         raise ValueError(msg)
     ecg_peaks = timeseries.peaks[parameter_names["ecg"]].peak_df["peak_idx"].to_numpy()
     valid_interpeak = qa.interpeak_dist(
@@ -172,9 +168,7 @@ def test_snr(
     See TimeSeries.test_emg_quality method in resurfemg.data_connector.data_classes for more information.
     """
     if parameter_names["baseline"] not in timeseries.y_data:
-        raise ValueError(
-            "Baseline not determined, but required for " + " SNR evaluaton."
-        )
+        raise ValueError("Baseline not determined, but required for " + " SNR evaluaton.")
     snr_peaks = qa.snr_pseudo(
         src_signal=peak_set.signal,
         peaks=peak_set.peak_df["peak_idx"].to_numpy(),
@@ -272,9 +266,7 @@ def test_curve_fits(
     return quality_outcomes_df, quality_values_df, peak_set
 
 
-def test_relative_aub(
-    peak_set: PeaksSet, quality_outcomes_df: pd.DataFrame, cutoff: dict
-) -> pd.DataFrame:
+def test_relative_aub(peak_set: PeaksSet, quality_outcomes_df: pd.DataFrame, cutoff: dict) -> pd.DataFrame:
     """Test the relative area under the baseline.
 
     See TimeSeries.test_emg_quality method in resurfemg.data_connector.data_classes
@@ -356,12 +348,8 @@ def initialize_pocc_tests(
             parameter_names[parameter] = parameter
 
     n_peaks = len(peak_set.peak_df["peak_idx"].to_numpy())
-    quality_values_df = pd.DataFrame(
-        data=peak_set.peak_df["peak_idx"], columns=["peak_idx"]
-    )
-    quality_outcomes_df = pd.DataFrame(
-        data=peak_set.peak_df["peak_idx"], columns=["peak_idx"]
-    )
+    quality_values_df = pd.DataFrame(data=peak_set.peak_df["peak_idx"], columns=["peak_idx"])
+    quality_outcomes_df = pd.DataFrame(data=peak_set.peak_df["peak_idx"], columns=["peak_idx"])
     return (
         skip_tests,
         cutoff,
@@ -387,9 +375,7 @@ def test_consecutive_poccs(
         msg = "Ventilator breaths not determined, but required for consecutive Pocc evaluation."
         raise ValueError(msg)
     vent_breaths = parameter_names["ventilator_breaths"]
-    ventilator_breath_idxs = (
-        timeseries.peaks[vent_breaths].peak_df["peak_idx"].to_numpy()
-    )
+    ventilator_breath_idxs = timeseries.peaks[vent_breaths].peak_df["peak_idx"].to_numpy()
     valid_manoeuvres = qa.detect_non_consecutive_manoeuvres(
         ventilator_breath_idxs=ventilator_breath_idxs,
         manoeuvres_idxs=peak_set.peak_df["peak_idx"].to_numpy(),
@@ -433,9 +419,7 @@ def test_pocc_upslope(
     return quality_outcomes_df, quality_values_df
 
 
-def _resolve_linked_peaks_cutoffs(
-    cutoff: dict | str | None, skip_tests: list
-) -> dict[str, float]:
+def _resolve_linked_peaks_cutoffs(cutoff: dict | str | None, skip_tests: list) -> dict[str, float]:
     if (cutoff is None) or (isinstance(cutoff, str) and cutoff == "tolerant"):
         return {"fraction_emg_breaths": 0.1, "delta_min": -0.5, "delta_max": 2.0}
     if isinstance(cutoff, str) and cutoff == "strict":
@@ -468,9 +452,7 @@ def initialize_linked_peaks_tests(
     See TimeSeries.test_linked_peak_sets method in resurfemg.data_connector.data_classes for more information.
     """
     peak_set, skip_tests = _resolve_peaks(timeseries, peak_set_name, skip_tests)
-    linked_peak_set, skip_tests = _resolve_peaks(
-        linked_timeseries, linked_peak_set_name, skip_tests
-    )
+    linked_peak_set, skip_tests = _resolve_peaks(linked_timeseries, linked_peak_set_name, skip_tests)
 
     cutoff = _resolve_linked_peaks_cutoffs(cutoff, skip_tests)
 
@@ -486,12 +468,8 @@ def initialize_linked_peaks_tests(
             parameter_names[parameter] = parameter
 
     n_peaks = len(peak_set.peak_df["peak_idx"].to_numpy())
-    quality_values_df = pd.DataFrame(
-        data=peak_set.peak_df["peak_idx"], columns=["peak_idx"]
-    )
-    quality_outcomes_df = pd.DataFrame(
-        data=peak_set.peak_df["peak_idx"], columns=["peak_idx"]
-    )
+    quality_values_df = pd.DataFrame(data=peak_set.peak_df["peak_idx"], columns=["peak_idx"])
+    quality_outcomes_df = pd.DataFrame(data=peak_set.peak_df["peak_idx"], columns=["peak_idx"])
     return (
         skip_tests,
         cutoff,
@@ -591,9 +569,7 @@ def test_emg_quality(
     Returns:
         None
     """
-    output = initialize_emg_tests(
-        timeseries, peak_set_name, cutoff, skip_tests, parameter_names
-    )
+    output = initialize_emg_tests(timeseries, peak_set_name, cutoff, skip_tests, parameter_names)
     (
         skip_tests,
         cutoff,
@@ -643,9 +619,7 @@ def test_emg_quality(
         quality_outcomes_df = test_relative_aub(peak_set, quality_outcomes_df, cutoff)
 
     if "relative_etp" not in skip_tests:
-        quality_outcomes_df = test_relative_etp(
-            peak_set, quality_outcomes_df, cutoff, parameter_names
-        )
+        quality_outcomes_df = test_relative_etp(peak_set, quality_outcomes_df, cutoff, parameter_names)
 
     peak_set.update_test_outcomes(quality_values_df)
     peak_set.evaluate_validity(quality_outcomes_df)
@@ -681,9 +655,7 @@ def test_pocc_quality(
     Returns:
         None
     """
-    output = initialize_pocc_tests(
-        timeseries, peak_set_name, cutoff, skip_tests, parameter_names
-    )
+    output = initialize_pocc_tests(timeseries, peak_set_name, cutoff, skip_tests, parameter_names)
     (
         skip_tests,
         cutoff,
@@ -695,9 +667,7 @@ def test_pocc_quality(
     ) = output
 
     if "consecutive_poccs" not in skip_tests:
-        quality_outcomes_df = test_consecutive_poccs(
-            timeseries, peak_set, quality_outcomes_df, parameter_names
-        )
+        quality_outcomes_df = test_consecutive_poccs(timeseries, peak_set, quality_outcomes_df, parameter_names)
 
     if "pocc_upslope" not in skip_tests:
         quality_outcomes_df, quality_values_df = test_pocc_upslope(
