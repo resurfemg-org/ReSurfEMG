@@ -353,8 +353,7 @@ def wavelet_denoising(
     def threshold_wavelets(data: np.ndarray, hard_thresholding: bool, threshold: float | np.ndarray) -> np.ndarray:
         """Threshold wavelet coefficients.
 
-            Apply thresholding to data based on "soft" or "hard" option.
-
+        Apply thresholding to data based on 'soft' or 'hard' option.
 
         Args:
                 data (numpy.ndarray): Input data.

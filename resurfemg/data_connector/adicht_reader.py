@@ -41,7 +41,7 @@ class AdichtReader:
         """Initialize the AdichtReader with the provided file path.
 
         Args:
-            file_path (str): The file path to the import.
+                file_path (str): The file path to the import.
         """
         if platform.system() != "Windows":
             msg = "AdichtReader is only available on Windows."
@@ -190,12 +190,12 @@ class AdichtReader:
         """Return channel names based on channel indices or IDs.
 
         Args:
-            channel_idxs (list[int], optional): List of channel indices.
-            channel_ids (list, optional): List of channel IDs. Either
-                channel_idxs or channel_ids must be set.
+                channel_idxs (list[int], optional): List of channel indices.
+                channel_ids (list, optional): List of channel IDs. Either
+                    channel_idxs or channel_ids must be set.
 
         Returns:
-            list[str]: List of channel names.
+                list[str]: List of channel names.
         """
         channel_idxs = self._resolve_many(channel_idxs, channel_ids, self.channel_map, "channel")
         return [self.adicht_data.channels[idx].name for idx in channel_idxs]
@@ -210,17 +210,17 @@ class AdichtReader:
         """Return channel units based on channel indices and a record index or ID.
 
         Args:
-            channel_idxs (list[int], optional): List of channel indices. Either
-                channel_idxs or channel_ids must be set.
-            channel_ids (list, optional): List of channel IDs. Either
-                channel_idxs or channel_ids must be set.
-            record_idx (int, optional): The record index to retrieve the units
-                for. Either record_idx or record_id must be set.
-            record_id (int, optional): The record ID to retrieve the units for.
-                Either record_idx or record_id must be set.
+                channel_idxs (list[int], optional): List of channel indices. Either
+                    channel_idxs or channel_ids must be set.
+                channel_ids (list, optional): List of channel IDs. Either
+                    channel_idxs or channel_ids must be set.
+                record_idx (int, optional): The record index to retrieve the units
+                    for. Either record_idx or record_id must be set.
+                record_id (int, optional): The record ID to retrieve the units for.
+                    Either record_idx or record_id must be set.
 
         Returns:
-            list[str]: List of units.
+                list[str]: List of units.
         """
         channel_idxs = self._resolve_many(channel_idxs, channel_ids, self.channel_map, "channel")
         record_idx = self._resolve_one(record_idx, record_id, self.record_map, "record")
@@ -235,19 +235,20 @@ class AdichtReader:
     ) -> pd.DataFrame:
         """Resample a channel to a target sampling rate.
 
-        Resamples the specified channel using linear interpolation.
+            Resamples the specified channel using linear interpolation.
+
 
         Args:
-            fs_target (int): The target sampling rate in Hz.
-            channel_idx (int, optional): The channel index to be resampled.
-            record_idx (int, optional): The record index to be resampled.
-                Either record_idx or record_id must be set.
-            **kwargs: Additional arguments to specify channel_id or record_id
-                instead of indices.
+                fs_target (int): The target sampling rate in Hz.
+                channel_idx (int, optional): The channel index to be resampled.
+                record_idx (int, optional): The record index to be resampled.
+                    Either record_idx or record_id must be set.
+                **kwargs: Additional arguments to specify channel_id or record_id
+                    instead of indices.
 
         Returns:
-            pd.DataFrame: Record DataFrame with resampled data for the
-                specified index.
+                pd.DataFrame: Record DataFrame with resampled data for the
+                    specified index.
         """
         channel_idx = self._resolve_one(channel_idx, kwargs.get("channel_id"), self.channel_map, "channel")
         record_idx = self._resolve_one(record_idx, kwargs.get("record_id"), self.record_map, "record")
@@ -286,24 +287,25 @@ class AdichtReader:
     ) -> tuple[pd.DataFrame, int]:
         """Extract channel data from specified channels and record.
 
-        Optionally resamples specified channels to equalize sampling rates
-        across channels. Resampling all channels to a rate not yet used is not
-        supported; at least one channel must already have the target rate and
-        must not be listed in resample_channels.
+            Optionally resamples specified channels to equalize sampling rates
+            across channels. Resampling all channels to a rate not yet used is not
+            supported; at least one channel must already have the target rate and
+            must not be listed in resample_channels.
+
 
         Args:
-            channel_idxs (list[int], optional): List of channel indices.
-            record_idx (int, optional): The record index to extract data from.
-            resample_channels (dict[int, int], optional): Map of
-                channel_idx to target rate. Example: ``{1: 2000, 3: 2000}``
-                resamples channels 1 and 3 to 2000 Hz.
-            **kwargs: Additional arguments to specify channel_ids or record_id
-                instead of indices.
+                channel_idxs (list[int], optional): List of channel indices.
+                record_idx (int, optional): The record index to extract data from.
+                resample_channels (dict[int, int], optional): Map of
+                    channel_idx to target rate. Example: ``{1: 2000, 3: 2000}``
+                    resamples channels 1 and 3 to 2000 Hz.
+                **kwargs: Additional arguments to specify channel_ids or record_id
+                    instead of indices.
 
         Returns:
-            tuple:
-                - pd.DataFrame: Extracted (and optionally resampled) data.
-                - int: Sampling rate (Hz) of the leading channel.
+                tuple:
+                    - pd.DataFrame: Extracted (and optionally resampled) data.
+                    - int: Sampling rate (Hz) of the leading channel.
         """
         channel_idxs = self._resolve_many(channel_idxs, kwargs.get("channel_ids"), self.channel_map, "channel")
         record_idx = self._resolve_one(record_idx, kwargs.get("record_id"), self.record_map, "record")
