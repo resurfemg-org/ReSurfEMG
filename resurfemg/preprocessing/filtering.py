@@ -1,23 +1,24 @@
-"""
+"""This file contains functions to filter EMG arrays.
+
 Copyright 2022 Netherlands eScience Center and University of Twente
 Licensed under the Apache License, version 2.0. See LICENSE for details.
-
-This file contains functions to filter EMG arrays.
 """
 
-from scipy import signal
+from __future__ import annotations
+
 import numpy as np
+from scipy import signal
 
 
 def emg_bandpass_butter(
-    emg_raw,
-    high_pass,
-    low_pass,
-    fs_emg,
-    order=3,
-):
-    """Bandpass filter for EMG signal
-    ---------------------------------------------------------------------------
+    emg_raw: np.ndarray | tuple[np.ndarray, np.ndarray],
+    high_pass: float,
+    low_pass: float,
+    fs_emg: int,
+    order: int = 3,
+) -> np.ndarray:
+    """Bandpass filter for EMG signal.
+
     :param emg_raw: The raw EMG signal
     :type emg_raw: ~numpy.ndarray
     :param high_pass: High pass cut-off frequency `frequenceisabove`
@@ -35,23 +36,22 @@ def emg_bandpass_butter(
     sos = signal.butter(
         order,
         [high_pass, low_pass],
-        'bandpass',
+        "bandpass",
         fs=fs_emg,
-        output='sos',
+        output="sos",
     )
     # sos (output parameter)is second order section  -> "stabilizes" ?
-    emg_filt = signal.sosfiltfilt(sos, emg_raw)
-    return emg_filt
+    return signal.sosfiltfilt(sos, emg_raw)
 
 
 def emg_lowpass_butter(
-    emg_raw,
-    low_pass,
-    fs_emg,
-    order=3,
-):
-    """Lowpass filter for EMG signal
-    ---------------------------------------------------------------------------
+    emg_raw: np.ndarray | tuple[np.ndarray, np.ndarray],
+    low_pass: float,
+    fs_emg: int,
+    order: int = 3,
+) -> np.ndarray:
+    """Lowpass filter for EMG signal.
+
     :param emg_raw: The raw EMG signal
     :type emg_raw: ~numpy.ndarray
     :param low_pass: Low pass cut-off frequency `frequenciesbelow`
@@ -67,23 +67,21 @@ def emg_lowpass_butter(
     sos = signal.butter(
         order,
         low_pass,
-        'lowpass',
+        "lowpass",
         fs=fs_emg,
-        output='sos',
+        output="sos",
     )
-    emg_filt = signal.sosfiltfilt(sos, emg_raw)
-    return emg_filt
+    return signal.sosfiltfilt(sos, emg_raw)
 
 
 def emg_highpass_butter(
-    emg_raw,
-    high_pass,
-    fs_emg,
-    order=3,
-):
+    emg_raw: np.ndarray | tuple[np.ndarray, np.ndarray],
+    high_pass: float,
+    fs_emg: int,
+    order: int = 3,
+) -> np.ndarray:
+    """Highpass filter for EMG signal.
 
-    """Highpass filter for EMG signal
-    ---------------------------------------------------------------------------
     :param emg_raw: The raw EMG signal
     :type emg_raw: ~numpy.ndarray
     :param high_pass: High pass cut-off frequency `frequenceisabove`
@@ -99,17 +97,21 @@ def emg_highpass_butter(
     sos = signal.butter(
         order,
         high_pass,
-        'highpass',
+        "highpass",
         fs=fs_emg,
-        output='sos',
+        output="sos",
     )
-    emg_filt = signal.sosfiltfilt(sos, emg_raw)
-    return emg_filt
+    return signal.sosfiltfilt(sos, emg_raw)
 
 
-def notch_filter(emg_raw, f_notch, fs_emg, q):
+def notch_filter(
+    emg_raw: np.ndarray | tuple[np.ndarray, np.ndarray],
+    f_notch: float,
+    fs_emg: int,
+    q: float,
+) -> np.ndarray:
     """Filter to take out a specific frequency band.
-    ---------------------------------------------------------------------------
+
     :param emg_raw: Percentage variation tolerance to allow without cutting
     :type emg_raw: int
     :param f_notch: The frequency to remove from the signal
@@ -123,25 +125,21 @@ def notch_filter(emg_raw, f_notch, fs_emg, q):
     :returns emg_filt: The notch filtered EMG data
     :rtype emg_filt: ~numpy.ndarray
     """
-    b_notch, a_notch = signal.iirnotch(
-        f_notch,
-        q,
-        fs_emg)
+    b_notch, a_notch = signal.iirnotch(f_notch, q, fs_emg)
 
-    output_signal = signal.filtfilt(b_notch, a_notch, emg_raw)
-    return output_signal
+    return signal.filtfilt(b_notch, a_notch, emg_raw)
 
 
 def compute_power_loss(
-    signal_original,
-    fs_original,
-    signal_processed,
-    fs_processed,
-    n_segment=None,
-    percent_overlap=25,
-):
+    signal_original: np.ndarray | tuple[np.ndarray, np.ndarray],
+    fs_original: int,
+    signal_processed: np.ndarray | tuple[np.ndarray, np.ndarray],
+    fs_processed: int,
+    n_segment: int | None = None,
+    percent_overlap: float = 25,
+) -> float:
     """Compute the percentage of power loss after the processing.
-    ---------------------------------------------------------------------------
+
     :param signal_original: Original signal
     :type  signal_original: ~numpy.ndarray
     :param fs_original: Sampling frequency of orginal signal
@@ -161,7 +159,7 @@ def compute_power_loss(
     if n_segment is None:
         n_segment = fs_original // 2
 
-    noverlap = int(percent_overlap/100 * fs_original)
+    noverlap = int(percent_overlap / 100 * fs_original)
 
     # power spectrum density of the original and
     # processed signals using Welch method
@@ -178,6 +176,4 @@ def compute_power_loss(
         noverlap=noverlap,
     )
     # compute the percentage of power loss
-    power_loss = 100*(1-(np.sum(pxx_den_orig)/np.sum(pxx_den_processed)))
-
-    return power_loss
+    return 100 * (1 - (np.sum(pxx_den_orig) / np.sum(pxx_den_processed)))

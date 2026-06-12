@@ -1,4 +1,2 @@
-# -*- coding: utf-8 -*-
-
 # Import the submodules
-from . import cli
+from resurfemg.cli import cli  # noqa: F401
