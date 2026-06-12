@@ -133,6 +133,30 @@ class TimeSeries:
                 FutureWarning,
             )
             return self._y_data.get(key)
+        if item in self.peaks:
+            warnings.warn(
+                "\n".join(
+                    wrap(
+                        dedent(f"""
+                The attribute {item} is deprecated to allow for multiple peak
+                sets. Use self.peaks['{item}'] instead.""")
+                    )
+                ),
+                FutureWarning,
+            )
+            return self.peaks[item]
+        if item in self.param:
+            warnings.warn(
+                "\n".join(
+                    wrap(
+                        dedent(f"""
+                The attribute {item} is deprecated to allow for more parameters.
+                Use self.param['{item}'] instead.""")
+                    )
+                ),
+                FutureWarning,
+            )
+            return self.param[item]
         # `__getattr__` is only called when normal attribute lookup fails.
         # The correct behavior is to raise `AttributeError` to signal the
         # attribute does not exist (rather than calling `object.__getattr__`,
@@ -311,7 +335,7 @@ class TimeSeries:
         self,
         ecg_raw: np.ndarray | None = None,
         bp_filter: bool = True,
-        overwrite: bool = False,
+        overwrite: bool = True,
         name: str = "ecg",
     ) -> None:
         """Detect ECG peaks in the provided signal.
@@ -700,7 +724,7 @@ class TimeSeries:
         peak_idxs: np.ndarray,
         signal: np.ndarray | None,
         peak_set_name: str,
-        overwrite: bool = False,
+        overwrite: bool = True,
     ) -> None:
         """Store a new PeaksSet object.
 
@@ -728,7 +752,7 @@ class TimeSeries:
         peak_set_name: str = "breaths",
         start_idx: int = 0,
         end_idx: int | None = None,
-        overwrite: bool = False,
+        overwrite: bool = True,
         signal_io: tuple[tuple[str | None, str], ...] = (("env", "baseline"),),
     ) -> None:
         """Find breath peaks in provided EMG envelope signal.
@@ -1480,15 +1504,15 @@ class TimeSeriesGroup:
         """
         self.channels = []
         y_raw, n_samp, n_channel = self._resolve_dims(y_raw)
-        t_data, fs = self._resolve_time(t_data, fs, n_samp)
-        self.param = {"fs": fs, "n_samp": n_samp, "n_channel": n_channel}
+        t_data, self.fs = self._resolve_time(t_data, fs, n_samp)
+        self.param = {"fs": self.fs, "n_samp": n_samp, "n_channel": n_channel}
         self.labels, self.y_units = self._resolve_labels_units(labels, units, n_channel)
         for idx in range(n_channel):
             self.channels.append(
                 TimeSeries(
                     y_raw=y_raw[idx, :],
                     t_data=t_data,
-                    fs=fs,
+                    fs=self.fs,
                     label=self.labels[idx],
                     units=self.y_units[idx],
                 )
@@ -1576,7 +1600,7 @@ class TimeSeriesGroup:
                 raise ValueError(msg)
 
     def _run_wrapper(self, method: str, channel_idxs: list[int] | np.ndarray | None = None, **kwargs) -> None:
-        if channel_idxs is None:
+        if channel_idxs is None or not isinstance(channel_idxs, (int, list)):
             channel_idxs = np.arange(self.param["n_channel"])
         elif isinstance(channel_idxs, int):
             channel_idxs = np.array([channel_idxs])
@@ -1722,6 +1746,10 @@ class EmgDataGroup(TimeSeriesGroup):
         self._check_ecg_future_warning(channel_idxs, kwargs)
         return self._run_wrapper("wavelet_denoising", channel_idxs=channel_idxs, **kwargs)
 
+    def filter(self, channel_idxs: list[int] | np.ndarray | None = None, **kwargs) -> None:
+        """Apply EMG-specific filtering to the indicated channels."""
+        return self._run_wrapper("filter_emg", channel_idxs=channel_idxs, **kwargs)
+
     if TYPE_CHECKING:
         filter_emg: Callable[..., None]
 
@@ -1790,7 +1818,7 @@ class VentilatorDataGroup(TimeSeriesGroup):
         self,
         pressure_idx: int | None = None,
         peep: float | None = None,
-        overwrite: bool = False,
+        overwrite: bool = True,
         **kwargs,
     ) -> None:
         """Find occluded breaths.
@@ -1833,7 +1861,7 @@ class VentilatorDataGroup(TimeSeriesGroup):
         self,
         volume_idx: int | None = None,
         pressure_idx: int | None = None,
-        overwrite: bool = False,
+        overwrite: bool = True,
         **kwargs,
     ) -> None:
         """Find tidal-volume peaks in ventilator volume signal.

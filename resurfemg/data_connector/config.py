@@ -209,6 +209,7 @@ class Config:
             try:
                 with Path(path).open() as f:
                     self._raw = json.load(f)
+                    logger.info("Loaded config from: %s", path)
                 break
             except (OSError, json.JSONDecodeError) as e:
                 logger.info("Failed to load %s: %s", path, e)
