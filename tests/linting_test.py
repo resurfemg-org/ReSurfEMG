@@ -1,28 +1,22 @@
 # Test linting of project # noqa: INP001
 
+import subprocess
 import sys
 import unittest
-from io import StringIO
 from pathlib import Path
-
-import pycodestyle
 
 
 class TestCodeFormat(unittest.TestCase):
-    """Test that the code conforms to PEP-8."""
+    """Test that the code conforms to Ruff standards defined in pyproject.toml."""
 
     def test_conformance(self):
-        """Test that we conform to PEP-8."""
+        """Test that we conform to Ruff linting rules."""
         project_dir = Path(__file__).parent.parent
-        file_paths = [*list(project_dir.glob("resurfemg/**/*.py")), project_dir / "setup.py"]
-
-        buffer = StringIO()
-        sys.stdout = buffer
-
-        style = pycodestyle.StyleGuide()
-        result = style.check_files(file_paths)
-
-        print_output = buffer.getvalue()
-        sys.stdout = sys.__stdout__
-
-        assert result.total_errors == 0, "Found code style errors (and warnings):\n" + print_output
+        result = subprocess.run(
+            [sys.executable, "-m", "ruff", "check", "resurfemg/"],
+            capture_output=True,
+            check=False,
+            text=True,
+            cwd=project_dir,
+        )
+        assert result.returncode == 0, "Found Ruff linting errors:\n" + result.stdout + result.stderr

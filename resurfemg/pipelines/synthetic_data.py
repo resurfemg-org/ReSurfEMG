@@ -16,9 +16,7 @@ import resurfemg.data_connector.synthetic_data as synth
 logger = logging.getLogger(__name__)
 
 
-def simulate_raw_emg(
-    t_end: int, fs_emg: int, emg_amp: float = 5, rr: float = 22, **kwargs
-) -> np.ndarray:
+def simulate_raw_emg(t_end: int, fs_emg: int, emg_amp: float = 5, rr: float = 22, **kwargs) -> np.ndarray:
     """Generate realistic synthetic respiratory EMG data remixed with ECG.
 
     Args:
@@ -89,6 +87,7 @@ def synthetic_emg_cli(n_emg: int, output_directory: str, **kwargs) -> None:
 
     Generate realistic, single lead, synthetic respiratory EMG data remixed
     with ECG through command line using the cli.
+
     Args:
         n_emg (int): Number of EMGs to simulate.
         output_directory (str): File directory where synthetic EMG will be saved.
@@ -194,9 +193,7 @@ def simulate_ventilator_data(
     )
     t_occ_bool = np.zeros(p_mus.shape, dtype=bool)
     for t_occ in sim_parameters["t_p_occs"]:
-        t_occ_bool[
-            int((t_occ - 1) * fs_vent) : int((t_occ + 1 / rr * 60) * fs_vent)
-        ] = True
+        t_occ_bool[int((t_occ - 1) * fs_vent) : int((t_occ + 1 / rr * 60) * fs_vent)] = True
     lung_mechanics = {
         "c": 0.050,
         "r": 5,
@@ -228,13 +225,12 @@ def simulate_ventilator_data(
     return y_vent, p_mus
 
 
-def synthetic_ventilator_data_cli(
-    n_datasets: int, output_directory: str, **kwargs
-) -> None:
+def synthetic_ventilator_data_cli(n_datasets: int, output_directory: str, **kwargs) -> None:
     """Generate realistic synthetic ventilator data through cli.
 
     Generate realistic synthetic ventilator data through
     command line using the cli.
+
     Args:
         n_datasets (int): Number of datasets to simulate.
         output_directory (str): File directory where synthetic data will be saved.

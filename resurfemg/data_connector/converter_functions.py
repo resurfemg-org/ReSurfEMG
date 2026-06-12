@@ -63,9 +63,7 @@ def load_poly5(file_path: str, verbose: bool = True) -> tuple[pd.DataFrame, dict
     return data_df, metadata
 
 
-def load_mat(
-    file_path: str, key_name: str, verbose: bool = True
-) -> tuple[pd.DataFrame, dict]:
+def load_mat(file_path: str, key_name: str, verbose: bool = True) -> tuple[pd.DataFrame, dict]:
     """Load a .mat file and return the data as a pandas DataFrame.
 
     This function loads a .mat file and returns the data as a pandas
@@ -105,9 +103,7 @@ def load_mat(
     return data_df, {}
 
 
-def load_csv(
-    file_path: str, force_col_reading: bool, verbose: bool = True
-) -> tuple[pd.DataFrame, dict]:
+def load_csv(file_path: str, force_col_reading: bool, verbose: bool = True) -> tuple[pd.DataFrame, dict]:
     """Load a .csv file and return the data as a pandas DataFrame.
 
     This function loads a .csv file and returns the data as a pandas
@@ -294,9 +290,7 @@ def _load_by_extension(
     raise UserWarning(msg)
 
 
-def _rename_channels(
-    data_df: pd.DataFrame, kwargs: dict, verbose: bool
-) -> pd.DataFrame:
+def _rename_channels(data_df: pd.DataFrame, kwargs: dict, verbose: bool) -> pd.DataFrame:
     labels = kwargs.get("labels")
     if isinstance(labels, list) and len(labels) == data_df.shape[1]:
         if not all(isinstance(channel, str) for channel in labels):
@@ -311,13 +305,9 @@ def _rename_channels(
     return data_df
 
 
-def _select_channels(
-    data_df: pd.DataFrame, metadata: dict, kwargs: dict, verbose: bool
-) -> pd.DataFrame:
+def _select_channels(data_df: pd.DataFrame, metadata: dict, kwargs: dict, verbose: bool) -> pd.DataFrame:
     channel_idxs = kwargs.get("channel_idxs", list(range(data_df.shape[1])))
-    if not all(
-        isinstance(idx, int) and 0 <= idx < data_df.shape[1] for idx in channel_idxs
-    ):
+    if not all(isinstance(idx, int) and 0 <= idx < data_df.shape[1] for idx in channel_idxs):
         msg = "channel_idxs should be a list of ints"
         raise TypeError(msg)
     data_df = cast("pd.DataFrame", data_df.iloc[:, channel_idxs])
@@ -330,9 +320,7 @@ def _select_channels(
     return data_df
 
 
-def load_file(
-    file_path: str, verbose: bool = True, **kwargs
-) -> tuple[np.ndarray, pd.DataFrame, dict]:
+def load_file(file_path: str, verbose: bool = True, **kwargs) -> tuple[np.ndarray, pd.DataFrame, dict]:
     """Load a file as numpy array.
 
     This function loads a file from a given path and returns the data as a
@@ -371,9 +359,7 @@ def load_file(
     if verbose:
         logger.info("Detected .%s", file_ext)
 
-    data_df, metadata = _load_by_extension(
-        file_path, file_ext, file_extension, verbose, kwargs
-    )
+    data_df, metadata = _load_by_extension(file_path, file_ext, file_extension, verbose, kwargs)
     metadata["file_name"] = file_name
     metadata["file_dir"] = Path(file_path).parent
     metadata["file_extension"] = file_extension
@@ -443,9 +429,7 @@ def csv_from_jkmn_to_array(file_name: str) -> np.ndarray:
     """
     file = pd.read_csv(file_name)
     new_df = (
-        file.T.reset_index()
-        .T.reset_index(drop=True)
-        .set_axis([f"lead.{i+1}" for i in range(file.shape[1])], axis=1)
+        file.T.reset_index().T.reset_index(drop=True).set_axis([f"lead.{i + 1}" for i in range(file.shape[1])], axis=1)
     )
     arrayed = np.rot90(new_df)
     return np.flipud(arrayed)

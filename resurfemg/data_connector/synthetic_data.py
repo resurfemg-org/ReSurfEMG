@@ -41,11 +41,7 @@ def respiratory_pattern_generator(
         np.array[float]: The simulated on/off respiratory muscle pattern.
     """
     ie_fraction = ie_ratio / (ie_ratio + 1)
-    t_occs = (
-        np.array([])
-        if t_p_occs is None
-        else np.floor(np.array(t_p_occs) * rr / 60) * 60 / rr
-    )
+    t_occs = np.array([]) if t_p_occs is None else np.floor(np.array(t_p_occs) * rr / 60) * 60 / rr
 
     for _, t_occ in enumerate(t_occs):
         if t_end < (t_occ + 60 / rr):
@@ -56,9 +52,7 @@ def respiratory_pattern_generator(
     t_emg = np.array([i / fs for i in range(int(t_end * fs))])
 
     # reference signal pattern generator
-    respiratory_pattern = (
-        signal.square(t_emg * rr / 60 * 2 * np.pi + 0.5, ie_fraction) + 1
-    ) / 2
+    respiratory_pattern = (signal.square(t_emg * rr / 60 * 2 * np.pi + 0.5, ie_fraction) + 1) / 2
     for _, t_occ in enumerate(t_occs):
         i_occ = int(t_occ * fs)
         blocker = np.arange(int(fs * 60 / rr) + 1) / fs * rr / 60 * 2 * np.pi
@@ -93,13 +87,9 @@ def simulate_muscle_dynamics(
     for i in range(1, len(block_pattern)):
         pat = muscle_activation[i - 1]
         if (block_pattern[i - 1] - pat) > 0:
-            muscle_activation[i] = pat + (
-                (block_pattern[i - 1] - pat) / (tau_mus_up * fs)
-            )
+            muscle_activation[i] = pat + ((block_pattern[i - 1] - pat) / (tau_mus_up * fs))
         else:
-            muscle_activation[i] = pat + (
-                (block_pattern[i - 1] - pat) / (tau_mus_down * fs)
-            )
+            muscle_activation[i] = pat + ((block_pattern[i - 1] - pat) / (tau_mus_down * fs))
     return muscle_activation
 
 
@@ -123,18 +113,14 @@ def _evaluate_ventilator_status(
     Returns:
         dict: The new ventilator status.
     """
-    if (vent_status["sensitive"] is True) and (
-        60 * y_vent[1, idx] > vent_settings["flow_trigger"]
-    ):
+    if (vent_status["sensitive"] is True) and (60 * y_vent[1, idx] > vent_settings["flow_trigger"]):
         vent_status["active"] = True
         vent_status["sensitive"] = False
 
     if vent_status["active"] and y_vent[1, idx] > vent_status["F_max"]:
         vent_status["p_set"] = vent_settings["dp"]
         vent_status["F_max"] = y_vent[1, idx]
-    elif (
-        y_vent[1, idx] < vent_settings["flow_cycle"] * vent_status["F_max"]
-    ) and vent_status["active"]:
+    elif (y_vent[1, idx] < vent_settings["flow_cycle"] * vent_status["F_max"]) and vent_status["active"]:
         vent_status["active"] = False
         vent_status["p_set"] = 0
     return vent_status
@@ -192,10 +178,7 @@ def simulate_ventilator_data(
     # Simulate up- and downslope dynamics of airway pressure
     p_noise_ma = (
         0
-        * pd.Series(rng.normal(0, 2, size=(len(p_mus),)))
-        .rolling(fs_vent, min_periods=1, center=True)
-        .mean()
-        .to_numpy()
+        * pd.Series(rng.normal(0, 2, size=(len(p_mus),))).rolling(fs_vent, min_periods=1, center=True).mean().to_numpy()
     )
 
     vent_status = {
@@ -221,9 +204,7 @@ def simulate_ventilator_data(
             vent_status["F_max"] = 0
 
             # Occlusion pressure results into negative airway pressure:
-            dp_step = (
-                -np.mean(p_mus[i - int(1 * fs_vent / 2) : int(i - 1)]) - p_dp[i - 1]
-            )
+            dp_step = -np.mean(p_mus[i - int(1 * fs_vent / 2) : int(i - 1)]) - p_dp[i - 1]
             p_dp[i] = p_dp[i - 1] + dp_step / (vent_settings["tau_dp_up"])
             # During occlusion manoeuvre: flow and volume are zero
             y_vent[1:2, i] = 0
@@ -233,9 +214,7 @@ def simulate_ventilator_data(
             else:
                 p_dp[i] = p_dp[i - 1] + dp_step / vent_settings["tau_dp_down"]
             # Calculate flows and volumes from equation of motion:
-            y_vent[1, i] = (
-                (p_dp[i - 1] + p_mus[i - 1]) - y_vent[2, i - 1] / lung_mechanics["c"]
-            ) / lung_mechanics["r"]
+            y_vent[1, i] = ((p_dp[i - 1] + p_mus[i - 1]) - y_vent[2, i - 1] / lung_mechanics["c"]) / lung_mechanics["r"]
             y_vent[2, i] = y_vent[2, i - 1] + y_vent[1, i] * 1 / fs_vent
             if (vent_status["sensitive"] is False) and (y_vent[1, i] < 0):
                 vent_status["sensitive"] = True

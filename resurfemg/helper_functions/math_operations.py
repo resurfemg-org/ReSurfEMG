@@ -39,10 +39,10 @@ class Range(NamedTuple):
         """Return True if this range intersects other range.
 
         Args:
-            other (Range): Another range to compare this one to.
+                other (Range): Another range to compare this one to.
 
         Returns:
-            bool: True if this range intersects another range.
+                bool: True if this range intersects another range.
         """
         return (
             ((self.end >= other.end) and (self.start < other.end))
@@ -54,10 +54,10 @@ class Range(NamedTuple):
         """Return True if this range precedes other range.
 
         Args:
-            other (Range): Another range to compare this one to.
+                other (Range): Another range to compare this one to.
 
         Returns:
-            bool: True if this range strictly precedes another range.
+                bool: True if this range strictly precedes another range.
         """
         return self.end < other.start
 
@@ -87,9 +87,7 @@ def zero_one_for_jumps_base(array: np.ndarray, cut_off: float) -> list:
     return [i >= cut_off for i in array]
 
 
-def slices_slider(
-    array_sample: np.ndarray, slice_len: int
-) -> Generator[np.ndarray, None, None]:
+def slices_slider(array_sample: np.ndarray, slice_len: int) -> Generator[np.ndarray, None, None]:
     """Produce sequential slices over an array of a certain length.
 
     This function produces continuous sequential slices over an
@@ -106,9 +104,7 @@ def slices_slider(
         yield array_sample[i : i + slice_len]
 
 
-def slices_jump_slider(
-    array_sample: np.ndarray, slice_len: int, jump: int
-) -> Generator[np.ndarray, None, None]:
+def slices_jump_slider(array_sample: np.ndarray, slice_len: int, jump: int) -> Generator[np.ndarray, None, None]:
     """Produce sequential slices over an array of a certain length with jumps.
 
     This function produces continuous sequential slices over an
@@ -140,9 +136,7 @@ def ranges_of(array: np.ndarray) -> tuple[Range, ...]:
         tuple[Range, ...]: Tuple of Range objects representing boundaries.
     """
     marks = np.logical_xor(array[1:], array[:-1])
-    boundaries = np.hstack(
-        (np.zeros(1), np.where(marks != 0)[0], np.zeros(1) + len(array) - 1)
-    )
+    boundaries = np.hstack((np.zeros(1), np.where(marks != 0)[0], np.zeros(1) + len(array) - 1))
     if not array[0]:
         boundaries = boundaries[1:]
     if len(boundaries) % 2 != 0:
@@ -318,9 +312,7 @@ def derivative(signal: np.ndarray, fs: int, window_s: int | None = None) -> np.n
     if window_s is not None:
         # Moving average over signal
         signal_series = pd.Series(signal)
-        signal_moving_average = (
-            signal_series.rolling(window=window_s, center=True).mean().to_numpy()
-        )
+        signal_moving_average = signal_series.rolling(window=window_s, center=True).mean().to_numpy()
         dsignal_dt = (signal_moving_average[1:] - signal_moving_average[:-1]) * fs
     else:
         dsignal_dt = (signal[1:] - signal[:-1]) * fs

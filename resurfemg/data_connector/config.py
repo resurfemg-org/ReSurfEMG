@@ -81,21 +81,22 @@ class Config:
     ) -> None:
         """Initialize the configuration.
 
-        This function initializes the configuration file. If no location is
-        specified it will try to load the configuration file from the default
-        locations:
-        - ./config.json
-        - ~/.resurfemg/config.json
-        - /etc/resurfemg/config.json
-        - PROJECT_ROOT/config.json
+            This function initializes the configuration file. If no location is
+            specified it will try to load the configuration file from the default
+            locations:
+            - ./config.json
+            - ~/.resurfemg/config.json
+            - /etc/resurfemg/config.json
+            - PROJECT_ROOT/config.json
+
 
         Args:
-            location (str | Path | None): The location of the configuration file.
-            verbose (bool): A boolean to print the loaded configuration.
-            force (bool): A boolean to overwrite the configuration file.
+                location (str | Path | None): The location of the configuration file.
+                verbose (bool): A boolean to print the loaded configuration.
+                force (bool): A boolean to overwrite the configuration file.
 
         Raises:
-            ValueError: If the configuration file is not found.
+                ValueError: If the configuration file is not found.
         """
         self._raw: dict | None = None
         self._loaded: dict = {}
@@ -169,11 +170,11 @@ class Config:
         """This function creates a config file from an example file.
 
         Args:
-            location (Path): The location of the example file.
-            force (bool): A boolean to overwrite an existing config file.
+                location (Path): The location of the example file.
+                force (bool): A boolean to overwrite an existing config file.
 
         Raises:
-            ValueError: If the config file already exists and force is False.
+                ValueError: If the config file already exists and force is False.
         """
         config_path = Path(location).with_name("config.json")
         if Path(config_path).is_file() and not force:
@@ -187,19 +188,20 @@ class Config:
     def load(self, location: str | Path | None, verbose: bool = False) -> None:
         """This function loads the configuration file.
 
-        If no location is specified
-        it will try to load the configuration file from the default locations:
-        - ./config.json
-        - ~/.resurfemg/config.json
-        - /etc/resurfemg/config.json
-        - PROJECT_ROOT/config.json
+            If no location is specified
+            it will try to load the configuration file from the default locations:
+            - ./config.json
+            - ~/.resurfemg/config.json
+            - /etc/resurfemg/config.json
+            - PROJECT_ROOT/config.json
+
 
         Args:
-            location (str | Path | None): The location of the configuration file.
-            verbose (bool): A boolean to print the loaded configuration.
+                location (str | Path | None): The location of the configuration file.
+                verbose (bool): A boolean to print the loaded configuration.
 
         Raises:
-            ValueError: If the configuration file is not found.
+                ValueError: If the configuration file is not found.
         """
         locations = [Path(location)] if location is not None else self.default_locations
 
@@ -289,8 +291,8 @@ class Config:
         """Log where the config came from and the configured paths.
 
         Args:
-            path (Path): The location of the loaded configuration file.
-            verbose (bool): A boolean to print the loaded configuration.
+                path (Path): The location of the loaded configuration file.
+                verbose (bool): A boolean to print the loaded configuration.
         """
         if self.created_config:
             logger.info("Created config. See and edit it at: %s", path)
@@ -309,23 +311,22 @@ class Config:
         """
         for req_dir in self.required_directories:
             if not Path(self._loaded[req_dir]).is_dir():
-                logger.error(
-                    "Required directory %s does not exist", self._loaded[req_dir]
-                )
+                logger.error("Required directory %s does not exist", self._loaded[req_dir])
                 raise ValueError(self.usage())
 
     def get_directory(self, directory: str, value: str | None = None) -> str | None:
         """Return the directory specified in the configuration file.
 
-        If the directory is not specified, it will return the value.
+            If the directory is not specified, it will return the value.
+
 
         Args:
-            directory (str): The directory to return.
-            value (str): The value to return if the directory is not
-                specified.
+                directory (str): The directory to return.
+                value (str): The value to return if the directory is not
+                    specified.
 
         Returns:
-            str: The directory specified in the configuration file.
+                str: The directory specified in the configuration file.
         """
         if value is None:
             if directory in self._loaded:

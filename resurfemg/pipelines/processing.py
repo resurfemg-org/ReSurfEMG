@@ -99,6 +99,4 @@ def ecg_removal_gating(
     # Gate ECG and EMG signal
     # Fill methods: 0: Zeros, 1: Interpolate start-end, 2: Average prior data
     # 3: Moving average
-    return ecg_rm.gating(
-        emg_raw, gate_peaks_idxs, gate_width=gate_width_samples, method=method
-    )
+    return ecg_rm.gating(emg_raw, gate_peaks_idxs, gate_width=gate_width_samples, method=method)

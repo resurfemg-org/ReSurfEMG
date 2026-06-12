@@ -27,12 +27,12 @@ class PeaksSet:
         """Initialize the PeaksSet.
 
         Args:
-            signal (numpy.ndarray): 1-dimensional signal data.
-            t_data (numpy.ndarray): Time axis data.
-            peak_idxs (numpy.ndarray): Indices of peaks.
+                signal (numpy.ndarray): 1-dimensional signal data.
+                t_data (numpy.ndarray): Time axis data.
+                peak_idxs (numpy.ndarray): Indices of peaks.
 
         Raises:
-            ValueError: If signal, t_data, or peak_idxs have an invalid type.
+                ValueError: If signal, t_data, or peak_idxs have an invalid type.
         """
         if isinstance(signal, np.ndarray):
             self.signal: np.ndarray = signal
@@ -54,12 +54,8 @@ class PeaksSet:
             msg = "Invalid peak indices: 'peak_s'."
             raise TypeError(msg)
         self.peak_df: pd.DataFrame = pd.DataFrame(data=peak_idxs, columns=["peak_idx"])
-        self.quality_values_df: pd.DataFrame = pd.DataFrame(
-            data=peak_idxs, columns=["peak_idx"]
-        )
-        self.quality_outcomes_df: pd.DataFrame = pd.DataFrame(
-            data=peak_idxs, columns=["peak_idx"]
-        )
+        self.quality_values_df: pd.DataFrame = pd.DataFrame(data=peak_idxs, columns=["peak_idx"])
+        self.quality_outcomes_df: pd.DataFrame = pd.DataFrame(data=peak_idxs, columns=["peak_idx"])
         self.time_products: np.ndarray | None = None
 
     def __len__(self):
@@ -95,9 +91,7 @@ class PeaksSet:
         peak_idxs = self.peak_df["peak_idx"].to_numpy()
 
         if method in {"default", "baseline_crossing"}:
-            start_idxs, end_idxs, _, _, valid_list = onoffpeak_baseline_crossing(
-                self.signal, baseline, peak_idxs
-            )
+            start_idxs, end_idxs, _, _, valid_list = onoffpeak_baseline_crossing(self.signal, baseline, peak_idxs)
 
         elif method == "slope_extrapolation":
             if fs is None:
@@ -126,22 +120,19 @@ class PeaksSet:
     def update_test_outcomes(self, tests_df_new: pd.DataFrame) -> None:
         """Add new peak quality test to self.quality_outcomes_df.
 
-        Updates existing entries.
+            Updates existing entries.
+
 
         Args:
-            tests_df_new (pandas.DataFrame): Dataframe of test parameters per
-                peak.
+                tests_df_new (pandas.DataFrame): Dataframe of test parameters per
+                    peak.
         """
         if self.quality_values_df is not None:
             df_old = self.quality_values_df
             pre_existing_keys = list(set(tests_df_new.keys()) & set(df_old.keys()))
             df_old = df_old.drop(columns=pre_existing_keys)
-            tests_df_merge = df_old.merge(
-                tests_df_new, left_index=True, right_index=True
-            )
-            if not self.quality_values_df["peak_idx"].equals(
-                tests_df_merge["peak_idx"]
-            ):
+            tests_df_merge = df_old.merge(tests_df_new, left_index=True, right_index=True)
+            if not self.quality_values_df["peak_idx"].equals(tests_df_merge["peak_idx"]):
                 msg = "Mismatched 'peak_idx' between old and new dataframes."
                 raise ValueError(msg)
             self.quality_values_df = tests_df_merge
@@ -151,23 +142,20 @@ class PeaksSet:
     def evaluate_validity(self, tests_df_new: pd.DataFrame) -> None:
         """Update peak validity based on executed tests.
 
-        Considers previously and newly executed tests in
-        self.quality_outcomes_df.
+            Considers previously and newly executed tests in
+            self.quality_outcomes_df.
+
 
         Args:
-            tests_df_new (pandas.DataFrame): Dataframe of passed tests per
-                peak.
+                tests_df_new (pandas.DataFrame): Dataframe of passed tests per
+                    peak.
         """
         if self.quality_outcomes_df is not None:
             df_old = self.quality_outcomes_df
             pre_existing_keys = list(set(tests_df_new.keys()) & set(df_old.keys()))
             df_old = df_old.drop(columns=pre_existing_keys)
-            tests_df_merge = df_old.merge(
-                tests_df_new, left_index=True, right_index=True
-            )
-            if not self.quality_outcomes_df["peak_idx"].equals(
-                tests_df_merge["peak_idx"]
-            ):
+            tests_df_merge = df_old.merge(tests_df_new, left_index=True, right_index=True)
+            if not self.quality_outcomes_df["peak_idx"].equals(tests_df_merge["peak_idx"]):
                 msg = "Mismatched 'peak_idx' between old and new dataframes."
                 raise ValueError(msg)
             self.quality_outcomes_df = tests_df_merge
@@ -187,9 +175,5 @@ class PeaksSet:
         """
         valid_idxs = self.peak_df["valid"].to_numpy()
         self.peak_df = self.peak_df.loc[valid_idxs].reset_index(drop=True)
-        self.quality_outcomes_df = self.quality_outcomes_df.loc[valid_idxs].reset_index(
-            drop=True
-        )
-        self.quality_values_df = self.quality_values_df.loc[valid_idxs].reset_index(
-            drop=True
-        )
+        self.quality_outcomes_df = self.quality_outcomes_df.loc[valid_idxs].reset_index(drop=True)
+        self.quality_values_df = self.quality_values_df.loc[valid_idxs].reset_index(drop=True)
