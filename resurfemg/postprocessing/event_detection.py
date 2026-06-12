@@ -32,6 +32,7 @@ def find_occluded_breaths(
     The prominence_factor, min_width_s, and distance_s specify the minimal
     peak prominence relative to the PEEP level, peak width in samples, and
     distance to other peaks.
+
     Args:
         p_vent (numpy.ndarray): Ventilator pressure signal.
         fs (int): Sampling rate.
@@ -80,6 +81,7 @@ def onoffpeak_baseline_crossing(
 
     This function calculates the peaks of each breath using the
     slopesum baseline of envelope data.
+
     Args:
         signal_env (numpy.ndarray): Envelope signal.
         baseline (numpy.ndarray): Baseline signal of EMG data for baseline detection.
@@ -101,14 +103,10 @@ def onoffpeak_baseline_crossing(
     valid_starts_bools = np.array([True for _ in range(len(peak_idxs))])
     valid_ends_bools = np.array([True for _ in range(len(peak_idxs))])
     for peak_nr, peak_idx in enumerate(peak_idxs):
-        delta_samples = (
-            peak_idx - baseline_crossings_idx[baseline_crossings_idx < peak_idx]
-        )
+        delta_samples = peak_idx - baseline_crossings_idx[baseline_crossings_idx < peak_idx]
         if len(delta_samples) < 1:
             peak_start_idxs[peak_nr] = 0
-            peak_end_idxs[peak_nr] = baseline_crossings_idx[
-                baseline_crossings_idx > peak_idx
-            ][0]
+            peak_end_idxs[peak_nr] = baseline_crossings_idx[baseline_crossings_idx > peak_idx][0]
         else:
             a = np.argmin(delta_samples)
 
@@ -123,9 +121,7 @@ def onoffpeak_baseline_crossing(
             valid_starts_bools[peak_nr] = False
 
         # Evaluate end validity
-        if (peak_nr < (len(peak_idxs) - 2)) and (
-            valid_ends_bools[peak_nr] > peak_idxs[peak_nr + 1]
-        ):
+        if (peak_nr < (len(peak_idxs) - 2)) and (valid_ends_bools[peak_nr] > peak_idxs[peak_nr + 1]):
             valid_ends_bools[peak_nr] = False
 
         if (
@@ -135,18 +131,14 @@ def onoffpeak_baseline_crossing(
             and valid_ends_bools[peak_nr - 1]
         ):
             invalid_current_start = (
-                peak_idx - peak_start_idxs[peak_nr]
-                > peak_end_idxs[peak_nr - 1] - peak_idxs[peak_nr - 1]
+                peak_idx - peak_start_idxs[peak_nr] > peak_end_idxs[peak_nr - 1] - peak_idxs[peak_nr - 1]
             )
 
             valid_starts_bools[peak_nr] = not invalid_current_start
             valid_ends_bools[peak_nr - 1] = invalid_current_start
 
     valid_peaks = np.array(
-        [
-            valid_detections[0] and valid_detections[1]
-            for valid_detections in zip(valid_starts_bools, valid_ends_bools)
-        ],
+        [valid_detections[0] and valid_detections[1] for valid_detections in zip(valid_starts_bools, valid_ends_bools)],
         dtype=bool,
     )
 
@@ -169,6 +161,7 @@ def onoffpeak_slope_extrapolation(
     The validity arrays provide feedback on the validity of the detected on-
     and offsets, aiming to prevent onsets after peak indices, offsets before
     peak indices, and overlapping peaks.
+
     Args:
         signal_env (numpy.ndarray): Signal to identify on- and offsets in.
         fs (int): Sampling rate.
@@ -186,12 +179,8 @@ def onoffpeak_slope_extrapolation(
     """
     dsignal_dt = derivative(signal_env, fs)
 
-    max_upslope_idxs = scipy.signal.argrelextrema(
-        dsignal_dt, np.greater, order=slope_window_s
-    )[0]
-    max_downslope_idxs = scipy.signal.argrelextrema(
-        dsignal_dt, np.less, order=slope_window_s
-    )[0]
+    max_upslope_idxs = scipy.signal.argrelextrema(dsignal_dt, np.greater, order=slope_window_s)[0]
+    max_downslope_idxs = scipy.signal.argrelextrema(dsignal_dt, np.less, order=slope_window_s)[0]
 
     peak_start_idxs = np.zeros((len(peak_idxs),), dtype=int)
     peak_end_idxs = np.zeros((len(peak_idxs),), dtype=int)
@@ -208,9 +197,7 @@ def onoffpeak_slope_extrapolation(
             new_upslope = dsignal_dt[max_upslope_idx]
             y_val = signal_env[max_upslope_idx]
             dy_dt_val = dsignal_dt[max_upslope_idx]
-            upslope_idx_ds = np.array(y_val * fs // (dy_dt_val), dtype=int).astype(
-                np.int64
-            )
+            upslope_idx_ds = np.array(y_val * fs // (dy_dt_val), dtype=int).astype(np.int64)
 
             start_idx = max([0, max_upslope_idx - upslope_idx_ds])
 
@@ -219,19 +206,14 @@ def onoffpeak_slope_extrapolation(
         if len(max_downslope_idxs[max_downslope_idxs > peak_idx]) < 1:
             end_idx = len(signal_env) - 1
         else:
-
-            max_downslope_idx = int(
-                max_downslope_idxs[max_downslope_idxs > peak_idx][0]
-            )
+            max_downslope_idx = int(max_downslope_idxs[max_downslope_idxs > peak_idx][0])
 
             if peak_nr > 0:
                 prev_downslope = dsignal_dt[max_downslope_idx]
 
             y_val = signal_env[max_downslope_idx]
             dy_dt_val = dsignal_dt[max_downslope_idx]
-            downslope_idx_ds = np.array(y_val * fs // (dy_dt_val), dtype=int).astype(
-                np.int64
-            )
+            downslope_idx_ds = np.array(y_val * fs // (dy_dt_val), dtype=int).astype(np.int64)
 
             end_idx = min([len(signal_env) - 1, max_downslope_idx - downslope_idx_ds])
 
@@ -249,20 +231,13 @@ def onoffpeak_slope_extrapolation(
             valid_ends_bools[peak_nr] = False
 
         # Evaluate conflicts
-        if (
-            peak_nr > 0
-            and start_idx < peak_end_idxs[peak_nr - 1]
-            and valid_ends_bools[peak_nr - 1]
-        ):
+        if peak_nr > 0 and start_idx < peak_end_idxs[peak_nr - 1] and valid_ends_bools[peak_nr - 1]:
             invalidate_previous_end = new_upslope > -prev_downslope
             valid_ends_bools[peak_nr - 1] = not invalidate_previous_end
             valid_starts_bools[peak_nr] = invalidate_previous_end
 
     valid_peaks = np.array(
-        [
-            valid_detections[0] and valid_detections[1]
-            for valid_detections in zip(valid_starts_bools, valid_ends_bools)
-        ],
+        [valid_detections[0] and valid_detections[1] for valid_detections in zip(valid_starts_bools, valid_ends_bools)],
         dtype=bool,
     )
 
@@ -290,6 +265,7 @@ def detect_ventilator_breath(
     Identify the breaths from the ventilator signal and return an array
     of ventilator peak breath indices, in two steps of peak detection.
     Input of threshold and prominence values is optional.
+
     Args:
         v_vent (numpy.ndarray): Ventilator volume signal.
         start_idx (int): Start sample of the window in which to be searched.
@@ -310,9 +286,7 @@ def detect_ventilator_breath(
     if prominence is None:
         prominence = float(0.10 * np.percentile(v_t_slice, 90))
 
-    resp_eff, _ = scipy.signal.find_peaks(
-        v_t_slice, height=threshold, prominence=prominence, width=width_s
-    )
+    resp_eff, _ = scipy.signal.find_peaks(v_t_slice, height=threshold, prominence=prominence, width=width_s)
 
     if threshold_new is None:
         threshold_new = float(0.5 * np.percentile(v_t_slice[resp_eff], 90))
@@ -338,6 +312,7 @@ def detect_emg_breaths(
     Identify the electrophysiological breaths from the EMG envelope and return
     an array breath peak indices. Input of baseline threshold, peak prominence
     factor, and minimal peak width are optional.
+
     Args:
         emg_env (numpy.ndarray): 1D EMG envelope signal.
         emg_baseline (numpy.ndarray, optional): EMG baseline. If none provided,
@@ -355,12 +330,8 @@ def detect_emg_breaths(
         emg_baseline = np.zeros(emg_env.shape)
 
     emg_env_delta = emg_env - emg_baseline
-    prominence = prominence_factor * (
-        np.nanpercentile(emg_env_delta, 75) + np.nanpercentile(emg_env_delta, 50)
-    )
-    peak_idxs, _ = scipy.signal.find_peaks(
-        emg_env, height=threshold, prominence=prominence, width=min_peak_width_s
-    )
+    prominence = prominence_factor * (np.nanpercentile(emg_env_delta, 75) + np.nanpercentile(emg_env_delta, 50))
+    peak_idxs, _ = scipy.signal.find_peaks(emg_env, height=threshold, prominence=prominence, width=min_peak_width_s)
 
     return peak_idxs
 
@@ -387,8 +358,6 @@ def find_linked_peaks(
         signal_2_t_peaks = np.array(signal_2_t_peaks)
     peaks_idxs_signal_1_in_2 = np.zeros(signal_1_t_peaks.shape, dtype=int)
     for idx, signal_1_t_peak in enumerate(signal_1_t_peaks):
-        peaks_idxs_signal_1_in_2[idx] = np.argmin(
-            np.abs(signal_2_t_peaks - signal_1_t_peak)
-        )
+        peaks_idxs_signal_1_in_2[idx] = np.argmin(np.abs(signal_2_t_peaks - signal_1_t_peak))
 
     return peaks_idxs_signal_1_in_2

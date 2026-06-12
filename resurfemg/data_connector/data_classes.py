@@ -67,13 +67,13 @@ class TimeSeries:
         """Initialize a TimeSeries object with raw signal data and optional time axis.
 
         Args:
-            y_raw (numpy.ndarray): 1-dimensional raw signal data.
-            t_data (numpy.ndarray, optional): Time axis data. If None,
-                generated from fs.
-            fs (int, optional): Sampling rate. If None, calculated from
-                t_data.
-            label (str, optional): Label of the channel.
-            units (str, optional): Channel signal units.
+                y_raw (numpy.ndarray): 1-dimensional raw signal data.
+                t_data (numpy.ndarray, optional): Time axis data. If None,
+                    generated from fs.
+                fs (int, optional): Sampling rate. If None, calculated from
+                    t_data.
+                label (str, optional): Label of the channel.
+                units (str, optional): Channel signal units.
         """
         self.param = {}
         self.param["fs"] = fs
@@ -142,17 +142,18 @@ class TimeSeries:
     def __getitem__(self, key: str) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
         """Get the signal data of the requested type.
 
-        The default signal types are: "raw", "filt", "clean", "env", "env_ci",
-        and "baseline".
+            The default signal types are: "raw", "filt", "clean", "env", "env_ci",
+            and "baseline".
+
 
         Args:
-            key (str): One of "raw", "filt", "clean", "env", "env_ci",
-                "baseline", or a custom signal type.
+                key (str): One of "raw", "filt", "clean", "env", "env_ci",
+                    "baseline", or a custom signal type.
 
         Returns:
-            numpy.ndarray or tuple: Data of the selected signal type. May be a
-                numpy array or a tuple of two arrays for confidence interval
-                data (lower, upper).
+                numpy.ndarray or tuple: Data of the selected signal type. May be a
+                    numpy array or a tuple of two arrays for confidence interval
+                    data (lower, upper).
         """
         return self._y_data[key]
 
@@ -167,15 +168,16 @@ class TimeSeries:
     def __setitem__(self, key: str, value: np.ndarray | tuple[np.ndarray, np.ndarray]):
         """Set the signal data of the requested type.
 
-        The default signal types are: "raw", "filt", "clean", "env", "env_ci",
-        and "baseline".
+            The default signal types are: "raw", "filt", "clean", "env", "env_ci",
+            and "baseline".
+
 
         Args:
-            key (str): One of "raw", "filt", "clean", "env", "env_ci",
-                "baseline", or a custom signal type.
-            value (numpy.ndarray or tuple): Data of the selected signal type.
-                Can be a numpy array or a tuple of two arrays
-                (lower_ci, upper_ci).
+                key (str): One of "raw", "filt", "clean", "env", "env_ci",
+                    "baseline", or a custom signal type.
+                value (numpy.ndarray or tuple): Data of the selected signal type.
+                    Can be a numpy array or a tuple of two arrays
+                    (lower_ci, upper_ci).
         """
         self._y_data[key] = value
 
@@ -200,15 +202,16 @@ class TimeSeries:
     def signal_type_data(self, signal_type: str | None = None) -> np.ndarray:
         """Automatic data type selection.
 
-        Automatically select the most advanced data type eligible for a
-        subprocess ("env" {=envelope} > "clean" > "filt" > "raw").
+            Automatically select the most advanced data type eligible for a
+            subprocess ("env" {=envelope} > "clean" > "filt" > "raw").
+
 
         Args:
-            signal_type (str, optional): One of "env", "clean", "filt", or
-                "raw".
+                signal_type (str, optional): One of "env", "clean", "filt", or
+                    "raw".
 
         Returns:
-            numpy.ndarray: Data of the selected signal type.
+                numpy.ndarray: Data of the selected signal type.
         """
         # Use direct dict access for the raw signal since `self.__getitem__`
         # can return `None` (static checkers complain about `.shape` on None).
@@ -265,19 +268,20 @@ class TimeSeries:
     ) -> None:
         """Filter raw EMG signal.
 
-        Filter raw EMG signal to remove baseline wander and high frequency
-        components. See preprocessing.emg_bandpass_butter submodule.
-        The filtered signal is stored in self[signal_io[1]].
+            Filter raw EMG signal to remove baseline wander and high frequency
+            components. See preprocessing.emg_bandpass_butter submodule.
+            The filtered signal is stored in self[signal_io[1]].
+
 
         Args:
-            signal_io (tuple, optional): Input/output signal type names.
-                Default is ("raw", "filt").
-            hp_cf (float, optional): High-pass cutoff frequency in Hz.
-                Default is 20.0.
-            lp_cf (float, optional): Low-pass cutoff frequency in Hz.
-                Default is 500.0.
-            order (int, optional): Filter order. Default is 3.
-            **kwargs: Accepts deprecated ``signal_type`` argument.
+                signal_io (tuple, optional): Input/output signal type names.
+                    Default is ("raw", "filt").
+                hp_cf (float, optional): High-pass cutoff frequency in Hz.
+                    Default is 20.0.
+                lp_cf (float, optional): Low-pass cutoff frequency in Hz.
+                    Default is 500.0.
+                order (int, optional): Filter order. Default is 3.
+                **kwargs: Accepts deprecated ``signal_type`` argument.
 
         """
         if "signal_type" in kwargs:
@@ -312,21 +316,22 @@ class TimeSeries:
     ) -> None:
         """Detect ECG peaks in the provided signal.
 
-        See preprocessing.ecg_removal submodule.
-        ECG peaks are stored in the self.peaks dict under the key
-        `name`. When no ECG channel is provided, the raw signal of the current
-        TimeSeries object is used.
-        When running get_ecg_peaks on a EmgDataGroup and no ECG channel or
-        ecg_raw is provided, EmgDataGroup.ecg_idx is used to detect the QRS
-        peak locations. ecg_idx is auto-detected from the labels on
-        EmgDataGroup initialization, or can be set with the set_ecg_idx method.
+            See preprocessing.ecg_removal submodule.
+            ECG peaks are stored in the self.peaks dict under the key
+            `name`. When no ECG channel is provided, the raw signal of the current
+            TimeSeries object is used.
+            When running get_ecg_peaks on a EmgDataGroup and no ECG channel or
+            ecg_raw is provided, EmgDataGroup.ecg_idx is used to detect the QRS
+            peak locations. ecg_idx is auto-detected from the labels on
+            EmgDataGroup initialization, or can be set with the set_ecg_idx method.
+
 
         Args:
-            ecg_raw (numpy.ndarray, optional): ECG signal. If None, the raw
-                signal is used.
-            bp_filter (bool): Apply band-pass filter to the ECG signal.
-            overwrite (bool): Overwrite existing peaks.
-            name (str): Name of the peak set in the self.peaks dict.
+                ecg_raw (numpy.ndarray, optional): ECG signal. If None, the raw
+                    signal is used.
+                bp_filter (bool): Apply band-pass filter to the ECG signal.
+                overwrite (bool): Overwrite existing peaks.
+                name (str): Name of the peak set in the self.peaks dict.
         """
         if name in self.peaks and not overwrite:
             msg = "ECG peaks already detected. Use overwrite=True"
@@ -362,21 +367,22 @@ class TimeSeries:
     ) -> None:
         """Eliminate ECG artifacts from the provided signal.
 
-        Eliminate ECG artifacts from the provided signal based on the peak_idx
-        of the provided PeakSet with `ecg_peakset_name`. See
-        preprocessing.ecg_removal and pipelines.ecg_removal_gating submodules.
-        The cleaned signal is stored in self["clean"].
+            Eliminate ECG artifacts from the provided signal based on the peak_idx
+            of the provided PeakSet with `ecg_peakset_name`. See
+            preprocessing.ecg_removal and pipelines.ecg_removal_gating submodules.
+            The cleaned signal is stored in self["clean"].
+
 
         Args:
-            signal_io (tuple, optional): Input/output signal type names.
-                Default is ("filt", "clean").
-            ecg_peakset_name (str, optional): Key of the ECG PeaksSet in
-                self.peaks. Default is "ecg".
-            gate_width_samples (int, optional): Width of the gating window in
-                samples. Defaults to fs // 10.
-            fill_method (int, optional): Fill method for gating. Default is 3.
-            **kwargs: Accepts deprecated arguments ``signal_type``,
-                ``ecg_peak_idxs``, ``ecg_raw``, ``bp_filter``, ``overwrite``.
+                signal_io (tuple, optional): Input/output signal type names.
+                    Default is ("filt", "clean").
+                ecg_peakset_name (str, optional): Key of the ECG PeaksSet in
+                    self.peaks. Default is "ecg".
+                gate_width_samples (int, optional): Width of the gating window in
+                    samples. Defaults to fs // 10.
+                fill_method (int, optional): Fill method for gating. Default is 3.
+                **kwargs: Accepts deprecated arguments ``signal_type``,
+                    ``ecg_peak_idxs``, ``ecg_raw``, ``bp_filter``, ``overwrite``.
 
         """
         if "signal_type" in kwargs:
@@ -457,20 +463,21 @@ class TimeSeries:
     ) -> None:
         """Eliminate ECG artifacts from the provided signal.
 
-        See preprocessing.wavelet_denoising submodules. The cleaned signal is
-        by default stored in self["clean"].
+            See preprocessing.wavelet_denoising submodules. The cleaned signal is
+            by default stored in self["clean"].
+
 
         Args:
-            signal_io (tuple, optional): Input/output signal type names.
-                Default is ("filt", "clean").
-            ecg_peakset_name (str, optional): Key of the ECG PeaksSet in
-                self.peaks. Default is "ecg".
-            n (int, optional): Number of wavelet decomposition levels.
-                Defaults to ``int(log(fs/20) // log(2))``.
-            fixed_threshold (float, optional): Threshold for wavelet
-                denoising. Default is 4.5.
-            **kwargs: Accepts deprecated arguments ``signal_type``,
-                ``ecg_peak_idxs``, ``ecg_raw``, ``bp_filter``, ``overwrite``.
+                signal_io (tuple, optional): Input/output signal type names.
+                    Default is ("filt", "clean").
+                ecg_peakset_name (str, optional): Key of the ECG PeaksSet in
+                    self.peaks. Default is "ecg".
+                n (int, optional): Number of wavelet decomposition levels.
+                    Defaults to ``int(log(fs/20) // log(2))``.
+                fixed_threshold (float, optional): Threshold for wavelet
+                    denoising. Default is 4.5.
+                **kwargs: Accepts deprecated arguments ``signal_type``,
+                    ``ecg_peak_idxs``, ``ecg_raw``, ``bp_filter``, ``overwrite``.
 
         """
         if "signal_type" in kwargs:
@@ -557,20 +564,21 @@ class TimeSeries:
     ) -> None:
         """Derive the moving envelope of the provided signal.
 
-        See preprocessing.envelope submodule. The envelope is by default stored
-        in self["env"]. If ci_alpha is not None, the confidence interval is
-        stored in self["env_ci"].
+            See preprocessing.envelope submodule. The envelope is by default stored
+            in self["env"]. If ci_alpha is not None, the confidence interval is
+            stored in self["env_ci"].
+
 
         Args:
-            env_window (int, optional): Envelope window length in samples.
-                Defaults to fs // 4.
-            env_type (str, optional): Envelope type, "rms" or "arv".
-                Defaults to "rms".
-            signal_io (tuple, optional): Input/output signal type names.
-                Default is ("clean", "env").
-            ci_alpha (float, optional): Confidence interval alpha level. If
-                None, no confidence interval is computed.
-            **kwargs: Accepts deprecated ``signal_type`` argument.
+                env_window (int, optional): Envelope window length in samples.
+                    Defaults to fs // 4.
+                env_type (str, optional): Envelope type, "rms" or "arv".
+                    Defaults to "rms".
+                signal_io (tuple, optional): Input/output signal type names.
+                    Default is ("clean", "env").
+                ci_alpha (float, optional): Confidence interval alpha level. If
+                    None, no confidence interval is computed.
+                **kwargs: Accepts deprecated ``signal_type`` argument.
         """
         if "signal_type" in kwargs:
             warnings.warn(
@@ -619,28 +627,29 @@ class TimeSeries:
     ) -> None:
         """Derive the moving baseline of the provided signal.
 
-        See postprocessing.baseline submodule. The baseline is stored in
-        self["baseline"].
+            See postprocessing.baseline submodule. The baseline is stored in
+            self["baseline"].
+
 
         Args:
-            percentile (int, optional): Percentile used for the moving
-                baseline. Default is 33.
-            window_s (int, optional): Window length in samples. Defaults to
-                7.5 * fs.
-            step_s (int, optional): Step size in samples. Defaults to
-                fs // 5.
-            base_method (str, optional): Baseline method, "default"/
-                "moving_baseline" or "slopesum_baseline". Default is
-                "default".
-            signal_io (tuple, optional): Input/output signal type names.
-                Default is (None, "baseline"), where None resolves to "env".
-            augm_percentile (int, optional): Augmented percentile for
-                slopesum_baseline. Default is 25.
-            ma_window (int, optional): Moving average window for
-                slopesum_baseline.
-            perc_window (int, optional): Percentile window for
-                slopesum_baseline.
-            **kwargs: Accepts deprecated ``signal_type`` argument.
+                percentile (int, optional): Percentile used for the moving
+                    baseline. Default is 33.
+                window_s (int, optional): Window length in samples. Defaults to
+                    7.5 * fs.
+                step_s (int, optional): Step size in samples. Defaults to
+                    fs // 5.
+                base_method (str, optional): Baseline method, "default"/
+                    "moving_baseline" or "slopesum_baseline". Default is
+                    "default".
+                signal_io (tuple, optional): Input/output signal type names.
+                    Default is (None, "baseline"), where None resolves to "env".
+                augm_percentile (int, optional): Augmented percentile for
+                    slopesum_baseline. Default is 25.
+                ma_window (int, optional): Moving average window for
+                    slopesum_baseline.
+                perc_window (int, optional): Percentile window for
+                    slopesum_baseline.
+                **kwargs: Accepts deprecated ``signal_type`` argument.
         """
         if "signal_type" in kwargs:
             warnings.warn(
@@ -695,15 +704,16 @@ class TimeSeries:
     ) -> None:
         """Store a new PeaksSet object.
 
-        Store a new PeaksSet object in the self.peaks dict under the key
-        peak_set_name.
+            Store a new PeaksSet object in the self.peaks dict under the key
+            peak_set_name.
+
 
         Args:
-            peak_idxs (list[int] or numpy.ndarray): Peak indices.
-            signal (numpy.ndarray or None): Signal underlying the peaks.
-            peak_set_name (str): Key under which to store the PeaksSet.
-            overwrite (bool): Overwrite an existing PeaksSet. Default is
-                False.
+                peak_idxs (list[int] or numpy.ndarray): Peak indices.
+                signal (numpy.ndarray or None): Signal underlying the peaks.
+                peak_set_name (str): Key under which to store the PeaksSet.
+                overwrite (bool): Overwrite an existing PeaksSet. Default is
+                    False.
         """
         if peak_set_name in self.peaks and not overwrite:
             msg = "PeaksSet already exists. Use overwrite=True"
@@ -723,26 +733,27 @@ class TimeSeries:
     ) -> None:
         """Find breath peaks in provided EMG envelope signal.
 
-        See postprocessing.event_detection submodule. The peaks are stored in
-        self.peaks under peak_set_name.
+            See postprocessing.event_detection submodule. The peaks are stored in
+            self.peaks under peak_set_name.
+
 
         Args:
-            threshold (int, optional): Minimum peak height above baseline.
-                Default is 0.
-            prominence_factor (float, optional): Minimum peak prominence as a
-                fraction of signal range. Default is 0.5.
-            min_peak_width_s (int, optional): Minimum peak width in samples.
-                Defaults to fs // 5.
-            peak_set_name (str, optional): Key under which to store the
-                PeaksSet. Default is "breaths".
-            start_idx (int, optional): Start index for peak detection.
-                Default is 0.
-            end_idx (int, optional): End index for peak detection. Defaults
-                to the signal length.
-            overwrite (bool): Overwrite an existing PeaksSet. Default is
-                False.
-            signal_io (tuple, optional): Tuple of (input_signal_key,
-                baseline_key). Default is (("env", "baseline"),).
+                threshold (int, optional): Minimum peak height above baseline.
+                    Default is 0.
+                prominence_factor (float, optional): Minimum peak prominence as a
+                    fraction of signal range. Default is 0.5.
+                min_peak_width_s (int, optional): Minimum peak width in samples.
+                    Defaults to fs // 5.
+                peak_set_name (str, optional): Key under which to store the
+                    PeaksSet. Default is "breaths".
+                start_idx (int, optional): Start index for peak detection.
+                    Default is 0.
+                end_idx (int, optional): End index for peak detection. Defaults
+                    to the signal length.
+                overwrite (bool): Overwrite an existing PeaksSet. Default is
+                    False.
+                signal_io (tuple, optional): Tuple of (input_signal_key,
+                    baseline_key). Default is (("env", "baseline"),).
         """
         if signal_io[0][0] not in self._y_data:
             msg = f"Envelope ({signal_io[0][0]}) not yet defined."
@@ -794,18 +805,19 @@ class TimeSeries:
     ) -> None:
         """Find the peaks closest in time to the provided peaks.
 
-        Find the peaks in the PeaksSet with the peak_set_name closest in time
-        to the provided peak timings in t_reference_peaks.
-        The results are
-        stored in a new PeaksSet object in the self.peaks dict under the key
-        linked_peak_set_name. If no linked_peak_set_name is provided, the key
-        is set to peak_set_name + "_linked".
+            Find the peaks in the PeaksSet with the peak_set_name closest in time
+            to the provided peak timings in t_reference_peaks.
+            The results are
+            stored in a new PeaksSet object in the self.peaks dict under the key
+            linked_peak_set_name. If no linked_peak_set_name is provided, the key
+            is set to peak_set_name + "_linked".
+
 
         Args:
-            peak_set_name (str): PeaksSet name in self.peaks dict.
-            t_reference_peaks (numpy.ndarray): Reference peak timings.
-            linked_peak_set_name (str, optional): Name of the new PeaksSet.
-                Defaults to peak_set_name + "_linked".
+                peak_set_name (str): PeaksSet name in self.peaks dict.
+                t_reference_peaks (numpy.ndarray): Reference peak timings.
+                linked_peak_set_name (str, optional): Name of the new PeaksSet.
+                    Defaults to peak_set_name + "_linked".
         """
         if peak_set_name not in self.peaks:
             msg = "Non-existent PeaksSet key"
@@ -835,23 +847,24 @@ class TimeSeries:
     ) -> None:
         """Calculate the time product, i.e. area under the curve for a PeaksSet.
 
-        The results are stored as
-        self.peaks[peak_set_name].peak_df[parameter_name]. If no parameter_name
-        is provided, parameter_name = "time_product".
+            The results are stored as
+            self.peaks[peak_set_name].peak_df[parameter_name]. If no parameter_name
+            is provided, parameter_name = "time_product".
+
 
         Args:
-            peak_set_name (str): PeaksSet name in self.peaks dict.
-            include_aub (bool): Include the area under the baseline in the
-                time product. Default is True.
-            aub_window_s (int, optional): Window length in samples for
-                finding the local extreme. Defaults to 5 * fs.
-            aub_reference_signal (numpy.ndarray, optional): Reference signal
-                for the local extreme. If None, the PeaksSet signal is used.
-            parameter_name (str, optional): Column name in
-                self.peaks[peak_set_name].peak_df. Defaults to
-                "time_product".
-            signal_io (tuple, optional): Tuple where the first element is the
-                baseline signal key. Default is ("baseline",).
+                peak_set_name (str): PeaksSet name in self.peaks dict.
+                include_aub (bool): Include the area under the baseline in the
+                    time product. Default is True.
+                aub_window_s (int, optional): Window length in samples for
+                    finding the local extreme. Defaults to 5 * fs.
+                aub_reference_signal (numpy.ndarray, optional): Reference signal
+                    for the local extreme. If None, the PeaksSet signal is used.
+                parameter_name (str, optional): Column name in
+                    self.peaks[peak_set_name].peak_df. Defaults to
+                    "time_product".
+                signal_io (tuple, optional): Tuple where the first element is the
+                    baseline signal key. Default is ("baseline",).
         """
         peak_set = self.peaks.get(peak_set_name)
         if peak_set is None:
@@ -971,22 +984,23 @@ class TimeSeries:
     ) -> None:
         """Plot the indicated signals in the provided axes.
 
-        By default the most
-        advanced signal type (envelope > clean > filt > raw) is plotted in the
-        provided colours.
+            By default the most
+            advanced signal type (envelope > clean > filt > raw) is plotted in the
+            provided colours.
+
 
         Args:
-            axes (matplotlib.Axes, optional): Matplotlib Axes object. If None,
-                a new figure is created.
-            signal_io (tuple, optional): Tuple where the first element is the
-                input signal type. Default is (None,), which resolves to the
-                most advanced available type.
-            colors (list, optional): Colors for 1) the signal, 2) the
-                baseline.
-            baseline_bool (bool): Plot the baseline. Default is True.
-            plot_ci (bool): Plot the confidence interval of the envelope.
-                Default is False.
-            **kwargs: Accepts deprecated ``signal_type`` argument.
+                axes (matplotlib.Axes, optional): Matplotlib Axes object. If None,
+                    a new figure is created.
+                signal_io (tuple, optional): Tuple where the first element is the
+                    input signal type. Default is (None,), which resolves to the
+                    most advanced available type.
+                colors (list, optional): Colors for 1) the signal, 2) the
+                    baseline.
+                baseline_bool (bool): Plot the baseline. Default is True.
+                plot_ci (bool): Plot the confidence interval of the envelope.
+                    Default is False.
+                **kwargs: Accepts deprecated ``signal_type`` argument.
         """
         if "signal_type" in kwargs:
             warnings.warn(
@@ -1032,21 +1046,22 @@ class TimeSeries:
     ) -> None:
         """Plot the markers for the peak set.
 
-        Plot the markers for the peak set in the provided axes in the
-        provided colours using the provided markers.
+            Plot the markers for the peak set in the provided axes in the
+            provided colours using the provided markers.
+
 
         Args:
-            peak_set_name (str): PeaksSet name in self.peaks dict.
-            axes (matplotlib.Axes or numpy.ndarray, optional): Matplotlib
-                Axes object. If None, a new figure is created.
-            valid_only (bool): When True, only valid peaks are plotted.
-                Default is False.
-            colors (str or list, optional): One color or list of up to 3
-                colors for peak, start, and end markers. If 2 colors are
-                provided, start and end share the same color.
-            markers (str or list, optional): One marker or list of up to 3
-                markers for peak, start, and end. If 2 markers are provided,
-                start and end share the same marker.
+                peak_set_name (str): PeaksSet name in self.peaks dict.
+                axes (matplotlib.Axes or numpy.ndarray, optional): Matplotlib
+                    Axes object. If None, a new figure is created.
+                valid_only (bool): When True, only valid peaks are plotted.
+                    Default is False.
+                colors (str or list, optional): One color or list of up to 3
+                    colors for peak, start, and end markers. If 2 colors are
+                    provided, start and end share the same color.
+                markers (str or list, optional): One marker or list of up to 3
+                    markers for peak, start, and end. If 2 markers are provided,
+                    start and end share the same marker.
         """
         if peak_set_name not in self.peaks:
             msg = "Non-existent PeaksSet key"
@@ -1122,25 +1137,26 @@ class TimeSeries:
     ) -> None:
         """Plot the indicated peaks in the provided axes.
 
-        By default the most advanced signal type (envelope > clean > filt > raw)
-        is plotted in the provided colours.
+            By default the most advanced signal type (envelope > clean > filt > raw)
+            is plotted in the provided colours.
+
 
         Args:
-            peak_set_name (str): The name of the peak set to be plotted.
-            axes (matplotlib.Axes or numpy.ndarray, optional): Matplotlib
-                Axes object. If None, a new figure is created.
-            signal_io (tuple, optional): Tuple where the first element is the
-                input signal type. Default is (None,).
-            margin_s (int, optional): Margins in samples before peak onset
-                and after peak offset. Defaults to fs // 2.
-            valid_only (bool): When True, only valid peaks are plotted.
-                Default is False.
-            colors (list, optional): Colors for 1) the signal, 2) the
-                baseline.
-            baseline_bool (bool): Plot the baseline. Default is True.
-            plot_ci (bool): Plot the confidence interval of the envelope.
-                Default is False.
-            **kwargs: Accepts deprecated ``signal_type`` argument.
+                peak_set_name (str): The name of the peak set to be plotted.
+                axes (matplotlib.Axes or numpy.ndarray, optional): Matplotlib
+                    Axes object. If None, a new figure is created.
+                signal_io (tuple, optional): Tuple where the first element is the
+                    input signal type. Default is (None,).
+                margin_s (int, optional): Margins in samples before peak onset
+                    and after peak offset. Defaults to fs // 2.
+                valid_only (bool): When True, only valid peaks are plotted.
+                    Default is False.
+                colors (list, optional): Colors for 1) the signal, 2) the
+                    baseline.
+                baseline_bool (bool): Plot the baseline. Default is True.
+                plot_ci (bool): Plot the confidence interval of the envelope.
+                    Default is False.
+                **kwargs: Accepts deprecated ``signal_type`` argument.
         """
         if "signal_type" in kwargs:
             warnings.warn(
@@ -1203,16 +1219,17 @@ class TimeSeries:
     ) -> None:
         """Plot the curve-fits for the peak set.
 
-        Plot the curve-fits for the peak set in the provided axes in the
-        provided colours.
+            Plot the curve-fits for the peak set in the provided axes in the
+            provided colours.
+
 
         Args:
-            peak_set_name (str): PeaksSet name in self.peaks dict.
-            axes (matplotlib.Axes or numpy.ndarray): Matplotlib Axes object.
-            valid_only (bool): When True, only valid peaks are plotted.
-                Default is False.
-            colors (str or list, optional): One color or list of colors for
-                the fitted curve.
+                peak_set_name (str): PeaksSet name in self.peaks dict.
+                axes (matplotlib.Axes or numpy.ndarray): Matplotlib Axes object.
+                valid_only (bool): When True, only valid peaks are plotted.
+                    Default is False.
+                colors (str or list, optional): One color or list of colors for
+                    the fitted curve.
         """
         peak_set = self.peaks.get(peak_set_name)
         if peak_set is None:
@@ -1284,19 +1301,20 @@ class TimeSeries:
     ) -> None:
         """Plot the area under the baseline (AUB) for the peak set.
 
-        Plot the area under the baseline (AUB) for the peak set in the provided
-        axes in the provided colours.
+            Plot the area under the baseline (AUB) for the peak set in the provided
+            axes in the provided colours.
+
 
         Args:
-            peak_set_name (str): PeaksSet name in self.peaks dict.
-            axes (matplotlib.Axes or numpy.ndarray): Matplotlib Axes object.
-            signal_io (tuple, optional): Tuple where the first element is the
-                input signal type.
-            valid_only (bool): When True, only valid peaks are plotted.
-                Default is False.
-            colors (str or list, optional): One color or list of up to 3
-                colors for the markers.
-            **kwargs: Accepts deprecated ``signal_type`` argument.
+                peak_set_name (str): PeaksSet name in self.peaks dict.
+                axes (matplotlib.Axes or numpy.ndarray): Matplotlib Axes object.
+                signal_io (tuple, optional): Tuple where the first element is the
+                    input signal type.
+                valid_only (bool): When True, only valid peaks are plotted.
+                    Default is False.
+                colors (str or list, optional): One color or list of up to 3
+                    colors for the markers.
+                **kwargs: Accepts deprecated ``signal_type`` argument.
         """
         if "signal_type" in kwargs:
             warnings.warn(
@@ -1452,13 +1470,13 @@ class TimeSeriesGroup:
         """Initialize the TimeSeriesGroup object.
 
         Args:
-            y_raw (numpy.ndarray): Raw signal data.
-            t_data (numpy.ndarray, optional): Time axis data. If None,
-                generated from fs.
-            fs (int, optional): Sampling rate. If None, calculated from
-                t_data.
-            labels (list, optional): List of labels, one per channel.
-            units (list, optional): List of signal units, one per channel.
+                y_raw (numpy.ndarray): Raw signal data.
+                t_data (numpy.ndarray, optional): Time axis data. If None,
+                    generated from fs.
+                fs (int, optional): Sampling rate. If None, calculated from
+                    t_data.
+                labels (list, optional): List of labels, one per channel.
+                units (list, optional): List of signal units, one per channel.
         """
         self.channels = []
         y_raw, n_samp, n_channel = self._resolve_dims(y_raw)
@@ -1513,19 +1531,20 @@ class TimeSeriesGroup:
     def to_numpy(self, channel_idxs: int | np.ndarray | None = None, signal_io: tuple = (None,)) -> np.ndarray:
         """Convert the TimeSeriesGroup to a numpy array.
 
-        The output is a 2D
-        array with the shape (n_channels, n_samples). The signal type is
-        determined by the signal_io parameter. If signal_io is (None,), the
-        most advanced signal type (envelope > clean > filt > raw) is used.
+            The output is a 2D
+            array with the shape (n_channels, n_samples). The signal type is
+            determined by the signal_io parameter. If signal_io is (None,), the
+            most advanced signal type (envelope > clean > filt > raw) is used.
+
 
         Args:
-            channel_idxs (numpy.ndarray or int, optional): Channel indices to
-                include. If None, all channels are used.
-            signal_io (tuple, optional): Tuple where the first element is the
-                input signal type. Default is (None,).
+                channel_idxs (numpy.ndarray or int, optional): Channel indices to
+                    include. If None, all channels are used.
+                signal_io (tuple, optional): Tuple where the first element is the
+                    input signal type. Default is (None,).
 
         Returns:
-            numpy.ndarray: 2D array of shape (n_channels, n_samples).
+                numpy.ndarray: 2D array of shape (n_channels, n_samples).
         """
         if channel_idxs is None:
             channel_idxs = np.arange(self.param["n_channel"])
@@ -1636,7 +1655,7 @@ class EmgDataGroup(TimeSeriesGroup):
         """Set the ECG channel index in the group.
 
         Args:
-            ecg_idx (int or str): ECG channel index or label.
+                ecg_idx (int or str): ECG channel index or label.
         """
         if isinstance(ecg_idx, int):
             self.ecg_idx = ecg_idx
@@ -1747,11 +1766,12 @@ class VentilatorDataGroup(TimeSeriesGroup):
     def find_peep(self, pressure_idx: int | None, volume_idx: int | None) -> None:
         """Calculate PEEP.
 
-        Calculate PEEP as the median value of p_vent at end-expiration.
+            Calculate PEEP as the median value of p_vent at end-expiration.
+
 
         Args:
-            pressure_idx (int): Channel index of the ventilator pressure data.
-            volume_idx (int): Channel index of the ventilator volume data.
+                pressure_idx (int): Channel index of the ventilator pressure data.
+                volume_idx (int): Channel index of the ventilator volume data.
         """
         pressure_idx = pressure_idx or self.p_vent_idx
         if pressure_idx is None:
@@ -1775,16 +1795,17 @@ class VentilatorDataGroup(TimeSeriesGroup):
     ) -> None:
         """Find occluded breaths.
 
-        Find end-expiratory occlusion manoeuvres in ventilator pressure
-        timeseries data. See postprocessing.event_detection submodule.
+            Find end-expiratory occlusion manoeuvres in ventilator pressure
+            timeseries data. See postprocessing.event_detection submodule.
+
 
         Args:
-            pressure_idx (int, optional): Channel index of the ventilator
-                pressure data. Defaults to self.p_vent_idx.
-            peep (float, optional): PEEP level. Defaults to self.peep.
-            overwrite (bool): Overwrite existing peaks. Default is False.
-            **kwargs: Additional arguments passed to
-                postprocessing.event_detection submodule.
+                pressure_idx (int, optional): Channel index of the ventilator
+                    pressure data. Defaults to self.p_vent_idx.
+                peep (float, optional): PEEP level. Defaults to self.peep.
+                overwrite (bool): Overwrite existing peaks. Default is False.
+                **kwargs: Additional arguments passed to
+                    postprocessing.event_detection submodule.
         """
         pressure_idx = pressure_idx or self.p_vent_idx
         if pressure_idx is None:
@@ -1817,17 +1838,18 @@ class VentilatorDataGroup(TimeSeriesGroup):
     ) -> None:
         """Find tidal-volume peaks in ventilator volume signal.
 
-        Peaks are stored in PeaksSet named "ventilator_breaths" in the
-        ventilator pressure and volume TimeSeries.
+            Peaks are stored in PeaksSet named "ventilator_breaths" in the
+            ventilator pressure and volume TimeSeries.
+
 
         Args:
-            volume_idx (int, optional): Channel index of the ventilator volume
-                data. Defaults to self.v_vent_idx.
-            pressure_idx (int, optional): Channel index of the ventilator
-                pressure data. Defaults to self.p_vent_idx.
-            overwrite (bool): Overwrite existing peaks. Default is False.
-            **kwargs: Additional arguments passed to
-                postprocessing.event_detection submodule.
+                volume_idx (int, optional): Channel index of the ventilator volume
+                    data. Defaults to self.v_vent_idx.
+                pressure_idx (int, optional): Channel index of the ventilator
+                    pressure data. Defaults to self.p_vent_idx.
+                overwrite (bool): Overwrite existing peaks. Default is False.
+                **kwargs: Additional arguments passed to
+                    postprocessing.event_detection submodule.
         """
         volume_idx = kwargs.pop("volume_idx") if "volume_idx" in kwargs else self.v_vent_idx
         if volume_idx is None:

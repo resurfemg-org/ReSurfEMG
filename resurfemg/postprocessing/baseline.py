@@ -28,6 +28,7 @@ def moving_baseline(
 
     This function calculates a moving baseline from a envelope data in
     accordance with Graßhoff et al. (2021)
+
     Args:
         signal_env (numpy.ndarray): Envelope signal.
         window_s (int): Window length in samples.
@@ -63,6 +64,7 @@ def slopesum_baseline(
 
     This function calculates the augmented version of the moving baseline over
     a signal envelope, using a slope sum.
+
     Args:
         signal_env (numpy.ndarray): Envelope signal.
         window_s (int): Window length in samples.
@@ -82,7 +84,6 @@ def slopesum_baseline(
             - pandas.Series: The running baseline series.
     """
     if ma_window is None:
-
         ma_window = fs // 2
 
     if perc_window is None:
@@ -96,14 +97,10 @@ def slopesum_baseline(
     y_baseline_series = pd.Series(rolling_baseline)
     # Ensure rolling results are concrete numpy ndarrays (not ExtensionArray)
     y_baseline_std = np.asarray(
-        y_baseline_series.rolling(window_s, min_periods=1, center=True)
-        .std()
-        .to_numpy(dtype=float)
+        y_baseline_series.rolling(window_s, min_periods=1, center=True).std().to_numpy(dtype=float)
     )
     y_baseline_mean = np.asarray(
-        y_baseline_series.rolling(window_s, min_periods=1, center=True)
-        .mean()
-        .to_numpy(dtype=float)
+        y_baseline_series.rolling(window_s, min_periods=1, center=True).mean().to_numpy(dtype=float)
     )
 
     # 2.b. Augmented signal: signal_env + abs([dsignal_env/dt]_smoothed)

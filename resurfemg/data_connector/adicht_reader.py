@@ -41,7 +41,7 @@ class AdichtReader:
         """Initialize the AdichtReader with the provided file path.
 
         Args:
-            file_path (str): The file path to the import.
+                file_path (str): The file path to the import.
         """
         if platform.system() != "Windows":
             msg = "AdichtReader is only available on Windows."
@@ -76,10 +76,8 @@ class AdichtReader:
         Initializes the adi-reader and loads the file.
         """
         try:
-            self.adicht_data = (
-                adi.read_file(  # pyright: ignore[reportPossiblyUnboundVariable]
-                    self.file_path
-                )
+            self.adicht_data = adi.read_file(  # pyright: ignore[reportPossiblyUnboundVariable]
+                self.file_path
             )
         except Exception as e:
             msg = f"Error loading the file: {e}"
@@ -90,18 +88,14 @@ class AdichtReader:
 
         Creates a dictionary mapping the channel names to their IDs.
         """
-        self.channel_map = {
-            i: channel.id for i, channel in enumerate(self.adicht_data.channels)
-        }
+        self.channel_map = {i: channel.id for i, channel in enumerate(self.adicht_data.channels)}
 
     def _initialize_record_map(self) -> None:
         """Map record indices to their IDs.
 
         Creates a dictionary mapping the record indices to their IDs.
         """
-        self.record_map = {
-            i: record.id for i, record in enumerate(self.adicht_data.records)
-        }
+        self.record_map = {i: record.id for i, record in enumerate(self.adicht_data.records)}
 
     def __repr__(self):
         return f"<AdichtReader(file_path={self.file_path})>"
@@ -166,9 +160,7 @@ class AdichtReader:
         self.generate_metadata()
         print(f"Available channels and metadata:\n{self.metadata_table}")  # noqa: T201
 
-    def _resolve_one(
-        self, idx: int | None, id_: int | None, mapping: dict[int, int], name: str
-    ) -> int:
+    def _resolve_one(self, idx: int | None, id_: int | None, mapping: dict[int, int], name: str) -> int:
         if idx is not None:
             return idx
         if id_ is None:
@@ -194,22 +186,18 @@ class AdichtReader:
             raise ValueError(msg)
         return [self._resolve_one(None, i, mapping, name) for i in ids]
 
-    def get_labels(
-        self, channel_idxs: list[int] | None = None, channel_ids: list | None = None
-    ) -> list[str]:
+    def get_labels(self, channel_idxs: list[int] | None = None, channel_ids: list | None = None) -> list[str]:
         """Return channel names based on channel indices or IDs.
 
         Args:
-            channel_idxs (list[int], optional): List of channel indices.
-            channel_ids (list, optional): List of channel IDs. Either
-                channel_idxs or channel_ids must be set.
+                channel_idxs (list[int], optional): List of channel indices.
+                channel_ids (list, optional): List of channel IDs. Either
+                    channel_idxs or channel_ids must be set.
 
         Returns:
-            list[str]: List of channel names.
+                list[str]: List of channel names.
         """
-        channel_idxs = self._resolve_many(
-            channel_idxs, channel_ids, self.channel_map, "channel"
-        )
+        channel_idxs = self._resolve_many(channel_idxs, channel_ids, self.channel_map, "channel")
         return [self.adicht_data.channels[idx].name for idx in channel_idxs]
 
     def get_units(
@@ -222,25 +210,21 @@ class AdichtReader:
         """Return channel units based on channel indices and a record index or ID.
 
         Args:
-            channel_idxs (list[int], optional): List of channel indices. Either
-                channel_idxs or channel_ids must be set.
-            channel_ids (list, optional): List of channel IDs. Either
-                channel_idxs or channel_ids must be set.
-            record_idx (int, optional): The record index to retrieve the units
-                for. Either record_idx or record_id must be set.
-            record_id (int, optional): The record ID to retrieve the units for.
-                Either record_idx or record_id must be set.
+                channel_idxs (list[int], optional): List of channel indices. Either
+                    channel_idxs or channel_ids must be set.
+                channel_ids (list, optional): List of channel IDs. Either
+                    channel_idxs or channel_ids must be set.
+                record_idx (int, optional): The record index to retrieve the units
+                    for. Either record_idx or record_id must be set.
+                record_id (int, optional): The record ID to retrieve the units for.
+                    Either record_idx or record_id must be set.
 
         Returns:
-            list[str]: List of units.
+                list[str]: List of units.
         """
-        channel_idxs = self._resolve_many(
-            channel_idxs, channel_ids, self.channel_map, "channel"
-        )
+        channel_idxs = self._resolve_many(channel_idxs, channel_ids, self.channel_map, "channel")
         record_idx = self._resolve_one(record_idx, record_id, self.record_map, "record")
-        return [
-            self.adicht_data.channels[idx].units[record_idx] for idx in channel_idxs
-        ]
+        return [self.adicht_data.channels[idx].units[record_idx] for idx in channel_idxs]
 
     def resample_channel(
         self,
@@ -251,26 +235,23 @@ class AdichtReader:
     ) -> pd.DataFrame:
         """Resample a channel to a target sampling rate.
 
-        Resamples the specified channel using linear interpolation.
+            Resamples the specified channel using linear interpolation.
+
 
         Args:
-            fs_target (int): The target sampling rate in Hz.
-            channel_idx (int, optional): The channel index to be resampled.
-            record_idx (int, optional): The record index to be resampled.
-                Either record_idx or record_id must be set.
-            **kwargs: Additional arguments to specify channel_id or record_id
-                instead of indices.
+                fs_target (int): The target sampling rate in Hz.
+                channel_idx (int, optional): The channel index to be resampled.
+                record_idx (int, optional): The record index to be resampled.
+                    Either record_idx or record_id must be set.
+                **kwargs: Additional arguments to specify channel_id or record_id
+                    instead of indices.
 
         Returns:
-            pd.DataFrame: Record DataFrame with resampled data for the
-                specified index.
+                pd.DataFrame: Record DataFrame with resampled data for the
+                    specified index.
         """
-        channel_idx = self._resolve_one(
-            channel_idx, kwargs.get("channel_id"), self.channel_map, "channel"
-        )
-        record_idx = self._resolve_one(
-            record_idx, kwargs.get("record_id"), self.record_map, "record"
-        )
+        channel_idx = self._resolve_one(channel_idx, kwargs.get("channel_id"), self.channel_map, "channel")
+        record_idx = self._resolve_one(record_idx, kwargs.get("record_id"), self.record_map, "record")
 
         _channel = self.adicht_data.channels[channel_idx]
         if fs_target == 1 / _channel.dt[record_idx]:
@@ -278,23 +259,17 @@ class AdichtReader:
             raise UserWarning(msg)
 
         # Create DataFrame and set time index
-        df = pd.DataFrame(
-            {_channel.name: _channel.get_data(self.record_map[record_idx])}
-        )
+        df = pd.DataFrame({_channel.name: _channel.get_data(self.record_map[record_idx])})
         df.index = pd.to_timedelta(df.index * _channel.dt[record_idx], unit="s")
 
         # New interval based on target rate
         dt_target_timedelta = pd.to_timedelta(1 / fs_target, unit="s")
 
         fs_original = _channel.fs[record_idx]
-        n_samples_target = int(
-            _channel.n_samples[record_idx] * (fs_target / fs_original)
-        )
+        n_samples_target = int(_channel.n_samples[record_idx] * (fs_target / fs_original))
 
         # Create an empty DataFrame with target sample rate
-        timedelta_index = pd.to_timedelta(
-            np.arange(n_samples_target) * dt_target_timedelta.value
-        )
+        timedelta_index = pd.to_timedelta(np.arange(n_samples_target) * dt_target_timedelta.value)
         empty_df = pd.DataFrame(index=timedelta_index, columns=[_channel.name])
         empty_df[_channel.name] = np.nan
 
@@ -312,31 +287,28 @@ class AdichtReader:
     ) -> tuple[pd.DataFrame, int]:
         """Extract channel data from specified channels and record.
 
-        Optionally resamples specified channels to equalize sampling rates
-        across channels. Resampling all channels to a rate not yet used is not
-        supported; at least one channel must already have the target rate and
-        must not be listed in resample_channels.
+            Optionally resamples specified channels to equalize sampling rates
+            across channels. Resampling all channels to a rate not yet used is not
+            supported; at least one channel must already have the target rate and
+            must not be listed in resample_channels.
+
 
         Args:
-            channel_idxs (list[int], optional): List of channel indices.
-            record_idx (int, optional): The record index to extract data from.
-            resample_channels (dict[int, int], optional): Map of
-                channel_idx to target rate. Example: ``{1: 2000, 3: 2000}``
-                resamples channels 1 and 3 to 2000 Hz.
-            **kwargs: Additional arguments to specify channel_ids or record_id
-                instead of indices.
+                channel_idxs (list[int], optional): List of channel indices.
+                record_idx (int, optional): The record index to extract data from.
+                resample_channels (dict[int, int], optional): Map of
+                    channel_idx to target rate. Example: ``{1: 2000, 3: 2000}``
+                    resamples channels 1 and 3 to 2000 Hz.
+                **kwargs: Additional arguments to specify channel_ids or record_id
+                    instead of indices.
 
         Returns:
-            tuple:
-                - pd.DataFrame: Extracted (and optionally resampled) data.
-                - int: Sampling rate (Hz) of the leading channel.
+                tuple:
+                    - pd.DataFrame: Extracted (and optionally resampled) data.
+                    - int: Sampling rate (Hz) of the leading channel.
         """
-        channel_idxs = self._resolve_many(
-            channel_idxs, kwargs.get("channel_ids"), self.channel_map, "channel"
-        )
-        record_idx = self._resolve_one(
-            record_idx, kwargs.get("record_id"), self.record_map, "record"
-        )
+        channel_idxs = self._resolve_many(channel_idxs, kwargs.get("channel_ids"), self.channel_map, "channel")
+        record_idx = self._resolve_one(record_idx, kwargs.get("record_id"), self.record_map, "record")
 
         fs_out = []
         data_dict = {}
@@ -347,17 +319,13 @@ class AdichtReader:
                 raise ValueError(msg)
 
             if resample_channels and idx in resample_channels:
-                resampled_df = self.resample_channel(
-                    resample_channels[idx], idx, record_idx
-                )
+                resampled_df = self.resample_channel(resample_channels[idx], idx, record_idx)
 
                 for column in resampled_df.columns:
                     data_dict[column] = resampled_df[column].values
                 fs_out.append(resample_channels[idx])
             else:
-                np_data = self.adicht_data.channels[idx].get_data(
-                    self.record_map[record_idx]
-                )
+                np_data = self.adicht_data.channels[idx].get_data(self.record_map[record_idx])
                 channel_name = self.adicht_data.channels[idx].name
                 data_dict[channel_name] = np_data
                 non_resampled_channels.append(idx)

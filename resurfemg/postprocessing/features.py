@@ -56,6 +56,7 @@ def pseudo_slope(
     EMG signal. The slope is returned in units/samples (in abs values), not
     true slope. The true slope will depend on sampling rate and pre-
     processing. Therefore, only within sample comparison is recommended.
+
     Args:
         emg_env (numpy.ndarray): A single lead EMG envelope.
         start_idxs (list[int]): List of individual peak start indices.
@@ -91,6 +92,7 @@ def amplitude(
     Calculate the peak height of signal and the baseline for the windows
     at the peak_idxs relative to the baseline. If no baseline is provided, the
     peak height relative to zero is determined.
+
     Args:
         signal (numpy.ndarray): Signal to determine the peak heights in.
         peak_idxs (numpy.ndarray): List of individual peak indices.
@@ -115,6 +117,7 @@ def time_product(
 
     Calculate the time product between the signal and the baseline for the
     windows defined by the start_idx and end_idx sample pairs.
+
     Args:
         signal (numpy.ndarray): Signal to calculate the time product over.
         fs (int): Sampling frequency.
@@ -131,9 +134,7 @@ def time_product(
     time_products = np.zeros(np.asarray(start_idxs).shape)
     for idx, (start_idx, end_idx) in enumerate(zip(start_idxs, end_idxs)):
         y_delta = signal[start_idx : end_idx + 1] - baseline[start_idx : end_idx + 1]
-        if not np.all(np.sign(y_delta[1:]) >= 0) and not np.all(
-            np.sign(y_delta[1:]) <= 0
-        ):
+        if not np.all(np.sign(y_delta[1:]) >= 0) and not np.all(np.sign(y_delta[1:]) <= 0):
             warnings.warn(
                 "Warning: Curve for peak idx"
                 + str(idx)
@@ -161,6 +162,7 @@ def area_under_baseline(
     Calculate the time product between the baseline and the nadir of the
     reference signal in the aub_window_s for the windows defined by the
     start_idx and end_idx sample pairs.
+
     Args:
         signal (numpy.ndarray): Signal to calculate the time product over.
         fs (int): Sampling frequency.
@@ -182,17 +184,11 @@ def area_under_baseline(
 
     aubs = np.zeros(np.asarray(peak_idxs).shape)
     y_refs = np.zeros(np.asarray(peak_idxs).shape)
-    for idx, (start_idx, peak_idx, end_idx) in enumerate(
-        zip(start_idxs, peak_idxs, end_idxs)
-    ):
-        y_delta_curve = (
-            signal[start_idx : end_idx + 1] - baseline[start_idx : end_idx + 1]
-        )
+    for idx, (start_idx, peak_idx, end_idx) in enumerate(zip(start_idxs, peak_idxs, end_idxs)):
+        y_delta_curve = signal[start_idx : end_idx + 1] - baseline[start_idx : end_idx + 1]
         ref_start_idx = max([0, peak_idx - aub_window_s])
         ref_end_idx = min([len(signal) - 1, peak_idx + aub_window_s])
-        if not np.all(np.sign(y_delta_curve[1:]) >= 0) and not np.all(
-            np.sign(y_delta_curve[1:]) <= 0
-        ):
+        if not np.all(np.sign(y_delta_curve[1:]) >= 0) and not np.all(np.sign(y_delta_curve[1:]) <= 0):
             warnings.warn(
                 "Warning: Curve for peak idx"
                 + str(idx)
@@ -226,6 +222,7 @@ def respiratory_rate(
     Estimate respiratory rate based from breath indices. Breath-by-breath
     respiratory rate larger than the outlier_percentile * outlier_factor are
     excluded.
+
     Args:
         breath_idxs (numpy.ndarray): Breath indices.
         fs (int): Sampling frequency.

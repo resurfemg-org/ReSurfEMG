@@ -1,7 +1,2 @@
-# -*- coding: utf-8 -*-
-
 # Import the submodules
-from . import baseline
-from . import event_detection
-from . import features
-from . import quality_assessment
+from resurfemg.postprocessing import baseline, event_detection, features, quality_assessment  # noqa: F401

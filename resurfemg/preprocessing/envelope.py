@@ -16,6 +16,7 @@ def full_rolling_rms(emg_clean: np.ndarray, window_length: int) -> np.ndarray:
 
     This function computes a root mean squared envelope over an
     array cleaned (filtered and ECG eliminated) EMG.
+
     Args:
         emg_clean (numpy.ndarray): Samples from the EMG.
         window_length (int): Length of the sample used as window for function.
@@ -24,11 +25,7 @@ def full_rolling_rms(emg_clean: np.ndarray, window_length: int) -> np.ndarray:
         numpy.ndarray: The root-mean-squared EMG sample data.
     """
     emg_clean_sqr = pd.Series(np.power(emg_clean, 2))
-    return np.sqrt(
-        emg_clean_sqr.rolling(window=window_length, min_periods=1, center=True)
-        .mean()
-        .to_numpy()
-    )
+    return np.sqrt(emg_clean_sqr.rolling(window=window_length, min_periods=1, center=True).mean().to_numpy())
 
 
 def naive_rolling_rms(emg_clean: np.ndarray, window_length: int) -> np.ndarray:
@@ -36,6 +33,7 @@ def naive_rolling_rms(emg_clean: np.ndarray, window_length: int) -> np.ndarray:
 
     This function computes a root mean squared envelope over an
     array `emg_clean`.
+
     Args:
         emg_clean (numpy.ndarray): Samples from the EMG.
         window_length (int): Length of the sample used as window for function.
@@ -52,6 +50,7 @@ def full_rolling_arv(emg_clean: np.ndarray, window_length: int) -> np.ndarray:
 
     This function computes an average rectified value envelope over an
     array `emg_clean`.
+
     Args:
         emg_clean (numpy.ndarray): Samples from the EMG.
         window_length (int): Length of the sample used as window for function.
@@ -60,19 +59,14 @@ def full_rolling_arv(emg_clean: np.ndarray, window_length: int) -> np.ndarray:
         numpy.ndarray: The average rectified value EMG sample data.
     """
     emg_clean_abs = pd.Series(np.abs(emg_clean))
-    return np.asarray(
-        emg_clean_abs.rolling(window=window_length, min_periods=1, center=True)
-        .mean()
-        .values
-    )
+    return np.asarray(emg_clean_abs.rolling(window=window_length, min_periods=1, center=True).mean().values)
 
 
-def rolling_rms_ci(
-    emg_clean: np.ndarray, window_length: int, alpha: float = 0.05
-) -> tuple[np.ndarray, np.ndarray]:
+def rolling_rms_ci(emg_clean: np.ndarray, window_length: int, alpha: float = 0.05) -> tuple[np.ndarray, np.ndarray]:
     """Estimate RMS confidence interval.
 
     This function estimates the confidence interval for each window of the RMS.
+
     Args:
         emg_clean (numpy.ndarray): Samples from the EMG.
         window_length (int): Length of the sample used as window for function.
@@ -84,16 +78,8 @@ def rolling_rms_ci(
             - numpy.ndarray: Upper bound of the confidence interval.
     """
     emg_clean_sqr = pd.Series(np.power(emg_clean, 2))
-    emg_ms = (
-        emg_clean_sqr.rolling(window=window_length, min_periods=1, center=True)
-        .mean()
-        .values
-    )
-    emg_sem = (
-        emg_clean_sqr.rolling(window=window_length, min_periods=1, center=True)
-        .sem()
-        .values
-    )
+    emg_ms = emg_clean_sqr.rolling(window=window_length, min_periods=1, center=True).mean().values
+    emg_sem = emg_clean_sqr.rolling(window=window_length, min_periods=1, center=True).sem().values
     # Calculate the confidence interval
     confidence_level = 1 - alpha
     df = window_length - 1
@@ -105,9 +91,7 @@ def rolling_rms_ci(
     return lower_ci, upper_ci
 
 
-def rolling_arv_ci(
-    emg_clean: np.ndarray, window_length: int, alpha: float = 0.05
-) -> tuple[np.ndarray, np.ndarray]:
+def rolling_arv_ci(emg_clean: np.ndarray, window_length: int, alpha: float = 0.05) -> tuple[np.ndarray, np.ndarray]:
     """This function estimates the confidence interval for each window.
 
     Args:
@@ -121,17 +105,8 @@ def rolling_arv_ci(
             - numpy.ndarray: Upper bound of the confidence interval.
     """
     emg_clean_abs = pd.Series(np.abs(emg_clean))
-    emg_arv = (
-        emg_clean_abs.rolling(window=window_length, min_periods=1, center=True)
-        .mean()
-        .values
-    )
-    emg_sem = (
-        pd.Series(emg_clean)
-        .rolling(window=window_length, min_periods=1, center=True)
-        .sem()
-        .values
-    )
+    emg_arv = emg_clean_abs.rolling(window=window_length, min_periods=1, center=True).mean().values
+    emg_sem = pd.Series(emg_clean).rolling(window=window_length, min_periods=1, center=True).sem().values
 
     # Calculate the confidence interval
     confidence_level = 1 - alpha
