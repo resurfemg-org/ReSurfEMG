@@ -58,6 +58,8 @@ venv.bak/
 .spyderproject
 .spyproject
 
+# locally-generated synthetic data
+synth_data/*.npy
 
 /site
 /historical_notebooks
