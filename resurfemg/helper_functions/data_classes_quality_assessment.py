@@ -554,22 +554,20 @@ def test_emg_quality(
     relative area under the baseline (relative_aub) and relative ETP
     (relative_ETP). Peak validity is updated in the PeaksSet object.
     See postprocessing.quality_assessment submodule for details.
-    -----------------------------------------------------------------------
-    :param peak_set_name: PeaksSet name in self.peaks dict
-    :type peak_set_name: str
-    :param cutoff: Cut-off criteria for passing the tests 'tolerant' and
-    'strict' can also be providedto use the values from Warnaar et al.
-    :type cutoff: dict
-    :param skip_tests: List of tests to skip.
-    :type skip_tests: list
-    :param parameter_names: Optionally refer to custom parameter names for
-    default PeaksSet (ecg)
-    :type parameter_names: dict
-    :param verbose: Output the test values, and pass/fail to console.
-    :type verbose: bool
 
-    :returns: None
-    :rtype: None
+    Args:
+        timeseries (TimeSeries): TimeSeries object with the EMG signal.
+        peak_set_name (str): PeaksSet name in timeseries.peaks dict.
+        cutoff (dict, optional): Cut-off criteria for passing the tests.
+            'tolerant' and 'strict' can also be provided to use the values
+            from Warnaar et al.
+        skip_tests (list[str], optional): List of tests to skip.
+        parameter_names (dict, optional): Optionally refer to custom parameter
+            names for default PeaksSet (ecg).
+        verbose (bool): Output the test values, and pass/fail to console.
+
+    Returns:
+        None
     """
     output = initialize_emg_tests(timeseries, peak_set_name, cutoff, skip_tests, parameter_names)
     (
@@ -642,22 +640,20 @@ def test_pocc_quality(
 
     consecutive_poccs, and pocc_upslope. Peak validity is updated
     in the PeaksSet object.
-    -----------------------------------------------------------------------
-    :param peak_set_name: PeaksSet name in self.peaks dict
-    :type peak_set_name: str
-    :param cutoff: Cut-off criteria for passing the tests. 'tolerant' and
-    'strict' can also be provided  to use the values from Warnaar et al.
-    :type cutoff: dict
-    :param skip_tests: List of tests to skip.
-    :type skip_tests: list
-    :param parameter_names: Refer to custom parameter names for default
-    PeaksSet and parameters (ventilator_breaths, time_product, AUB)
-    :type parameter_names: dict
-    :param verbose: Output the test values, and pass/fail to console.
-    :type verbose: bool
 
-    :returns: None
-    :rtype: None
+    Args:
+        timeseries (TimeSeries): TimeSeries object with the ventilator signal.
+        peak_set_name (str): PeaksSet name in timeseries.peaks dict.
+        cutoff (dict, optional): Cut-off criteria for passing the tests.
+            'tolerant' and 'strict' can also be provided to use the values
+            from Warnaar et al.
+        skip_tests (list[str], optional): List of tests to skip.
+        parameter_names (dict, optional): Refer to custom parameter names for
+            default PeaksSet and parameters (ventilator_breaths, time_product, AUB).
+        verbose (bool): Output the test values, and pass/fail to console.
+
+    Returns:
+        None
     """
     output = initialize_pocc_tests(timeseries, peak_set_name, cutoff, skip_tests, parameter_names)
     (
@@ -706,25 +702,20 @@ def test_linked_peak_sets(
     number (fraction_emg_breaths) of and timing peaks (event_timing) in the
     linked PeaksSet. Peak validity is updated in the PeaksSet object.
 
-    :param peak_set_name: PeaksSet name in self.peaks dict
-    :type peak_set_name: str
-    :param linked_timeseries: TimeSeries object with linked signal
-    :type linked_timeseries: TimeSeries
-    :param linked_peak_set_name: PeaksSet name in linked_timeseries.peaks
-    :type linked_peak_set_name: str
-    :param parameter_names: Optionally refer to custom parameter names for
-    default PeaksSet and parameter names ('rr', )
-    :type parameter_names: dict
-    :param cutoff: Cut-off criteria for passing the tests. 'tolerant' and
-    'strict' can also be provided use the pre-defined values.
-    :type cutoff: dict
-    :param skip_tests: List of tests to skip.
-    :type skip_tests: list
-    :param verbose: Output the test values, and pass/fail to console.
-    :type verbose: bool
+    Args:
+        timeseries (TimeSeries): Native TimeSeries object.
+        peak_set_name (str): PeaksSet name in timeseries.peaks dict.
+        linked_timeseries (TimeSeries): TimeSeries object with linked signal.
+        linked_peak_set_name (str): PeaksSet name in linked_timeseries.peaks.
+        parameter_names (dict, optional): Optionally refer to custom parameter
+            names for default PeaksSet and parameter names ('rr').
+        cutoff (dict, optional): Cut-off criteria for passing the tests.
+            'tolerant' and 'strict' can also be provided to use pre-defined values.
+        skip_tests (list[str], optional): List of tests to skip.
+        verbose (bool): Output the test values, and pass/fail to console.
 
-    :returns: None
-    :rtype: None
+    Returns:
+        None
     """
     output = initialize_linked_peaks_tests(
         timeseries,

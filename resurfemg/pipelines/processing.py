@@ -29,23 +29,18 @@ def quick_look(
 ) -> tuple[np.ndarray, np.ndarray]:
     """Method for quick inspection of EMG data based on high-pass filtering @80Hz.
 
-    :param emg_raw: raw single channel EMG data
-    :type emg_raw: ~numpy.ndarray
-    :param fs_emg: sampling frequency
-    :type fs_emg: ~int
-    :param plot_raw: Plot the raw signal
-    :type plot_raw: bool
-    :param plot_clean: Plot the filtered signal
-    :type plot_clean: bool
-    :param plot_env: Plot the envelope of the signal
-    :type plot_env: bool
-    :param plot_power_spectrum: Plot the powerspectrum of the raw signal
-    :type plot_power_spectrum: bool
+    Args:
+        emg_raw (numpy.ndarray): Raw single channel EMG data.
+        fs_emg (int): Sampling frequency.
+        plot_raw (bool): Plot the raw signal.
+        plot_clean (bool): Plot the filtered signal.
+        plot_env (bool): Plot the envelope of the signal.
+        plot_power_spectrum (bool): Plot the power spectrum of the raw signal.
 
-    :returns emg_filt: The bandpass filtered EMG data
-    :rtype emg_filt: ~numpy.ndarray
-    :returns emg_env: The envelope of the EMG data
-    :rtype emg_env: ~numpy.ndarray
+    Returns:
+        tuple:
+            - numpy.ndarray: The bandpass filtered EMG data.
+            - numpy.ndarray: The envelope of the EMG data.
     """
     emg_filt = filt.emg_bandpass_butter(
         emg_raw=emg_raw,
@@ -81,21 +76,16 @@ def ecg_removal_gating(
 ) -> np.ndarray:
     """Eliminate the ECG peaks from the emg_raw signal.
 
-    :param emg_raw: 1 dimensional emg signal to gate
-    :type emg_raw: ~numpy.ndarray
-    :param ecg_peaks_idxs: List of ECG peak sample numbers to gate.
-    :type ecg_peaks_idxs: ~numpy.ndarray
-    :param gate_width_samples: Number of samples to gate
-    :type gate_width_samples: int
-    :param fs: Sampling rate of emg_raw
-    :type fs: int
-    :param method: gating method. See the ecg_removal.gating function.
-    :type method: int
-    :param ecg_shift: Shift gate windows relative to detected peaks in samples.
-    :type ecg_shift: int
+    Args:
+        emg_raw (numpy.ndarray): 1-dimensional EMG signal to gate.
+        ecg_peaks_idxs (numpy.ndarray): List of ECG peak sample numbers to gate.
+        gate_width_samples (int): Number of samples to gate.
+        method (int): Gating method. See the ecg_removal.gating function.
+        ecg_shift (int, optional): Shift gate windows relative to detected peaks
+            in samples.
 
-    :returns emg_gated: The gated EMG signal
-    :rtype emg_gated: numpy.ndarray
+    Returns:
+        numpy.ndarray: The gated EMG signal.
     """
     if len(emg_raw.shape) > 1:
         msg = "emg_raw should be a 1-D array"

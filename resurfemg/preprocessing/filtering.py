@@ -19,19 +19,15 @@ def emg_bandpass_butter(
 ) -> np.ndarray:
     """Bandpass filter for EMG signal.
 
-    :param emg_raw: The raw EMG signal
-    :type emg_raw: ~numpy.ndarray
-    :param high_pass: High pass cut-off frequency `frequenceisabove`
-    :type high_pass: ~float
-    :param low_pass: Low pass cut-off frequency `frequenciesbelow`
-    :type low_pass: ~float
-    :param fs_emg: Sampling frequency
-    :type fs_emg: int
-    :param order: The filter order
-    :type order: int
+    Args:
+        emg_raw (numpy.ndarray): The raw EMG signal.
+        high_pass (float): High pass cut-off frequency.
+        low_pass (float): Low pass cut-off frequency.
+        fs_emg (int): Sampling frequency.
+        order (int): The filter order.
 
-    :returns emg_filt: The bandpass filtered EMG data
-    :rtype emg_filt: ~numpy.ndarray
+    Returns:
+        numpy.ndarray: The bandpass filtered EMG data.
     """
     sos = signal.butter(
         order,
@@ -52,17 +48,14 @@ def emg_lowpass_butter(
 ) -> np.ndarray:
     """Lowpass filter for EMG signal.
 
-    :param emg_raw: The raw EMG signal
-    :type emg_raw: ~numpy.ndarray
-    :param low_pass: Low pass cut-off frequency `frequenciesbelow`
-    :type low_pass: ~float
-    :param fs_emg: Sampling frequency
-    :type fs_emg: int
-    :param order: The filter order
-    :type order: int
+    Args:
+        emg_raw (numpy.ndarray): The raw EMG signal.
+        low_pass (float): Low pass cut-off frequency.
+        fs_emg (int): Sampling frequency.
+        order (int): The filter order.
 
-    :returns emg_filt: The lowpass filtered EMG data
-    :rtype: ~numpy.ndarray
+    Returns:
+        numpy.ndarray: The lowpass filtered EMG data.
     """
     sos = signal.butter(
         order,
@@ -82,17 +75,14 @@ def emg_highpass_butter(
 ) -> np.ndarray:
     """Highpass filter for EMG signal.
 
-    :param emg_raw: The raw EMG signal
-    :type emg_raw: ~numpy.ndarray
-    :param high_pass: High pass cut-off frequency `frequenceisabove`
-    :type high_pass: ~float
-    :param fs_emg: Sampling frequency
-    :type fs_emg: int
-    :param order: The filter order
-    :type order: int
+    Args:
+        emg_raw (numpy.ndarray): The raw EMG signal.
+        high_pass (float): High pass cut-off frequency.
+        fs_emg (int): Sampling frequency.
+        order (int): The filter order.
 
-    :returns emg_filt: The highpass filtered EMG data
-    :rtype emg_filt: ~numpy.ndarray
+    Returns:
+        numpy.ndarray: The highpass filtered EMG data.
     """
     sos = signal.butter(
         order,
@@ -112,18 +102,15 @@ def notch_filter(
 ) -> np.ndarray:
     """Filter to take out a specific frequency band.
 
-    :param emg_raw: Percentage variation tolerance to allow without cutting
-    :type emg_raw: int
-    :param f_notch: The frequency to remove from the signal
-    :type f_notch: float
-    :param fs_emg: Sampling frequency
-    :type fs_emg: int
-    :param q: quality factor of notch filter, Q = f_notch/band_width of band-
-        stop, see scipy.signal.iirnotch
-    :type q: float
+    Args:
+        emg_raw (numpy.ndarray): The raw EMG signal.
+        f_notch (float): The frequency to remove from the signal.
+        fs_emg (int): Sampling frequency.
+        q (float): Quality factor of notch filter, Q = f_notch/band_width of
+            band-stop, see scipy.signal.iirnotch.
 
-    :returns emg_filt: The notch filtered EMG data
-    :rtype emg_filt: ~numpy.ndarray
+    Returns:
+        numpy.ndarray: The notch filtered EMG data.
     """
     b_notch, a_notch = signal.iirnotch(f_notch, q, fs_emg)
 
@@ -140,21 +127,16 @@ def compute_power_loss(
 ) -> float:
     """Compute the percentage of power loss after the processing.
 
-    :param signal_original: Original signal
-    :type  signal_original: ~numpy.ndarray
-    :param fs_original: Sampling frequency of orginal signal
-    :type original_signal_sampling_frequency: int
-    :param signal_processed: Array.
-    :type  signal_processed: ~numpy.ndarray
-    :param fs_processed: Sampling frequency of orginal signal
-    :type fs_processed: int
-    :param n_segment: Pwelch window width
-    :type n_segment: int
-    :param percent_overlap: Pwelch window overlap percentage
-    :type percent_overlap: float
+    Args:
+        signal_original (numpy.ndarray): Original signal.
+        fs_original (int): Sampling frequency of original signal.
+        signal_processed (numpy.ndarray): Processed signal.
+        fs_processed (int): Sampling frequency of processed signal.
+        n_segment (int, optional): Pwelch window width.
+        percent_overlap (float): Pwelch window overlap percentage.
 
-    :returns power_loss: Percentage of power loss
-    :rtype power_loss: float
+    Returns:
+        float: Percentage of power loss.
     """
     if n_segment is None:
         n_segment = fs_original // 2

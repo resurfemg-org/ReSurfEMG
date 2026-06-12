@@ -67,17 +67,17 @@ def file_select(
 
     default_value_select precedes default_idx_select in default value identification.
 
-    :param files: file paths tabled by the folder_levels
-    :type files: pd.DataFrame
-    :param folder_levels: data directory organisation, e.g. ['patient', 'date']
-    :type folder_levels: list(str)
-    :param default_value_select: default values to select per folder_level
-    :type default_value_select: list(str)
-    :param default_idx_select: default index to select per folder_level
-    :type default_idx_select: list(int)
+    Args:
+        files (pd.DataFrame): File paths tabled by the folder_levels.
+        folder_levels (list[str]): Data directory organisation, e.g.
+            ['patient', 'date'].
+        default_value_select (list[str], optional): Default values to select
+            per folder_level.
+        default_idx_select (list[int], optional): Default index to select per
+            folder_level.
 
-    :returns button_list: file paths tabled by the folder_levels
-    :rtype button_list: [ipywidgets.widgets.widget_selection.Dropdown]
+    Returns:
+        list[ipywidgets.Dropdown]: List of dropdown widgets for file selection.
     """
     if not isinstance(files, pd.DataFrame):
         msg = "Files not provided in valid format."
@@ -90,9 +90,7 @@ def file_select(
     default_value_select, value_options_bool = _check_defaults(
         default_value_select, folder_levels, default_type="value"
     )
-    default_idx_select, idx_options_bool = _check_defaults(
-        default_idx_select, folder_levels, default_type="idx"
-    )
+    default_idx_select, idx_options_bool = _check_defaults(default_idx_select, folder_levels, default_type="idx")
 
     button_list = []
     btn_dict = {}
@@ -104,9 +102,7 @@ def file_select(
         button_list.append(_btn)
         btn_dict[folder_level] = _btn
 
-    prev_values: list[str | None] = cast(
-        "list[str | None]", [None] * len(folder_levels)
-    )
+    prev_values: list[str | None] = cast("list[str | None]", [None] * len(folder_levels))
 
     @widgets.interact(**btn_dict)
     def _update_select(**kwargs) -> None:
@@ -136,10 +132,7 @@ def _update_dropdowns(
     default_value_select: list[str] | None,
     default_idx_select: list[int] | None,
 ) -> None:
-    btn_changed = [
-        button_list[_idx].value != prev_values[_idx]
-        for _idx in range(len(folder_levels))
-    ]
+    btn_changed = [button_list[_idx].value != prev_values[_idx] for _idx in range(len(folder_levels))]
 
     for idx, dict_key in enumerate(btn_dict):
         btn_idx = folder_levels.index(dict_key)
@@ -148,10 +141,7 @@ def _update_dropdowns(
         if idx == 0:
             filter_files = files
         else:
-            bool_list = [
-                button_list[_idx].value == files[folder_levels[_idx]].values
-                for _idx in range(idx)
-            ]
+            bool_list = [button_list[_idx].value == files[folder_levels[_idx]].values for _idx in range(idx)]
             filter_files = files[np.all(np.array(bool_list), 0)]
 
         col_values: np.ndarray = filter_files[dict_key].to_numpy()
@@ -163,11 +153,7 @@ def _update_dropdowns(
             value = _btn.value if _btn.value in options else options[0]
             if any(btn_changed[:btn_idx]) or prev_values[btn_idx] is None:
                 if value_options_bool[btn_idx] and default_value_select is not None:
-                    value = (
-                        default_value_select[btn_idx]
-                        if default_value_select[btn_idx] in options
-                        else options[0]
-                    )
+                    value = default_value_select[btn_idx] if default_value_select[btn_idx] in options else options[0]
                 elif idx_options_bool[btn_idx] and default_idx_select is not None:
                     value = (
                         options[default_idx_select[btn_idx]]

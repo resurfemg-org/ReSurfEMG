@@ -28,18 +28,14 @@ def moving_baseline(
 
     This function calculates a moving baseline from a envelope data in
     accordance with Graßhoff et al. (2021)
-    ---------------------------------------------------------------------------
-    :param emg_env: envelope signal
-    :type emg_env: ~numpy.ndarray
-    :param window_s: window length in samples
-    :type window_s: int
-    :param step_s: number of consecutive samples with the same baseline value
-    :type step_s: int
-    :param: set_percentile
-    :type: numpy percentile
+    Args:
+        signal_env (numpy.ndarray): Envelope signal.
+        window_s (int): Window length in samples.
+        step_s (int): Number of consecutive samples with the same baseline value.
+        set_percentile (float): Percentile used for baseline calculation.
 
-    :returns rolling_baseline: The moving baseline for the signal envelope
-    :rtype rolling_baseline: numpy.ndarray
+    Returns:
+        numpy.ndarray: The moving baseline for the signal envelope.
     """
     rolling_baseline = np.zeros((len(signal_env),))
 
@@ -67,31 +63,23 @@ def slopesum_baseline(
 
     This function calculates the augmented version of the moving baseline over
     a signal envelope, using a slope sum.
-    ---------------------------------------------------------------------------
-    :param signal_env: envelope signal
-    :type signal_env: ~numpy.ndarray
-    :param window_s: window length in seconds
-    :type window_s: int
-    :param step_s: number of consecutive samples with the same baseline value
-    :type step_s: int
-    :param fs: emg sampling rating
-    :type fs: int
-    :param set_percentile
-    :type set_percentile: float (0-100)
-    :param ma_window: moving average window in samples for average dy/dt
-    :type ma_window: int
-    :param perc_window: number of consecutive samples with the same
-    baseline value
-    :type perc_window: int
+    Args:
+        signal_env (numpy.ndarray): Envelope signal.
+        window_s (int): Window length in samples.
+        step_s (int): Number of consecutive samples with the same baseline value.
+        fs (int): EMG sampling rate.
+        set_percentile (float): Percentile used for baseline calculation.
+        augm_percentile (float): Percentile used for augmented baseline calculation.
+        ma_window (int, optional): Moving average window in samples for average dy/dt.
+        perc_window (int, optional): Number of consecutive samples with the same
+            baseline value.
 
-    :returns _slopesum_baseline: The slopesum baseline for the signal envelope
-    :rtype: numpy.ndarray
-    :returns y_baseline_mean: The running mean baseline of the baseline
-    :rtype: numpy.ndarray
-    :returns y_baseline_std: The running standard deviation of the baseline
-    :rtype: numpy.ndarray
-    :returns y_baseline_series: The running baseline series
-    :rtype: pandas.Series
+    Returns:
+        tuple:
+            - numpy.ndarray: The slopesum baseline for the signal envelope.
+            - numpy.ndarray: The running mean baseline.
+            - numpy.ndarray: The running standard deviation of the baseline.
+            - pandas.Series: The running baseline series.
     """
     if ma_window is None:
 
