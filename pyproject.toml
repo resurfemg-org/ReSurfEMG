@@ -13,7 +13,7 @@ description = "A package for analysis of respiratory EMG data"
 readme = "README.md"
 requires-python = ">=3.9"
 keywords = ["electromyography", "EMG", "respiratory", "Python", "surface EMG"]
-license = { text = "Apache-2.0" }
+license = "Apache-2.0"
 dynamic = ["version"]
 license-files = ["LICENSE"]
 classifiers = [
