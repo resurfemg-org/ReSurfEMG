@@ -138,11 +138,10 @@ If you wish to install with pip:
 ## Getting Started
 ### With the recommended Python venv setup
 
-How to get the notebooks running? Assuming the raw data set and
-metadata is available.
+How to get the notebooks running? Assuming the you have a supported [Python version](https://wiki.python.org/moin/BeginnersGuide/Download) installed and a raw data setis available, e.g., the [test data](https://github.com/resurfemg-org/ReSurfEMG/tree/main/test_data).
 
 ### 0a. Create a virtual environment using Python
-
+Open a terminal, and run the following code:
   #### On Linux/OSX:
 ``` sh
 python3 -m venv .venv
@@ -170,12 +169,16 @@ pip install resurfemg[dev]
   ```
 
 ### 1. Open a notebook
-   Start a local Jupyter Notebook server by running the `jupyter notebook` 
-   command in your terminal. This opens a browser window where you can browse, 
-   open and run the notebooks. (We use [Jupyter notebooks](https://jupyter.org/try-jupyter/retro/notebooks/?path=notebooks/Intro.ipynb))
-   The ReSurfEMG notebooks are located in the notebooks folder. Navigate there 
-   and open a notebook of interest. The [basic_emg_analysis](https://github.com/resurfemg-org/ReSurfEMG/blob/main/researcher_interface/basic_emg_analysis.ipynb) 
-   notebook can be used to understand how to use the package.
+Start a local Jupyter Notebook server by running the `jupyter notebook` 
+command in your terminal. 
+   ``` sh
+   jupyter notebook
+   ```
+This opens a browser window where you can browse, 
+open and run the notebooks. (We use [Jupyter notebooks](https://jupyter.org/try-jupyter/retro/notebooks/?path=notebooks/Intro.ipynb))
+The ReSurfEMG notebooks are located in the notebooks folder. Navigate there 
+and open a notebook of interest. The [basic_emg_analysis](https://github.com/resurfemg-org/ReSurfEMG/blob/main/notebooks/researcher_interface/basic_emg_pipeline.ipynb) 
+notebook can be used to understand how to use the package.
 
 
 ## Advanced contributor's setup / "Developer's setup"
