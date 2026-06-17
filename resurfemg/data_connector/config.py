@@ -16,13 +16,32 @@ import json
 import logging
 import os
 import textwrap
+import tkinter as tk
 from pathlib import Path
-from typing import ClassVar
+from tkinter import filedialog
+from typing import (
+    ClassVar,
+    Literal,
+    TypeAlias,  # Python 3.10+
+    cast,
+    get_args,
+)
 
 import pandas as pd
+from IPython.display import display
+from ipywidgets import Layout, widgets
 
 logger = logging.getLogger(__name__)
 BUF_SIZE = 65536
+
+PropertyName: TypeAlias = Literal[
+    "root_data",
+    "test_data",
+    "patient_data",
+    "simulated_data",
+    "preprocessed_data",
+    "output_data",
+]
 
 
 def convert_to_os_path(
@@ -312,7 +331,9 @@ class Config:
         """
         for req_dir in self.required_directories:
             if not Path(self._loaded[req_dir]).is_dir():
-                logger.error("Required directory %s does not exist", self._loaded[req_dir])
+                logger.error(
+                    "Required directory %s does not exist", self._loaded[req_dir]
+                )
                 raise ValueError(self.usage())
 
     def get_directory(self, directory: str, value: str | None = None) -> str | None:
@@ -376,3 +397,119 @@ def hash_it_up_right_all(origin_directory: str, file_extension: str) -> pd.DataF
     df.columns = ["hash"]
     df = df.reset_index()
     return df.rename(columns={"index": "file_name"})
+
+
+class PathSelector:
+    """Create a widget to select a path for a given property name."""
+
+    property_name: PropertyName | None = None
+    selected_path: str | Path | None = None
+
+    def __init__(
+        self,
+        property_name: PropertyName | None = None,
+        selected_path: str | Path | None = None,
+    ):
+        self.property_name = property_name
+        self.selected_path = selected_path
+        self.path_box = widgets.Text(
+            value=(
+                str(selected_path)
+                if selected_path is not None
+                else (
+                    Config().get_directory(property_name)
+                    if property_name is not None
+                    else ""
+                )
+            ),
+            placeholder="Enter path",
+            description=(
+                self.property_name if self.property_name is not None else "Path:"
+            ),
+            disabled=False,
+        )
+        self.browse_button = widgets.Button(
+            description="Browse",
+            icon="folder_open",
+            disabled=False,
+        )
+        self.browse_button.on_click(self._select_path)
+        self.widget = widgets.HBox([self.path_box, self.browse_button])
+
+    def _select_path(self, _button: widgets.Button) -> None:
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)  # dialog appears on top
+        folder = filedialog.askdirectory(title="Select folder")
+        root.destroy()
+        if folder:  # user didn't cancel
+            self.path_box.value = folder
+
+    def _ipython_display_(self) -> None:
+        display(self.widget)
+
+    def get_path(self) -> str:
+        """Get the selected path."""
+        return self.path_box.value
+
+
+class ConfigCreator:
+    """Aggregate multiple path selectors into a single config creator."""
+
+    def __init__(self):
+        self.config: Config = Config()
+        self.config_file_path: Path = Path().cwd() / "config.json"
+        self.path_selectors = {
+            name: PathSelector(
+                property_name=name, selected_path=self.config.get_directory(name)
+            )
+            for name in cast("tuple[PropertyName, ...]", get_args(PropertyName))
+        }
+        self.save_button = widgets.Button(
+            description="Save Config",
+            icon="save",
+            disabled=False,
+        )
+        self.save_button.on_click(self.save_config)
+        self.config_file_selector = widgets.Text(
+            value=self.config_file_path.name,
+        )
+        self.widget = widgets.VBox(
+            [selector.widget for selector in self.path_selectors.values()]
+            + [self.save_button],
+            layout=Layout(width="100%"),
+        )
+        self._ipython_display_()
+
+    def _get_config_file_path(self) -> None:
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+        filepath = filedialog.asksaveasfilename(
+            title="Save config file",
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+        )
+        root.destroy()
+
+        if filepath:  # user didn't cancel
+            self.config_file_path = Path(filepath)
+
+    def _ipython_display_(self) -> None:
+        display(self.widget)
+
+    def save_config(self, _button: widgets.Button) -> None:
+        """Save the config file."""
+        self._get_config_file_path()
+        with self.config_file_path.open("w") as f:
+            config = {}
+            for property_name, selector in self.path_selectors.items():
+                path = selector.get_path()
+                if path:
+                    config[property_name] = path
+            json.dump(config, f)
+        self.config = Config(location=self.config_file_path)
+
+    def get_config(self) -> Config:
+        """Return the current configuration."""
+        return self.config
