@@ -9,7 +9,7 @@ maintainers = [
     {name = "Rob Warnaar", email = "r.s.p.warnaar@utwente.nl"},
 ]
 description = "A package for analysis of respiratory EMG data"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 keywords = ["electromyography", "EMG", "respiratory", "Python", "surface EMG"]
 license = "Apache-2.0"
 license-files = ["LICENSE"]
