@@ -116,7 +116,7 @@ thier own modified fork). NB: You can accomplish modifications of the code,
 submit pull-requests (PRs) and soforth without a 'developer's setup' but we 
 feel this setup will make advanced contributions easier.
 
-We have transitioned to a fully Python 3.9+ environment. 
+We have transitioned to a fully Python 3.10+ environment. 
 (For older instructions with `venv` please see versions below 0.2.0, and
 adapt them if using Windows and/or a different Python version than
 Python.org Python. e.g. you may need to use `.venv\Scripts\activate.bat` in
