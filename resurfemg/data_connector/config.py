@@ -14,7 +14,6 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-import os
 import textwrap
 import tkinter as tk
 from pathlib import Path
@@ -55,6 +54,8 @@ def convert_to_os_path(
     Returns:
         str: The converted path.
     """
+    import os  # noqa: PLC0415
+
     return path.replace(os.sep if os.altsep is None else os.altsep, os.sep)
 
 
@@ -63,7 +64,7 @@ def find_repo_root(marker_file: str = "config_example.json") -> Path | None:
 
     Args:
         marker_file (str): The marker file to look for. Defaults to
-            'config_example.json'.
+            "config_example.json".
 
     Returns:
         Path | None: The absolute path to the root directory of the
@@ -75,7 +76,7 @@ def find_repo_root(marker_file: str = "config_example.json") -> Path | None:
         if (current_dir / marker_file).exists():
             return current_dir
         if current_dir.parent == current_dir:
-            msg = f"Marker file '{marker_file}' not found in any parent directory."
+            msg = f'Marker file "{marker_file}" not found in any parent directory.'
             logger.error(msg)
             return None
         current_dir = current_dir.parent
@@ -336,7 +337,7 @@ class Config:
                 )
                 raise ValueError(self.usage())
 
-    def get_directory(self, directory: str, value: str | None = None) -> str | None:
+    def get_directory(self, directory: str, value: str | None = None) -> str:
         """Return the directory specified in the configuration file.
 
             If the directory is not specified, it will return the value.
@@ -354,7 +355,7 @@ class Config:
             if directory in self._loaded:
                 return self._loaded[directory]
             self._log_configured_paths(directory)
-        return value
+        return str(value)
 
     def get_config(self) -> dict:
         """This function returns the configuration file.
@@ -427,11 +428,12 @@ class PathSelector:
                 self.property_name if self.property_name is not None else "Path:"
             ),
             disabled=False,
+            layout=Layout(width="100%"),
         )
         self.browse_button = widgets.Button(
-            description="Browse",
-            icon="folder_open",
+            icon="folder-open",
             disabled=False,
+            layout=Layout(width="40px"),
         )
         self.browse_button.on_click(self._select_path)
         self.widget = widgets.HBox([self.path_box, self.browse_button])
@@ -454,12 +456,26 @@ class PathSelector:
 
 
 class ConfigCreator:
-    """Aggregate multiple path selectors into a single config creator."""
+    """Aggregate multiple path selectors into a single config creator.
 
-    def __init__(self):
+    This widget allows users to select paths for all properties and save them.
+
+    Example usage:
+    config_creator = ConfigCreator()
+    Creates the widget with path selectors for all properties and a save button. The user can select paths and
+    save the configuration, which will be loaded into the Config object.
+
+    config = config_creator.get_config()
+    Returns the current configuration as a Config object, which can be used in the rest of the codebase
+    to access the configured paths.
+    """
+
+    def __init__(self, config_path: str | Path | None = None):
         self.config: Config = Config()
-        self.config_file_path: Path = Path().cwd() / "config.json"
-        self.path_selectors = {
+        self._config_file_path: Path = (
+            Path().cwd() / "config.json" if config_path is None else Path(config_path)
+        )
+        self._path_selectors = {
             name: PathSelector(
                 property_name=name, selected_path=self.config.get_directory(name)
             )
@@ -470,13 +486,16 @@ class ConfigCreator:
             icon="save",
             disabled=False,
         )
+        self._config_picker = ConfigPicker(_standalone=True)
+        self._config_picker.select_button.on_click(self._load_from_picker)
+
         self.save_button.on_click(self.save_config)
         self.config_file_selector = widgets.Text(
-            value=self.config_file_path.name,
+            value=self._config_file_path.name,
         )
         self.widget = widgets.VBox(
-            [selector.widget for selector in self.path_selectors.values()]
-            + [self.save_button],
+            [selector.widget for selector in self._path_selectors.values()]
+            + [self.save_button, self._config_picker.widget],
             layout=Layout(width="100%"),
         )
         self._ipython_display_()
@@ -499,17 +518,75 @@ class ConfigCreator:
         display(self.widget)
 
     def save_config(self, _button: widgets.Button) -> None:
-        """Save the config file."""
+        """Save the config file.
+
+        This function collects the paths from the path selectors and opens a file dialog to save the config file.
+        It then saves the config file and updates the current config.
+        """
         self._get_config_file_path()
         with self.config_file_path.open("w") as f:
             config = {}
-            for property_name, selector in self.path_selectors.items():
+            for property_name, selector in self._path_selectors.items():
                 path = selector.get_path()
                 if path:
                     config[property_name] = path
             json.dump(config, f)
         self.config = Config(location=self.config_file_path)
 
+    def _load_from_picker(self, _button: widgets.Button) -> None:
+        """Update path selectors from the config loaded by config_picker."""
+        if self._config_picker.config_file_path is None:
+            return
+        self.config = self._config_picker.config
+        self.config_file_path = self._config_picker.config_file_path
+        for name, selector in self._path_selectors.items():
+            path = self.config.get_directory(name)
+            if path:
+                selector.path_box.value = path
+
     def get_config(self) -> Config:
-        """Return the current configuration."""
+        """Return the current configuration as Config object."""
         return self.config
+
+
+class ConfigPicker:
+    """Create a widget to select a config file."""
+
+    def __init__(self, _standalone: bool = False):
+        self.config: Config = Config()
+        self.config_file_path: Path | None = None
+        self.select_button = widgets.Button(
+            description="Select Config File",
+            icon="folder_open",
+            disabled=False,
+        )
+        self.select_button.on_click(self.select_config)
+        self.widget = widgets.VBox([self.select_button], layout=Layout(width="100%"))
+        if not _standalone:
+            self._ipython_display_()
+
+    def _ipython_display_(self) -> None:
+        display(self.widget)
+
+    def get_config(self) -> Config:
+        """Return the current configuration as Config object."""
+        return self.config
+
+    def select_config(self, _button: widgets.Button) -> None:
+        """Select a config file.
+
+        Opens a file dialog to select a config file, then loads the config and updates the current config.
+        """
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+        filepath = filedialog.askopenfilename(
+            title="Select config file",
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+        )
+        root.destroy()
+
+        if filepath:  # user didn't cancel
+            self.config_file_path = Path(filepath)
+            self.config = Config(location=self.config_file_path)

@@ -19,7 +19,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def _resolve_data_pattern(file_name_regex: str | None, extension_regex: str | None) -> str:
+def _resolve_data_pattern(
+    file_name_regex: str | None, extension_regex: str | None
+) -> str:
     """Validate the name/extension patterns and build the glob pattern."""
     if file_name_regex is None:
         file_name_regex = "**"
@@ -68,7 +70,7 @@ def _classify_files(
 
 
 def find_files(
-    base_path: str,
+    base_path: str | Path,
     file_name_regex: str | None = None,
     extension_regex: str | None = None,
     folder_levels: list[str] | None = None,
@@ -83,11 +85,11 @@ def find_files(
     organisation.
 
     Args:
-        base_path (str): Path to starting directory.
-        file_name_regex (str): File name pattern, see Python Regex docs.
-        extension_regex (str): File extension pattern, see Python Regex docs.
+        base_path (str | Path): Path to starting directory.
+        file_name_regex (str | None): File name pattern, see Python Regex docs.
+        extension_regex (str | None): File extension pattern, see Python Regex docs.
         folder_levels (list[str] | None): Data directory organisation, e.g.
-            ['patient', 'date'].
+            ["patient", "date"].
         verbose (bool): Provide feedback about non-included files.
 
     Returns:
@@ -106,7 +108,9 @@ def find_files(
     depth, folder_levels = _resolve_folder_levels(folder_levels)
 
     matching_files = root.glob(data_pattern)
-    matching_files_structure, non_matching_files_structure = _classify_files(matching_files, root, depth)
+    matching_files_structure, non_matching_files_structure = _classify_files(
+        matching_files, root, depth
+    )
 
     files = pd.DataFrame(matching_files_structure, columns=folder_levels)
     if verbose and non_matching_files_structure:
@@ -131,7 +135,7 @@ def find_folders(
     Args:
         base_path (str | Path): Path to starting directory.
         folder_levels (list[str] | None): Data directory organisation, e.g.
-            ['patient', 'date'].
+            ["patient", "date"].
         verbose (bool): Provide feedback about non-included folders.
 
     Returns:
@@ -159,7 +163,8 @@ def find_folders(
     matching_dirs = [
         p
         for p in root.glob(pattern)
-        if p.is_dir() and not any(part.startswith(".") for part in p.relative_to(root).parts)
+        if p.is_dir()
+        and not any(part.startswith(".") for part in p.relative_to(root).parts)
     ]
 
     matching_path_structure = []

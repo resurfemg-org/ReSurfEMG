@@ -116,6 +116,6 @@ class TestWaveletDenoising(unittest.TestCase):
             n=4,
             wavelet_type="db2",
             fixed_threshold=4.5,
-        )
+        )[0]
 
         assert len(self.sample_emg_filtered[0]) == len(ecg_denoised)

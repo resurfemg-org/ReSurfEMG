@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import os
 import shutil
 import subprocess
 import sys
@@ -77,7 +76,10 @@ class SphinxDoc(Command):
         from sphinx.application import Sphinx  # noqa: PLC0415
         from sphinx.cmd.build import handle_exception  # noqa: PLC0415
         from sphinx.util.console import nocolor  # noqa: PLC0415
-        from sphinx.util.docutils import docutils_namespace, patch_docutils  # noqa: PLC0415
+        from sphinx.util.docutils import (  # noqa: PLC0415
+            docutils_namespace,
+            patch_docutils,
+        )
 
         name = "resurfemg"
         try:
