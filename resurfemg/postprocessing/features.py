@@ -85,7 +85,7 @@ def pseudo_slope(
 def amplitude(
     signal: np.ndarray,
     peak_idxs: np.ndarray,
-    baseline: np.ndarray | tuple[np.ndarray, np.ndarray] | None = None,
+    baseline: np.ndarray | None = None,
 ) -> np.ndarray:
     """Calculate the peak height relative to the baseline.
 
@@ -111,7 +111,7 @@ def time_product(
     fs: int,
     start_idxs: list[int] | np.ndarray,
     end_idxs: list[int] | np.ndarray,
-    baseline: np.ndarray | tuple[np.ndarray, np.ndarray] | None = None,
+    baseline: np.ndarray | None = None,
 ) -> np.ndarray:
     """Calculate the time product between the signal and the baseline.
 
@@ -134,7 +134,9 @@ def time_product(
     time_products = np.zeros(np.asarray(start_idxs).shape)
     for idx, (start_idx, end_idx) in enumerate(zip(start_idxs, end_idxs)):
         y_delta = signal[start_idx : end_idx + 1] - baseline[start_idx : end_idx + 1]
-        if not np.all(np.sign(y_delta[1:]) >= 0) and not np.all(np.sign(y_delta[1:]) <= 0):
+        if not np.all(np.sign(y_delta[1:]) >= 0) and not np.all(
+            np.sign(y_delta[1:]) <= 0
+        ):
             warnings.warn(
                 "Warning: Curve for peak idx"
                 + str(idx)
@@ -154,8 +156,8 @@ def area_under_baseline(
     start_idxs: list[int] | np.ndarray,
     end_idxs: list[int] | np.ndarray,
     aub_window_s: int,
-    baseline: np.ndarray | tuple[np.ndarray, np.ndarray],
-    ref_signal: np.ndarray | tuple[np.ndarray, np.ndarray] | None = None,
+    baseline: np.ndarray,
+    ref_signal: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Calculate the area under the baseline.
 
@@ -184,11 +186,17 @@ def area_under_baseline(
 
     aubs = np.zeros(np.asarray(peak_idxs).shape)
     y_refs = np.zeros(np.asarray(peak_idxs).shape)
-    for idx, (start_idx, peak_idx, end_idx) in enumerate(zip(start_idxs, peak_idxs, end_idxs)):
-        y_delta_curve = signal[start_idx : end_idx + 1] - baseline[start_idx : end_idx + 1]
+    for idx, (start_idx, peak_idx, end_idx) in enumerate(
+        zip(start_idxs, peak_idxs, end_idxs)
+    ):
+        y_delta_curve = (
+            signal[start_idx : end_idx + 1] - baseline[start_idx : end_idx + 1]
+        )
         ref_start_idx = max([0, peak_idx - aub_window_s])
         ref_end_idx = min([len(signal) - 1, peak_idx + aub_window_s])
-        if not np.all(np.sign(y_delta_curve[1:]) >= 0) and not np.all(np.sign(y_delta_curve[1:]) <= 0):
+        if not np.all(np.sign(y_delta_curve[1:]) >= 0) and not np.all(
+            np.sign(y_delta_curve[1:]) <= 0
+        ):
             warnings.warn(
                 "Warning: Curve for peak idx"
                 + str(idx)

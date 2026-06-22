@@ -48,7 +48,10 @@ class Poly5Reader:
     """
 
     def __init__(
-        self, filename: str | None = None, read_all: bool = True, verbose: bool = True
+        self,
+        filename: str | Path | None = None,
+        read_all: bool = True,
+        verbose: bool = True,
     ):
         if filename is None:
             import tkinter as tk  # noqa: PLC0415
@@ -58,12 +61,12 @@ class Poly5Reader:
             filename = filedialog.askopenfilename()
             root.withdraw()
 
-        self.filename: str = filename
+        self.filename: Path = Path(filename) if filename is not None else Path()
         self.read_all: bool = read_all
         self.verbose: bool = verbose
         if self.verbose:
-            logger.info("Reading file %s", filename)
-        self._readFile(filename)
+            logger.info("Reading file %s", self.filename)
+        self._readFile(self.filename)
 
     def read_data_MNE(  # noqa: N802
         self,
@@ -111,10 +114,10 @@ class Poly5Reader:
 
         return mne.io.RawArray(self.samples * np.expand_dims(scale, axis=1), info)
 
-    def _readFile(self, filename: str) -> None:  # noqa: N802
+    def _readFile(self, filename: Path) -> None:  # noqa: N802
         # """number_per_block = self.num_samples_per_block
         # suko = (self.num_samples % number_per_block) * self.num_channels"""
-        self.file_obj = Path(filename).open("rb")  # noqa: SIM115
+        self.file_obj = filename.open("rb")
         file_obj = self.file_obj
         self._readHeader(file_obj)
         self.channels = self._readSignalDescription(file_obj)
@@ -127,7 +130,7 @@ class Poly5Reader:
 
             for i in range(self.num_data_blocks):
                 # """numb_per_block = self.num_data_blocks
-                # print('\rProgress: % 0.1f %%'
+                # print("\rProgress: % 0.1f %%"
                 #  %(100*i/numb_per_block), end="\r")"""
 
                 # Check whether final data block is
@@ -269,7 +272,7 @@ class Channel:
 
     Attributes:
         name (str): The name of the channel.
-        unit_name (str): The name of unit (e.g. 'μVolt') of channel
+        unit_name (str): The name of unit (e.g. "μVolt") of channel
             sample-data.
     """
 
