@@ -1,3 +1,8 @@
 # Import the subpackages
+import logging
+
 from resurfemg import cli, data_connector, helper_functions, pipelines, postprocessing, preprocessing  # noqa: F401
 from resurfemg.__version__ import __version__  # noqa: F401
+
+logger = logging.getLogger(__name__)
+logging.getLogger(__name__).addHandler(logging.NullHandler())

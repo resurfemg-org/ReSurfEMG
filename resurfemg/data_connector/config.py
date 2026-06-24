@@ -332,9 +332,7 @@ class Config:
         """
         for req_dir in self.required_directories:
             if not Path(self._loaded[req_dir]).is_dir():
-                logger.error(
-                    "Required directory %s does not exist", self._loaded[req_dir]
-                )
+                logger.error("Required directory %s does not exist", self._loaded[req_dir])
                 raise ValueError(self.usage())
 
     def get_directory(self, directory: str, value: str | None = None) -> str:
@@ -417,16 +415,10 @@ class PathSelector:
             value=(
                 str(selected_path)
                 if selected_path is not None
-                else (
-                    Config().get_directory(property_name)
-                    if property_name is not None
-                    else ""
-                )
+                else (Config().get_directory(property_name) if property_name is not None else "")
             ),
             placeholder="Enter path",
-            description=(
-                self.property_name if self.property_name is not None else "Path:"
-            ),
+            description=(self.property_name if self.property_name is not None else "Path:"),
             disabled=False,
             layout=Layout(width="100%"),
         )
@@ -471,14 +463,11 @@ class ConfigCreator:
     """
 
     def __init__(self, config_path: str | Path | None = None):
-        self.config: Config = Config()
-        self._config_file_path: Path = (
-            Path().cwd() / "config.json" if config_path is None else Path(config_path)
-        )
+
+        self._config_file_path: Path = Path().cwd() / "config.json" if config_path is None else Path(config_path)
+        self.config: Config = Config(location=self._config_file_path, force=True)
         self._path_selectors = {
-            name: PathSelector(
-                property_name=name, selected_path=self.config.get_directory(name)
-            )
+            name: PathSelector(property_name=name, selected_path=self.config.get_directory(name))
             for name in cast("tuple[PropertyName, ...]", get_args(PropertyName))
         }
         self.save_button = widgets.Button(
@@ -512,7 +501,7 @@ class ConfigCreator:
         root.destroy()
 
         if filepath:  # user didn't cancel
-            self.config_file_path = Path(filepath)
+            self._config_file_path = Path(filepath)
 
     def _ipython_display_(self) -> None:
         display(self.widget)
@@ -524,21 +513,21 @@ class ConfigCreator:
         It then saves the config file and updates the current config.
         """
         self._get_config_file_path()
-        with self.config_file_path.open("w") as f:
+        with self._config_file_path.open("w") as f:
             config = {}
             for property_name, selector in self._path_selectors.items():
                 path = selector.get_path()
                 if path:
                     config[property_name] = path
             json.dump(config, f)
-        self.config = Config(location=self.config_file_path)
+        self.config = Config(location=self._config_file_path)
 
     def _load_from_picker(self, _button: widgets.Button) -> None:
         """Update path selectors from the config loaded by config_picker."""
         if self._config_picker.config_file_path is None:
             return
         self.config = self._config_picker.config
-        self.config_file_path = self._config_picker.config_file_path
+        self._config_file_path = self._config_picker.config_file_path
         for name, selector in self._path_selectors.items():
             path = self.config.get_directory(name)
             if path:
