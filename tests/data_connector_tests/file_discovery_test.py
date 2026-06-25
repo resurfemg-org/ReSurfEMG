@@ -34,3 +34,40 @@ class TestFileDiscovery(unittest.TestCase):
         ]
 
         assert len(found_folders) == len(real_folders)
+
+
+class TestFilepathsDict(unittest.TestCase):
+    """Test the filepaths_dict helper function."""
+
+    def test_single_file(self):
+        """A single (patient, file) pair produces the correct nested dict."""
+        result = file_discovery.filepaths_dict([("P_001", "emg_file.Poly5")])
+        self.assertIn("P_001", result)
+        self.assertIn("emg_file.Poly5", result["P_001"])
+
+    def test_multiple_files_same_patient(self):
+        """Multiple files for the same patient are all stored under that patient."""
+        result = file_discovery.filepaths_dict(
+            [("P_001", "emg_file.Poly5"), ("P_001", "vent_file.Poly5")]
+        )
+        self.assertIn("emg_file.Poly5", result["P_001"])
+        self.assertIn("vent_file.Poly5", result["P_001"])
+
+    def test_multiple_patients(self):
+        """Files for different patients are stored under separate keys."""
+        result = file_discovery.filepaths_dict(
+            [("P_001", "file.Poly5"), ("P_002", "file.Poly5")]
+        )
+        self.assertIn("P_001", result)
+        self.assertIn("P_002", result)
+
+    def test_nested_paths(self):
+        """Three-part paths are stored with intermediate folders as keys."""
+        result = file_discovery.filepaths_dict([("P_001", "session1", "emg.Poly5")])
+        self.assertIn("P_001", result)
+        self.assertIn("session1", result["P_001"])
+        self.assertIn("emg.Poly5", result["P_001"]["session1"])
+
+    def test_empty_input(self):
+        """An empty path list produces an empty dict."""
+        self.assertEqual(file_discovery.filepaths_dict([]), {})
