@@ -42,12 +42,35 @@ class TestTimeSeriesGroup(unittest.TestCase):
 
     # Find supported breath pressures
     v_vent = vent_timeseries[vent_timeseries.v_vent_idx]
-    vent_timeseries.find_tidal_volume_peaks()
+    vent_timeseries.find_ventilator_peaks()
 
-    def test_find_tidal_volume_peaks(self):
+    def test_find_ventilator_peaks_unspec(self):
         """Test the find_tidal_volume_peaks method of the VentilatorDataGroup class."""
         peak_df = self.p_vent.peaks["ventilator_breaths"].peak_df
         assert len(peak_df["peak_idx"]) == 151
+
+    vent_timeseries.find_ventilator_peaks(
+        channel_io=(
+            vent_timeseries.v_vent_idx,
+            [vent_timeseries.p_vent_idx, vent_timeseries.v_vent_idx]),
+            overwrite=True
+    )
+    def test_find_ventilator_peaks_spec(self):
+        peak_df = self.p_vent.peaks["ventilator_breaths"].peak_df
+        self.assertEqual(
+            len(peak_df["peak_idx"]),
+            151
+        )
+    def test_find_ventilator_peaks_spec_other_channel(self):
+        with self.assertRaises(ValueError) as context:
+            self.vent_timeseries.find_ventilator_peaks(
+                channel_io=(
+                    self.vent_timeseries.v_vent_idx,
+                    [self.vent_timeseries.p_vent_idx, 3]),
+                overwrite=True
+            )
+        self.assertIn("channel_io[1] contains an invalid channel.",
+                      str(context.exception))
 
     # Calculate PTPs
     p_vent.calculate_time_products(
@@ -213,7 +236,8 @@ class TestTimeSeriesGroup(unittest.TestCase):
         _, axes = plt.subplots(nrows=self.y_emg.shape[0], ncols=1, figsize=(10, 6), sharex=True)
         self.emg_timeseries.plot_full(axes=axes)
 
-        _, y_plot_data = axes[-1].lines[0].get_xydata().T
+        last_ax = np.atleast_1d(np.asarray(axes))[-1]
+        _, y_plot_data = last_ax.lines[0].get_xydata().T
 
         np.testing.assert_array_equal(self.emg_timeseries[-1]["env"], y_plot_data)
 
@@ -222,13 +246,14 @@ class TestTimeSeriesGroup(unittest.TestCase):
         _, axes = plt.subplots(nrows=1, ncols=3, figsize=(10, 6), sharex=True)
         self.emg_di.plot_curve_fits(axes=axes, peak_set_name="Pocc")
         self.emg_di.plot_aub(axes=axes, signal_io=("env",), peak_set_name="Pocc")
-        self.emg_timeseries.plot_peaks(peak_set_name="Pocc", axes=axes, channel_idxs=1, margin_s=0)
-        self.emg_timeseries.plot_markers(peak_set_name="Pocc", axes=axes, channel_idxs=1)
+        self.emg_timeseries.plot_peaks(peak_set_name="Pocc", axes=axes, channel_idxs=[1], margin_s=0)
+        self.emg_timeseries.plot_markers(peak_set_name="Pocc", axes=axes, channel_idxs=[1])
         peak_df = self.emg_di.peaks["Pocc"].peak_df
         len_peaks = len(peak_df)
         len_last_peak = peak_df.loc[len_peaks - 1, "end_idx"] - peak_df.loc[len_peaks - 1, "start_idx"]
         y_plot_data_list = []
-        for _, line in enumerate(axes[-1].lines):
+        last_ax = np.atleast_1d(np.asarray(axes))[-1]
+        for _, line in enumerate(last_ax.lines):
             _, y_plot_data = line.get_xydata().T
             y_plot_data_list.append(len(y_plot_data))
 

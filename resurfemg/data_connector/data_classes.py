@@ -14,7 +14,7 @@ import inspect
 import logging
 import warnings
 from textwrap import dedent, wrap
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -32,6 +32,8 @@ from resurfemg.preprocessing import envelope as evl
 from resurfemg.preprocessing import filtering as filt
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from matplotlib.axes import Axes
 
 # Descriptive constants to avoid magic-number comparisons for array ndim checks
@@ -58,7 +60,14 @@ class TimeSeries:
     - peaks: dictionary of PeaksSet objects.
     """
 
-    _data_fields: ClassVar[tuple[str, ...]] = ("raw", "filt", "clean", "env", "env_ci", "baseline")
+    _data_fields: ClassVar[tuple[str, ...]] = (
+        "raw",
+        "filt",
+        "clean",
+        "env",
+        "env_ci",
+        "baseline",
+    )
 
     def __init__(
         self,
@@ -1124,13 +1133,7 @@ class TimeSeries:
         if len(axes_arr) == 1 and len(x_vals_peak) > 1:
             axes = np.matlib.repmat(cast("Any", axes), len(x_vals_peak), 1).flatten()
         for axis, x_peak, y_peak, x_start, y_start, x_end, y_end in zip(
-            axes_arr,
-            x_vals_peak,
-            y_vals_peak,
-            x_vals_start,
-            y_vals_start,
-            x_vals_end,
-            y_vals_end,
+            axes_arr, x_vals_peak, y_vals_peak, x_vals_start, y_vals_start, x_vals_end, y_vals_end, strict=False
         ):
             axis.plot(x_peak, y_peak, marker=peak_marker, color=peak_color, linestyle="None")
             if x_start is not None:
@@ -1207,7 +1210,7 @@ class TimeSeries:
         m_s = margin_s if margin_s is not None else self.param["fs"] // 2
         ci = self._y_data.get("env_ci")
         baseline = self._y_data.get("baseline")
-        for axis, x_start, x_end in zip(axes, start_idxs, end_idxs):
+        for axis, x_start, x_end in zip(axes, start_idxs, end_idxs, strict=False):
             s_start, s_end = max(0, x_start - m_s), max(0, x_end + m_s)
             axis.grid(True)
             axis.plot(self.t_data[s_start:s_end], y_data[s_start:s_end], color=colors[0])
@@ -1265,7 +1268,7 @@ class TimeSeries:
         )
         color = colors[0] if isinstance(colors, list) and colors else "tab:green"
 
-        for axis, (_, row) in zip(axes, plot_peak_df.iterrows()):
+        for axis, (_, row) in zip(axes, plot_peak_df.iterrows(), strict=False):
             y_bell = mo.bell_curve(
                 peak_set.t_data[row.start_idx : row.end_idx],
                 a=row.bell_a,
@@ -1279,7 +1282,7 @@ class TimeSeries:
             )
 
         if len(axes) > 1:
-            for _, (axis, (_, row)) in enumerate(zip(axes, plot_peak_df.iterrows())):
+            for _, (axis, (_, row)) in enumerate(zip(axes, plot_peak_df.iterrows(), strict=False)):
                 y_bell = mo.bell_curve(
                     peak_set.t_data[row.start_idx : row.end_idx],
                     a=row.bell_a,
@@ -1367,7 +1370,7 @@ class TimeSeries:
         color = colors if isinstance(colors, str) else colors[0] if isinstance(colors, list) and colors else "tab:cyan"
 
         if len(axes) > 1:
-            for _, (axis, (_, row)) in enumerate(zip(axes, plot_peak_df.iterrows())):
+            for _, (axis, (_, row)) in enumerate(zip(axes, plot_peak_df.iterrows(), strict=False)):
                 axis.plot(
                     peak_set.t_data[[row.start_idx, row.end_idx]],
                     [row.aub_y_ref, row.aub_y_ref],
@@ -1488,6 +1491,49 @@ class TimeSeriesGroup:
         else:
             out_units = units
         return out_labels, out_units
+
+    def _resolve_channels(
+        self,
+        channels: int | str | list | np.ndarray | None,
+        *,
+        default: list | None = None,
+    ) -> list:
+        """Normalize a channel specifier into a list of validated keys.
+
+        Args:
+            channels: A single channel key (int or str), a list/array of
+                keys, or None. When None, ``default`` is used; if ``default``
+                is also None, all channels are selected.
+            default: Channel keys to fall back to when ``channels`` is None.
+
+        Returns:
+            list: Validated channel keys.
+
+        Raises:
+            ValueError: If ``channels`` has an unsupported type or contains a
+                key that is not a valid channel.
+        """
+        if channels is None:
+            if default is None:
+                # all channels are valid by construction; skip per-key checks
+                return list(range(self.param["n_channel"]))
+            keys = list(default)
+        elif isinstance(channels, (int, np.integer, str)):
+            keys = [channels]
+        elif isinstance(channels, (list, np.ndarray)):
+            keys = list(channels)
+        else:
+            msg = "channels must be an int, str, list, array, or None"
+            raise ValueError(msg)
+
+        key = ""
+        try:
+            for key in keys:
+                self[key]
+        except (KeyError, IndexError) as e:
+            msg = f"{key!r} is not a valid channel."
+            raise ValueError(msg) from e
+        return keys
 
     if TYPE_CHECKING:
 
@@ -1722,15 +1768,10 @@ class TimeSeriesGroup:
                 raise ValueError(msg)
 
     def _check_channel_idxs(self, channel_idxs: list[int] | np.ndarray | None, method: str) -> np.ndarray:
-        if channel_idxs is None or not isinstance(channel_idxs, (int, list)):
-            channel_idxs = np.arange(self.param["n_channel"])
-        elif isinstance(channel_idxs, int):
-            channel_idxs = np.array([channel_idxs])
-        channel_idxs = np.asarray(channel_idxs)
         if method not in self._available_methods:
             msg = "Invalid method"
             raise ValueError(msg)
-        return channel_idxs
+        return np.asarray(self._resolve_channels(channel_idxs))
 
     def _run_wrapper(self, method: str, channel_idxs: list[int] | np.ndarray | None = None, **kwargs) -> None:
         channel_idxs = self._check_channel_idxs(channel_idxs, method)
@@ -2042,53 +2083,71 @@ class VentilatorDataGroup(TimeSeriesGroup):
             overwrite=overwrite,
         )
 
-    def find_tidal_volume_peaks(
-        self,
-        volume_idx: int | None = None,
-        pressure_idx: int | None = None,
-        overwrite: bool = True,
-        **kwargs,
+    def find_ventilator_peaks(
+        self, channel_io: tuple[str | int, str | int | list] | None = None, overwrite: bool = False, **kwargs
     ) -> None:
-        """Find tidal-volume peaks in ventilator volume signal.
+        """Detect breath-related peaks in a specified ventilator signal.
 
-            Peaks are stored in PeaksSet named "ventilator_breaths" in the
-            ventilator pressure and volume TimeSeries.
-
+        Peaks are stored in the corresponding TimeSeries under the same signal.
 
         Args:
-                volume_idx (int, optional): Channel index of the ventilator volume
-                    data. Defaults to self.v_vent_idx.
-                pressure_idx (int, optional): Channel index of the ventilator
-                    pressure data. Defaults to self.p_vent_idx.
-                overwrite (bool): Overwrite existing peaks. Default is False.
-                **kwargs: Additional arguments passed to
-                    postprocessing.event_detection submodule.
+            channel_io (tuple(str | int, str | int | list)): Tuple of the input
+                and output channels. The first element is the input channel for
+                peak detection; the found peaks are stored in the channels listed
+                in the second element. If None, the volume or pressure channel is
+                used as input; in absence of these, the first channel is used.
+            overwrite (bool): Whether to overwrite existing peak set.
+            **kwargs: Additional keyword arguments passed to the peak detection
+                function.
+
+        Returns:
+            None
         """
-        volume_idx = kwargs.pop("volume_idx") if "volume_idx" in kwargs else self.v_vent_idx
-        if volume_idx is None:
-            msg = "volume_idx and v_vent_idx not defined"
-            raise ValueError(msg)
-        kwargs["v_vent"] = self.channels[volume_idx]["raw"]
+        channel_key_i = (
+            channel_io[0]
+            if channel_io is not None and channel_io[0] is not None
+            else (self.v_vent_idx or self.p_vent_idx or 0)
+        )
+        if not isinstance(channel_key_i, (int, str)):
+            msg = "channel_io[0] must be int or str"
+            raise TypeError(msg)
+        try:
+            signal_raw = self[channel_key_i]["raw"]
+        except KeyError as e:
+            msg = "channel_io[0] is not a valid channel."
+            raise ValueError(msg) from e
+
+        if channel_io is None:
+            default_o = [idx for idx in (self.p_vent_idx, self.v_vent_idx) if idx is not None]
+            channel_keys_o = self._resolve_channels(None, default=default_o)
+        else:
+            try:
+                channel_keys_o = self._resolve_channels(channel_io[1])
+            except ValueError as e:
+                msg_0 = "channel_io[1] contains an invalid channel."
+                raise ValueError(msg_0) from e
 
         kwargs["start_idx"] = kwargs.setdefault("start_idx", 0)
-        kwargs["end_idx"] = kwargs.setdefault("end_idx", len(self.channels[volume_idx]["raw"]) - 1)
+        kwargs["end_idx"] = kwargs.setdefault("end_idx", len(signal_raw) - 1)
         kwargs["width_s"] = kwargs.setdefault("width_s", self.param["fs"] // 4)
-        peak_idxs = evt.detect_ventilator_breath(**kwargs) + kwargs["start_idx"]
 
-        self.channels[volume_idx].set_peaks(
-            signal=self.channels[volume_idx]["raw"],
-            peak_idxs=peak_idxs,
-            peak_set_name="ventilator_breaths",
-            overwrite=overwrite,
+        # Detect peaks
+        peak_idxs = evt.detect_ventilator_breath(
+            np.asarray(signal_raw),
+            start_idx=kwargs["start_idx"],
+            end_idx=kwargs["end_idx"],
+            width_s=kwargs["width_s"],
+            threshold=kwargs.get("threshold"),
+            prominence=kwargs.get("prominence"),
+            threshold_new=kwargs.get("threshold_new"),
+            prominence_new=kwargs.get("prominence_new"),
         )
 
-        pressure_idx = pressure_idx or self.p_vent_idx
-        if pressure_idx is not None:
-            self.channels[pressure_idx].set_peaks(
-                signal=self.channels[pressure_idx]["raw"],
+        # Store peaks in the same signal
+        for _channel_key in channel_keys_o:
+            self.channels[_channel_key].set_peaks(
+                signal=signal_raw,
                 peak_idxs=peak_idxs,
                 peak_set_name="ventilator_breaths",
                 overwrite=overwrite,
             )
-        else:
-            warnings.warn("\n".join(wrap(dedent("pressure_idx and self.p_vent_idx not defined."))))

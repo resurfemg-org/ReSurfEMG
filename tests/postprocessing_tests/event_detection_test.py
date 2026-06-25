@@ -1,4 +1,4 @@
-"""sanity tests for the postprocessing.event_detection submodule of the resurfemg library."""  # noqa: INP001
+"""sanity tests for the postprocessing.event_detection submodule of the resurfemglibrary."""  # noqa: INP001
 
 import unittest
 
@@ -111,7 +111,7 @@ class TestEventDetection(unittest.TestCase):
     def test_detect_ventilator_breath(self):
         """Test the detect_ventilator_breath function."""
         ventilator_breath_idxs = evt.detect_ventilator_breath(
-            v_vent=self.breathing_signal, start_idx=1, end_idx=10000, width_s=1
+            signal=self.breathing_signal, start_idx=1, end_idx=10000, width_s=1
         )
         assert len(ventilator_breath_idxs) == 2
 

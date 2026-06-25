@@ -300,7 +300,7 @@ def _rename_channels(data_df: pd.DataFrame, kwargs: dict, verbose: bool) -> pd.D
             msg = "Channel names should be unique"
             raise UserWarning(msg)
         if verbose:
-            logger.info("Renamed channels: %s", list(zip(data_df.columns, labels)))
+            logger.info("Renamed channels: %s", list(zip(data_df.columns, labels, strict=False)))
         data_df.columns = labels
     return data_df
 

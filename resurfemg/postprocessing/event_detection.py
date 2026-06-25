@@ -138,7 +138,10 @@ def onoffpeak_baseline_crossing(
             valid_ends_bools[peak_nr - 1] = invalid_current_start
 
     valid_peaks = np.array(
-        [valid_detections[0] and valid_detections[1] for valid_detections in zip(valid_starts_bools, valid_ends_bools)],
+        [
+            valid_detections[0] and valid_detections[1]
+            for valid_detections in zip(valid_starts_bools, valid_ends_bools, strict=False)
+        ],
         dtype=bool,
     )
 
@@ -237,7 +240,10 @@ def onoffpeak_slope_extrapolation(
             valid_starts_bools[peak_nr] = invalidate_previous_end
 
     valid_peaks = np.array(
-        [valid_detections[0] and valid_detections[1] for valid_detections in zip(valid_starts_bools, valid_ends_bools)],
+        [
+            valid_detections[0] and valid_detections[1]
+            for valid_detections in zip(valid_starts_bools, valid_ends_bools, strict=False)
+        ],
         dtype=bool,
     )
 
@@ -251,47 +257,50 @@ def onoffpeak_slope_extrapolation(
 
 
 def detect_ventilator_breath(
-    v_vent: np.ndarray,
+    signal: np.ndarray,
     start_idx: int,
     end_idx: int,
     width_s: int,
-    threshold: float | None = None,
-    prominence: float | None = None,
-    threshold_new: float | None = None,
-    prominence_new: float | None = None,
+    threshold: int | None = None,
+    prominence: int | None = None,
+    threshold_new: int | None = None,
+    prominence_new: int | None = None,
 ) -> list[int]:
-    """Identify ventilator breaths in ventilator volume signal.
+    """Identify ventilator breaths.
 
     Identify the breaths from the ventilator signal and return an array
     of ventilator peak breath indices, in two steps of peak detection.
     Input of threshold and prominence values is optional.
 
     Args:
-        v_vent (numpy.ndarray): Ventilator volume signal.
+        signal (numpy.ndarray): Ventilator signal.
         start_idx (int): Start sample of the window in which to be searched.
         end_idx (int): End sample of the window in which to be searched.
         width_s (int): Required width of peak in samples.
-        threshold (float, optional): Required threshold of peaks, vertical threshold to
-            neighbouring samples.
-        prominence (float, optional): Required prominence of peaks.
-        threshold_new (float, optional): Updated threshold for second peak detection pass.
-        prominence_new (float, optional): Updated prominence for second peak detection pass.
+        threshold (int | None, optional): Required threshold of peaks, vertical
+            threshold to neighbouring samples. Defaults to None.
+        prominence (int | None, optional): Required prominence of peaks.
+            Defaults to None.
+        threshold_new (int | None, optional): Secondary threshold for peak
+            detection. Defaults to None.
+        prominence_new (int | None, optional): Secondary prominence for peak
+            detection. Defaults to None.
 
     Returns:
         list[int]: List of ventilator breath peak indices.
     """
-    v_t_slice = v_vent[int(start_idx) : int(end_idx)]
+    v_t_slice = signal[int(start_idx) : int(end_idx)]
     if threshold is None:
-        threshold = float(0.25 * np.percentile(v_t_slice, 90))
+        threshold = 0.25 * np.percentile(v_t_slice, 90)
     if prominence is None:
-        prominence = float(0.10 * np.percentile(v_t_slice, 90))
+        prominence = 0.10 * np.percentile(v_t_slice, 90)
 
     resp_eff, _ = scipy.signal.find_peaks(v_t_slice, height=threshold, prominence=prominence, width=width_s)
 
     if threshold_new is None:
-        threshold_new = float(0.5 * np.percentile(v_t_slice[resp_eff], 90))
+        threshold_new = 0.5 * np.percentile(v_t_slice[resp_eff], 90)
     if prominence_new is None:
-        prominence_new = float(0.5 * np.percentile(v_t_slice, 90))
+        prominence_new = 0.5 * np.percentile(v_t_slice, 90)
 
     ventilator_breath_idxs, _ = scipy.signal.find_peaks(
         v_t_slice, height=threshold_new, prominence=prominence_new, width=width_s

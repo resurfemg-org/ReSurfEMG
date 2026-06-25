@@ -377,7 +377,7 @@ class PatientSelector:
         self._get_selected()
         _data = None
         _id = str(self.selected_id)
-        _selected = {_id: dict(zip(self.selected_files, self.selected_types))}
+        _selected = {_id: dict(zip(self.selected_files, self.selected_types, strict=False))}
         for _file, _type in list(_selected[_id].items()):
             file = str(self.root_directory / Path(_id) / Path(_file))
             _extension = Path(file).suffix
