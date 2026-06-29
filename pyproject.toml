@@ -68,6 +68,10 @@ dev = ['pytest',
 [tool.setuptools.packages.find]
 include = ["resurfemg*"]
 
+[tool.setuptools.package-data]
+resurfemg = ["data_connector/config_example.json"]
+
+
 [tool.setuptools_scm]
 version_file = "resurfemg/__version__.py"
 
