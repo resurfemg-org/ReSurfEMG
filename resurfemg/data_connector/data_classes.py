@@ -1133,7 +1133,7 @@ class TimeSeries:
         if len(axes_arr) == 1 and len(x_vals_peak) > 1:
             axes = np.matlib.repmat(cast("Any", axes), len(x_vals_peak), 1).flatten()
         for axis, x_peak, y_peak, x_start, y_start, x_end, y_end in zip(
-            axes_arr, x_vals_peak, y_vals_peak, x_vals_start, y_vals_start, x_vals_end, y_vals_end, strict=False
+            axes_arr, x_vals_peak, y_vals_peak, x_vals_start, y_vals_start, x_vals_end, y_vals_end, strict=True
         ):
             axis.plot(x_peak, y_peak, marker=peak_marker, color=peak_color, linestyle="None")
             if x_start is not None:
@@ -1210,7 +1210,7 @@ class TimeSeries:
         m_s = margin_s if margin_s is not None else self.param["fs"] // 2
         ci = self._y_data.get("env_ci")
         baseline = self._y_data.get("baseline")
-        for axis, x_start, x_end in zip(axes, start_idxs, end_idxs, strict=False):
+        for axis, x_start, x_end in zip(axes, start_idxs, end_idxs, strict=True):
             s_start, s_end = max(0, x_start - m_s), max(0, x_end + m_s)
             axis.grid(True)
             axis.plot(self.t_data[s_start:s_end], y_data[s_start:s_end], color=colors[0])
@@ -1268,7 +1268,7 @@ class TimeSeries:
         )
         color = colors[0] if isinstance(colors, list) and colors else "tab:green"
 
-        for axis, (_, row) in zip(axes, plot_peak_df.iterrows(), strict=False):
+        for axis, (_, row) in zip(axes, plot_peak_df.iterrows(), strict=True):
             y_bell = mo.bell_curve(
                 peak_set.t_data[row.start_idx : row.end_idx],
                 a=row.bell_a,
@@ -1282,7 +1282,7 @@ class TimeSeries:
             )
 
         if len(axes) > 1:
-            for _, (axis, (_, row)) in enumerate(zip(axes, plot_peak_df.iterrows(), strict=False)):
+            for _, (axis, (_, row)) in enumerate(zip(axes, plot_peak_df.iterrows(), strict=True)):
                 y_bell = mo.bell_curve(
                     peak_set.t_data[row.start_idx : row.end_idx],
                     a=row.bell_a,
@@ -1350,8 +1350,7 @@ class TimeSeries:
         elif signal_io is None:
             msg = "Signal type not provided. Use signal_io."
             raise ValueError(msg)
-        peak_set = self.peaks.get(peak_set_name)
-        peak_set = self._check_peak_set(peak_set)
+        peak_set = self._check_peak_set(self.peaks.get(peak_set_name))
 
         axes = np.asarray(np.atleast_1d(cast("Any", axes)))
 
@@ -1370,7 +1369,7 @@ class TimeSeries:
         color = colors if isinstance(colors, str) else colors[0] if isinstance(colors, list) and colors else "tab:cyan"
 
         if len(axes) > 1:
-            for _, (axis, (_, row)) in enumerate(zip(axes, plot_peak_df.iterrows(), strict=False)):
+            for _, (axis, (_, row)) in enumerate(zip(axes, plot_peak_df.iterrows(), strict=True)):
                 axis.plot(
                     peak_set.t_data[[row.start_idx, row.end_idx]],
                     [row.aub_y_ref, row.aub_y_ref],
@@ -1414,7 +1413,7 @@ class TimeSeries:
             raise TypeError(msg)
         if peak_set.peak_df.empty:
             msg = "PeaksSet is empty"
-            raise ValueError(msg)
+            raise Warning(msg)
         return peak_set
 
 
@@ -1768,12 +1767,12 @@ class TimeSeriesGroup:
                 raise ValueError(msg)
 
     def _check_channel_idxs(self, channel_idxs: list[int] | np.ndarray | None, method: str) -> np.ndarray:
-        if method not in self._available_methods:
-            msg = "Invalid method"
-            raise ValueError(msg)
         return np.asarray(self._resolve_channels(channel_idxs))
 
     def _run_wrapper(self, method: str, channel_idxs: list[int] | np.ndarray | None = None, **kwargs) -> None:
+        if method not in self._available_methods:
+            msg = "Invalid method"
+            raise ValueError(msg)
         channel_idxs = self._check_channel_idxs(channel_idxs, method)
 
         # only plot checks remain here
@@ -1796,6 +1795,16 @@ class TimeSeriesGroup:
 
     def run(self, method: str, channel_idxs: list[int] | np.ndarray | None = None, **kwargs) -> None:
         """LEGACY - Run the indicated method on the indicated channels with the provided kwargs."""
+        warnings.warn(
+            "\n".join(
+                wrap(
+                    dedent(f"""
+                The `TimeSeriesGroup.run('{method}')` syntax is deprecated. Call the method directly on the
+                TimeSeriesGroup object instead, e.g. `group.{method}(channel_idxs=..., **kwargs)`.""")
+                )
+            ),
+            FutureWarning,
+        )
         if method not in self._available_methods:
             msg = "Invalid method"
             raise ValueError(msg)
