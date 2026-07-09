@@ -9,15 +9,16 @@ maintainers = [
     {name = "Rob Warnaar", email = "r.s.p.warnaar@utwente.nl"},
 ]
 description = "A package for analysis of respiratory EMG data"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 keywords = ["electromyography", "EMG", "respiratory", "Python", "surface EMG"]
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 classifiers = [
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Operating System :: OS Independent",
 ]
 dependencies = [
@@ -28,6 +29,7 @@ dependencies = [
     'scipy',
     'matplotlib',
     'h5py',
+    'ipywidgets',
     'numpy>=1.24.4',
     'scikit-learn>=1.3.2',
     'neurokit2>=0.2.7',
@@ -50,11 +52,9 @@ tests = ['pytest',
          'pytest-cov',
          'pycodestyle', 
          'isort',
-         'wheel',
-         'ipywidgets']
+         'wheel']
 docs = ['wheel',
-        'sphinx',
-        'ipywidgets']
+        'sphinx']
 dev = ['pytest', 
        'pytest-cov',
        'pycodestyle', 

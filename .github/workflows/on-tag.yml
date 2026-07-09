@@ -17,23 +17,23 @@ jobs:
     name: Tagged Release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           fetch-depth: 0
           submodules: recursive
 
-      - name: Set up Python 3.12
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
+      - name: Set up Python 3.14
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
-          python-version: 3.12
-      - run: python3.12 -m venv .venv
+          python-version: 3.14
+      - run: python3.14 -m venv .venv
       - run: .venv/bin/python -m pip install build wheel twine
       - run: .venv/bin/python -m build
       - run: >-
           TWINE_USERNAME=__token__
           TWINE_PASSWORD=${{ secrets.PYPI_TOKEN }}
           .venv/bin/python -m twine upload --skip-existing ./dist/*
-      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: pypi-build
           path: dist/*
@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [PyPIBuild]
     steps:
-      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           path: dist
       - uses: marvinpinto/action-automatic-releases@d68defdd11f9dcc7f52f35c1b7c236ee7513bcc1
