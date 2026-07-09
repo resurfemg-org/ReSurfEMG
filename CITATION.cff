@@ -32,6 +32,11 @@ authors:
     family-names: Oppersma
     given-names: Eline
     orcid: "https://orcid.org/0000-0002-0150-306X"
+-
+    affiliation: "University of Twente"
+    family-names: Maninetti
+    given-names: Chiara
+    orcid: "https://orcid.org/0009-0008-9817-3407"
 
 repository-code: 'https://github.com/resurfemg-org/ReSurfEMG'
 repository-artifact: 'https://pypi.org/project/resurfemg/'
