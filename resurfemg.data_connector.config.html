@@ -56,13 +56,38 @@ The data integrity can be checked because this file contains hash functions
 to track data. Synthetic data can be made with several methods.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="resurfemg.data_connector.config.Config">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">location</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.data_connector.config.Config" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">location</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">configure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.data_connector.config.Config" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
-<p>This class allows configuration on the home computer or remote workspace,
-of a file setup for data, which is then processed into a variable.
-Essentially by setting up and modifying a .json file in the appropriate
-directory users can avoid the need for any hardcoded paths to data.
+<p>A configuration class for ResurfEMG data paths, allowing to specify
+paths in a JSON file instead of hardcoding them within the code.
+A typical workflow would be:
+1. Create a Config object, which loads the configuration file (config.json)
+from the provided location or from default locations:
+config = Config(verbose=True)
+2. Extract a configured directory using the get_directory method:
+base_path = config.get_directory(‘root_data’)</p>
+<p>If no location is specified it will try to load the configuration file from
+the default locations in the following order:
+- ./config.json                 (current working directory)
+- PROJECT_ROOT/config.json      (project root directory, if located)
+- ~/.resurfemg/config.json      (user config in Windows)
+- /etc/resurfemg/config.json    (system-wide config in Linux or OSX)</p>
+<p>If ‘configure’ is set to True, a new configuration file will be created
+at the first available location in the above list.
+If ‘force’ is set to True, any existing configuration file will be
+overwritten.</p>
+<p>For details on how to set up the configuration file, see:
+- print(config.usage()): instructions on where to create a config file.
+- print(config.config_file_help()): details on the config file structure.
 ———————————————————————–</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="resurfemg.data_connector.config.Config.config_file_help">
+<span class="sig-name descname"><span class="pre">config_file_help</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.data_connector.config.Config.config_file_help" title="Link to this definition">¶</a></dt>
+<dd><section id="this-function-provides-help-on-how-to-set-up-the-configuration-file">
+<h2>This function provides help on how to set up the configuration file.<a class="headerlink" href="#this-function-provides-help-on-how-to-set-up-the-configuration-file" title="Link to this heading">¶</a></h2>
+</section>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="resurfemg.data_connector.config.Config.create_config_from_example">
 <span class="sig-name descname"><span class="pre">create_config_from_example</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">location</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.data_connector.config.Config.create_config_from_example" title="Link to this definition">¶</a></dt>
@@ -74,9 +99,6 @@ directory users can avoid the need for any hardcoded paths to data.
 </dd>
 <dt class="field-even">type location<span class="colon">:</span></dt>
 <dd class="field-even"><p>str</p>
-</dd>
-<dt class="field-odd">raises ValueError<span class="colon">:</span></dt>
-<dd class="field-odd"><p>If the example file is not found.</p>
 </dd>
 </dl>
 </section>
@@ -90,6 +112,22 @@ directory users can avoid the need for any hardcoded paths to data.
 <dl class="field-list simple">
 <dt class="field-odd">return<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The configuration file.</p>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="resurfemg.data_connector.config.Config.get_default_layout">
+<span class="sig-name descname"><span class="pre">get_default_layout</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.data_connector.config.Config.get_default_layout" title="Link to this definition">¶</a></dt>
+<dd><section id="this-function-returns-the-default-layout-of-the-configuration-file">
+<h2>This function returns the default layout of the configuration file.<a class="headerlink" href="#this-function-returns-the-default-layout-of-the-configuration-file" title="Link to this heading">¶</a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The default layout of the configuration file.</p>
 </dd>
 <dt class="field-even">rtype<span class="colon">:</span></dt>
 <dd class="field-even"><p>dict</p>
@@ -114,7 +152,7 @@ file. If the directory is not specified, it will return the value.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="resurfemg.data_connector.config.Config.load">
-<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">location</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.data_connector.config.Config.load" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">location</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.data_connector.config.Config.load" title="Link to this definition">¶</a></dt>
 <dd><p>This function loads the configuration file. If no location is specified
 it will try to load the configuration file from the default locations:
 - ./config.json
@@ -129,9 +167,30 @@ it will try to load the configuration file from the default locations:
 :raises ValueError: If the configuration file is not found.</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="resurfemg.data_connector.config.Config.parse_paths">
+<span class="sig-name descname"><span class="pre">parse_paths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.data_connector.config.Config.parse_paths" title="Link to this definition">¶</a></dt>
+<dd><section id="this-function-parses-the-paths-in-the-configuration-file">
+<h2>This function parses the paths in the configuration file.<a class="headerlink" href="#this-function-parses-the-paths-in-the-configuration-file" title="Link to this heading">¶</a></h2>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="resurfemg.data_connector.config.Config.print_config">
+<span class="sig-name descname"><span class="pre">print_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.data_connector.config.Config.print_config" title="Link to this definition">¶</a></dt>
+<dd><section id="this-function-prints-the-current-configuration">
+<h2>This function prints the current configuration.<a class="headerlink" href="#this-function-prints-the-current-configuration" title="Link to this heading">¶</a></h2>
+</section>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="resurfemg.data_connector.config.Config.required_directories">
 <span class="sig-name descname"><span class="pre">required_directories</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['root_data']</span></span><a class="headerlink" href="#resurfemg.data_connector.config.Config.required_directories" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="resurfemg.data_connector.config.Config.setup_config">
+<span class="sig-name descname"><span class="pre">setup_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">location</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.data_connector.config.Config.setup_config" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -144,11 +203,11 @@ correctly. It contains instructions on how to configure the paths.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="resurfemg.data_connector.config.Config.validate">
-<span class="sig-name descname"><span class="pre">validate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.data_connector.config.Config.validate" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">validate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.data_connector.config.Config.validate" title="Link to this definition">¶</a></dt>
 <dd><p>This function validates the configuration file. It checks if the
 required directories exist.
 ———————————————————————–
-:raises ValueError: If a required directory does not exist.</p>
+:raises LoggingError: If the required directories do not exist.</p>
 </dd></dl>
 
 </dd></dl>
@@ -170,15 +229,25 @@ required directories exist.
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="resurfemg.data_connector.config.find_repo_root">
-<span class="sig-name descname"><span class="pre">find_repo_root</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">marker_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'config_example.json'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.data_connector.config.find_repo_root" title="Link to this definition">¶</a></dt>
-<dd><p>Find the root directory of the repository by looking for a marker file.
-:param marker_file: The marker file to look for (default is
-‘config_example.json’).
-———————————————————————–
-:type marker_file: str
+<dt class="sig sig-object py" id="resurfemg.data_connector.config.find_project_root">
+<span class="sig-name descname"><span class="pre">find_project_root</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PosixPath('/home/runner/work/ReSurfEMG/ReSurfEMG')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marker_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefer_build_markers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.data_connector.config.find_project_root" title="Link to this definition">¶</a></dt>
+<dd><p>Walks upward from <cite>current_dir</cite> to find a plausible Python project root.
+Returns the path if found, else None. If <cite>marker_file</cite> is provided,
+it is uses the <cite>marker_file</cite> in favor of looking for standard build/
+VCS markers. If <cite>prefer_build_markers</cite> is True, prioritize pyproject/setup
+files over .git. Markers checked are:
+Build-markers: pyproject.toml, setup.cfg, setup.py, poetry.lock,
+Pipfile, requirements.txt, tox.ini
+VCS-markers: .git
+:param current_dir: The directory to start searching from.
+:type current_dir: Path
+:param marker_file: Look for a specific marker file.
+:type marker_file: Optional[str]
+:param prefer_build_markers: Whether to prefer build markers over VCS
+markers.
+:type prefer_build_markers: bool
 :return: The absolute path to the root directory of the repository.
-:rtype: str</p>
+:rtype: Optional[Path]</p>
 </dd></dl>
 
 <dl class="py function">
@@ -229,17 +298,22 @@ files are changed. This function hashes all files in a directory.
     <ul>
 <li><a class="reference internal" href="#">resurfemg.data_connector.config module</a><ul>
 <li><a class="reference internal" href="#resurfemg.data_connector.config.Config"><code class="docutils literal notranslate"><span class="pre">Config</span></code></a><ul>
+<li><a class="reference internal" href="#resurfemg.data_connector.config.Config.config_file_help"><code class="docutils literal notranslate"><span class="pre">Config.config_file_help()</span></code></a></li>
 <li><a class="reference internal" href="#resurfemg.data_connector.config.Config.create_config_from_example"><code class="docutils literal notranslate"><span class="pre">Config.create_config_from_example()</span></code></a></li>
 <li><a class="reference internal" href="#resurfemg.data_connector.config.Config.get_config"><code class="docutils literal notranslate"><span class="pre">Config.get_config()</span></code></a></li>
+<li><a class="reference internal" href="#resurfemg.data_connector.config.Config.get_default_layout"><code class="docutils literal notranslate"><span class="pre">Config.get_default_layout()</span></code></a></li>
 <li><a class="reference internal" href="#resurfemg.data_connector.config.Config.get_directory"><code class="docutils literal notranslate"><span class="pre">Config.get_directory()</span></code></a></li>
 <li><a class="reference internal" href="#resurfemg.data_connector.config.Config.load"><code class="docutils literal notranslate"><span class="pre">Config.load()</span></code></a></li>
+<li><a class="reference internal" href="#resurfemg.data_connector.config.Config.parse_paths"><code class="docutils literal notranslate"><span class="pre">Config.parse_paths()</span></code></a></li>
+<li><a class="reference internal" href="#resurfemg.data_connector.config.Config.print_config"><code class="docutils literal notranslate"><span class="pre">Config.print_config()</span></code></a></li>
 <li><a class="reference internal" href="#resurfemg.data_connector.config.Config.required_directories"><code class="docutils literal notranslate"><span class="pre">Config.required_directories</span></code></a></li>
+<li><a class="reference internal" href="#resurfemg.data_connector.config.Config.setup_config"><code class="docutils literal notranslate"><span class="pre">Config.setup_config()</span></code></a></li>
 <li><a class="reference internal" href="#resurfemg.data_connector.config.Config.usage"><code class="docutils literal notranslate"><span class="pre">Config.usage()</span></code></a></li>
 <li><a class="reference internal" href="#resurfemg.data_connector.config.Config.validate"><code class="docutils literal notranslate"><span class="pre">Config.validate()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#resurfemg.data_connector.config.convert_to_os_path"><code class="docutils literal notranslate"><span class="pre">convert_to_os_path()</span></code></a></li>
-<li><a class="reference internal" href="#resurfemg.data_connector.config.find_repo_root"><code class="docutils literal notranslate"><span class="pre">find_repo_root()</span></code></a></li>
+<li><a class="reference internal" href="#resurfemg.data_connector.config.find_project_root"><code class="docutils literal notranslate"><span class="pre">find_project_root()</span></code></a></li>
 <li><a class="reference internal" href="#resurfemg.data_connector.config.hash_it_up_right_all"><code class="docutils literal notranslate"><span class="pre">hash_it_up_right_all()</span></code></a></li>
 </ul>
 </li>
