@@ -7,6 +7,7 @@ name = "resurfemg"
 maintainers = [
     {name = "Eline Mos-Oppersma", email = "e.oppersma@utwente.nl"},
     {name = "Rob Warnaar", email = "r.s.p.warnaar@utwente.nl"},
+    {name = "Chiara Maninetti", email = "c.maninetti@utwente.nl"},
 ]
 description = "A package for analysis of respiratory EMG data"
 requires-python = ">=3.10"
