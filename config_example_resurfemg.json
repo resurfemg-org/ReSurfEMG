@@ -1,7 +1,0 @@
-{
-    "root_data": "./not_pushed",
-    "patient_data": "./not_pushed/patient_data",
-    "simulated_data": "./not_pushed/simulated_data",
-    "preprocessed_data": "./not_pushed/preprocessed_data",
-    "output_data": "./not_pushed/output_data"
-}
