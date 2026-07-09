@@ -15,35 +15,52 @@ jobs:
   Test-Sphinx:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       with:
         submodules: recursive
-    - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
       with:
-        python-version: 3.12
+        python-version: 3.14
     - run: python3 -m venv .venv
     - run: .venv/bin/python -m pip install wheel sphinx setuptools
     - run: .venv/bin/python -m pip install -e .[docs]
     - run: .venv/bin/python setup.py apidoc
     - run: .venv/bin/python setup.py build_sphinx -W
 
+  Test-Python-Versions-Ubuntu:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12', '3.13']
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      with:
+        submodules: recursive
+    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - run: python3 -m venv .venv
+    - run: .venv/bin/python -m pip install wheel
+    - run: .venv/bin/python -m pip install -e .[tests]
+    - run: .venv/bin/python -m pytest
+
   Test-Sanity-Windows:
     permissions:
       id-token: write
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       with:
         submodules: recursive
-    - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
       with:
-        python-version: 3.12
+        python-version: 3.14
     - run: python -m venv .venv
     - run: .venv\Scripts\pip install wheel setuptools
     - run: .venv\Scripts\pip install -e .[tests]
     - run: .venv\Scripts\python -m pytest --cov . --cov-report=xml
     - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@fdcc8476540edceab3de004e990f80d881c6cc00
+      uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         slug: resurfemg-org/ReSurfEMG
@@ -52,12 +69,12 @@ jobs:
   Test-Sanity-OSX:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       with:
         submodules: recursive
-    - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
       with:
-        python-version: 3.12
+        python-version: 3.14
     - run: python3 -m venv .venv
     - run: .venv/bin/python -m pip install wheel
     - run: .venv/bin/python -m pip install -e .[tests]
