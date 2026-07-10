@@ -93,37 +93,42 @@ def _windowed_masked_mean(source: np.ndarray, starts: np.ndarray, width: int, ma
     return masked.mean(axis=1).filled(np.nan)  # (K,)
 
 
+def _get_emg_raw_gated_rms(emg_raw_gated: np.ndarray, gate_mask: np.ndarray, gate_width: int) -> np.ndarray:
+    # define this helper for reusability as it's used in both RMS and quadratic methods
+    emg_raw_gated_base = copy.deepcopy(emg_raw_gated)
+    emg_raw_gated_base[gate_mask] = np.nan
+    return evl.full_rolling_rms(emg_raw_gated_base, gate_width)
+
+
 def _gate_fill_interp(
     k_start: np.ndarray,
-    k_end: np.ndarray,
-    emg_raw: np.ndarray,
     emg_raw_gated: np.ndarray,
-    gate_mask: np.ndarray,
+    gated_idx: np.ndarray,
     peaks: np.ndarray,
     half_gate_width: int,
+    gate_width: int,
     max_sample: int,
 ) -> np.ndarray:
-    pre_idxs = np.clip(k_start - 1, 0, max_sample - 1)
-    post_idxs = np.clip(k_end + 1, 0, max_sample - 1)
-    pre_vals = emg_raw[pre_idxs]
-    post_vals = np.where((peaks + half_gate_width + 1) < max_sample, emg_raw[post_idxs], 0.0)
-    anchor_idxs = np.concatenate([pre_idxs, post_idxs])
-    anchor_vals = np.concatenate([pre_vals, post_vals])
-    sort_order = np.argsort(anchor_idxs)
+    if gated_idx.size == 0:
+        return emg_raw_gated
 
-    sample_idxs = np.where(gate_mask)[0]
-    emg_raw_gated[sample_idxs] = np.interp(
-        sample_idxs,
-        anchor_idxs[sort_order],
-        anchor_vals[sort_order],
-    )
+    pre_idx = peaks - half_gate_width - 1
+    post_idx = peaks + half_gate_width + 1
+    pre_in = (pre_idx >= 0) & (pre_idx < max_sample)
+    post_in = (post_idx >= 0) & (post_idx < max_sample)
+    pre_val = np.where(pre_in, emg_raw_gated[np.clip(pre_idx, 0, max_sample - 1)], 0.0)
+    post_val = np.where(post_in, emg_raw_gated[np.clip(post_idx, 0, max_sample - 1)], 0.0)
+
+    owner = np.clip(np.searchsorted(k_start, gated_idx, side="right") - 1, 0, len(peaks) - 1)
+    frac = (gated_idx - peaks[owner] + half_gate_width) / float(gate_width)
+    emg_raw_gated[gated_idx] = (1.0 - frac) * pre_val[owner] + frac * post_val[owner]
     return emg_raw_gated
 
 
 def _gate_fill_prior_mean(
     emg_raw: np.ndarray,
     emg_raw_gated: np.ndarray,
-    gate_mask: np.ndarray,
+    gated_idx: np.ndarray,
     k_start: np.ndarray,
     peaks: np.ndarray,
     half_gate_width: int,
@@ -136,39 +141,59 @@ def _gate_fill_prior_mean(
     post_means = _windowed_masked_mean(emg_raw, peaks + half_gate_width, gate_width, max_sample)
     fill_means = np.where(clamped, post_means, prior_means)
 
-    sample_idxs = np.where(gate_mask)[0]
-    owner = np.clip(np.searchsorted(k_start, sample_idxs, side="right") - 1, 0, len(peaks) - 1)
-    emg_raw_gated[sample_idxs] = fill_means[owner]
+    owner = np.clip(np.searchsorted(k_start, gated_idx, side="right") - 1, 0, len(peaks) - 1)
+    emg_raw_gated[gated_idx] = fill_means[owner]
     return emg_raw_gated
 
 
 def _gate_fill_rms(
     emg_raw_gated: np.ndarray,
     gate_mask: np.ndarray,
+    gated_idx: np.ndarray,
     gate_width: int,
     max_sample: int,
 ) -> np.ndarray:
-    emg_raw_gated_base = copy.deepcopy(emg_raw_gated)
-    emg_raw_gated_base[gate_mask] = np.nan
-    emg_raw_gated_rms = evl.full_rolling_rms(emg_raw_gated_base, gate_width)
+    emg_raw_gated_rms = _get_emg_raw_gated_rms(emg_raw_gated, gate_mask, gate_width)
 
-    half3 = int(1.5 * gate_width)
-    sample_idxs = np.where(gate_mask)[0]
-    fill_vals = _windowed_masked_mean(emg_raw_gated_rms, sample_idxs - half3, 2 * half3, max_sample)
-    needs_interp = np.isnan(fill_vals)
-    emg_raw_gated[sample_idxs[~needs_interp]] = fill_vals[~needs_interp]
+    w = max(1, 2 * int(1.5 * gate_width) + 1)
+    closed = "neither" if gate_width % 2 == 0 else "left"
+    local_mean = pd.Series(emg_raw_gated_rms).rolling(window=w, min_periods=1, center=True, closed=closed).mean().values
 
-    interpolate_samples = sample_idxs[needs_interp]
-    if len(interpolate_samples) > 0:
-        if interpolate_samples[0] == 0:
-            emg_raw_gated[0] = 0
-        if interpolate_samples[-1] == max_sample - 1:
-            emg_raw_gated[-1] = 0
-        x_samp = np.arange(max_sample)
-        other_mask = ~np.isin(x_samp, interpolate_samples)
-        emg_raw_gated[interpolate_samples] = np.interp(
-            interpolate_samples, x_samp[other_mask], emg_raw_gated[other_mask]
-        )
+    fill_vals = np.asarray(local_mean[gated_idx])
+    interp_mask = np.isnan(fill_vals)
+    emg_raw_gated[gated_idx[~interp_mask]] = fill_vals[~interp_mask]
+
+    return _interp_missing_samples(emg_raw_gated, interp_mask, gated_idx, max_sample)
+
+
+def _interp_missing_samples(
+    emg_raw_gated: np.ndarray,
+    interp_mask: np.ndarray,
+    sample_idxs: np.ndarray,
+    max_sample: int,
+) -> np.ndarray:
+    interpolate_samples = sample_idxs[interp_mask]
+    if interpolate_samples.size == 0:
+        return emg_raw_gated
+
+    # Boundary handling: pin a gated endpoint to 0 and PROMOTE it to an anchor
+    # (drop it from the interpolation targets) so interior samples ramp from 0,
+    # instead of being overwritten and flat-clamped to the first interior value.
+    if interpolate_samples[0] == 0:
+        emg_raw_gated[0] = 0.0
+        interpolate_samples = interpolate_samples[1:]
+    if interpolate_samples.size and interpolate_samples[-1] == max_sample - 1:
+        emg_raw_gated[-1] = 0.0
+        interpolate_samples = interpolate_samples[:-1]
+    if interpolate_samples.size == 0:
+        return emg_raw_gated
+
+    x_samp = np.arange(max_sample)
+    other_mask = ~np.isin(x_samp, interpolate_samples)
+    if not other_mask.any():  # no anchors left to interpolate from
+        return emg_raw_gated
+
+    emg_raw_gated[interpolate_samples] = np.interp(interpolate_samples, x_samp[other_mask], emg_raw_gated[other_mask])
     return emg_raw_gated
 
 
@@ -199,45 +224,52 @@ def gating(
     Returns:
         numpy.ndarray: The gated result.
     """
-    peaks = np.asarray(peak_idxs)
+    # all methods require the gate mask, so we can compute it here to avoid rewriting the same logic in each method
+    peaks = np.sort(np.asarray(peak_idxs))
     emg_raw_gated = copy.deepcopy(emg_raw)
     max_sample = emg_raw_gated.shape[0]
-    half_gate_width = gate_width // 2
+    # the half_gate_width is computed via integer division for methods 0, 1, and 2,
+    # but via float division for methods 3 and 4. The rest of the mask computation is identical for all methods.
+    half_gate_width = gate_width / 2 if method is _GATE_FILL_RMS else gate_width // 2
+    k_start = np.clip(peaks - half_gate_width, 0, max_sample).astype(int)
+    k_end = np.clip(peaks + half_gate_width, 0, max_sample).astype(int)
+    delta = np.zeros(max_sample + 1, dtype=np.int64)
+    np.add.at(delta, k_start, 1)  # +1 entering each gate
+    np.add.at(delta, k_end, -1)  # -1 leaving each gate
+    gate_mask = np.cumsum(delta)[:max_sample] > 0
 
-    k_start = np.clip(peaks - half_gate_width, 0, max_sample)
-    k_end = np.clip(peaks + half_gate_width, 0, max_sample)
-    emg_raw_gated_rms = copy.deepcopy(emg_raw_gated)
-    gate_mask = np.zeros(len(emg_raw_gated_rms), dtype=bool)
-    gate_mask[k_start] = True
-    valid = k_end < len(emg_raw_gated_rms)
-    gate_mask[k_end[valid]] = False
-
+    # Each method gets its own helper function to improve code readability
+    # and reduce the complexity of the main gating function.
     if method == _GATE_FILL_ZEROS:  # 0
         emg_raw_gated[gate_mask] = 0
-    elif method == _GATE_FILL_INTERP:  # 1
+        return emg_raw_gated
+
+    # again, this is a common step for all non-zero methods, so we can compute it once here.
+    gated_idx = np.nonzero(gate_mask)[0]
+
+    if method == _GATE_FILL_INTERP:  # 1
         emg_raw_gated = _gate_fill_interp(
             k_start,
-            k_end,
-            emg_raw,
             emg_raw_gated,
-            gate_mask,
+            gated_idx,
             peaks,
-            half_gate_width,
+            int(half_gate_width),
+            gate_width,
             max_sample,
         )
     elif method == _GATE_FILL_PRIOR_MEAN:  # 2
         emg_raw_gated = _gate_fill_prior_mean(
             emg_raw,
             emg_raw_gated,
-            gate_mask,
+            gated_idx,
             k_start,
             peaks,
-            half_gate_width,
+            int(half_gate_width),
             gate_width,
             max_sample,
         )
     elif method == _GATE_FILL_RMS:  # 3
-        emg_raw_gated = _gate_fill_rms(emg_raw_gated, gate_mask, gate_width, max_sample)
+        emg_raw_gated = _gate_fill_rms(emg_raw_gated, gate_mask, gated_idx, gate_width, max_sample)
     else:
         msg = f"Invalid method {method}."
         raise ValueError(msg)

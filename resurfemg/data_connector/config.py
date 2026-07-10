@@ -447,13 +447,13 @@ class PathSelector:
         return self.path_box.value
 
 
-class ConfigCreator:
-    """Aggregate multiple path selectors into a single config creator.
+class ConfigCreatorWidget:
+    """Widget config file generation.
 
-    This widget allows users to select paths for all properties and save them.
+    The widget allows for path selection for each of the default config entries.
 
     Example usage:
-    config_creator = ConfigCreator()
+    config_creator = ConfigCreatorWidget()
     Creates the widget with path selectors for all properties and a save button. The user can select paths and
     save the configuration, which will be loaded into the Config object.
 
@@ -465,7 +465,7 @@ class ConfigCreator:
     def __init__(self, config_path: str | Path | None = None):
 
         self._config_file_path: Path = Path().cwd() / "config.json" if config_path is None else Path(config_path)
-        self.config: Config = Config(location=self._config_file_path, force=True)
+        self.config: Config = Config(location=self._config_file_path)
         self._path_selectors = {
             name: PathSelector(property_name=name, selected_path=self.config.get_directory(name))
             for name in cast("tuple[PropertyName, ...]", get_args(PropertyName))

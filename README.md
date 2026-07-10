@@ -31,7 +31,7 @@ invasively measured respiratory EMG.  This library supports the ongoing research
 ReSurfEMG is a pure Python package. Below is the list of
 platforms that should work. Other platforms may work, but have had less extensive testing.
 Please note that where python.org Python stated as supported, it means
-that versions 3.10 - 3.13 are supported.
+that versions 3.10 - 3.14 are supported.
 
 #### AMD64 (x86)
 

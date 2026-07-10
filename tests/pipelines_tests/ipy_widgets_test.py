@@ -63,8 +63,8 @@ class TestCheckBoxTree(unittest.TestCase):
         self.assertEqual(cbt.file_types, {"P_001/emg.Poly5": "EMG"})
 
 
-class TestPatientSelectorMethods(unittest.TestCase):
-    """Tests for PatientSelector logic methods (display is mocked)."""
+class TestDatasetSelectorMethods(unittest.TestCase):
+    """Tests for DatasetSelector logic methods (display is mocked)."""
 
     @classmethod
     def setUpClass(cls):
@@ -72,10 +72,8 @@ class TestPatientSelectorMethods(unittest.TestCase):
             patch("resurfemg.pipelines.ipy_widgets.display"),
             patch("resurfemg.pipelines.ipy_widgets.find_files") as mock_ff,
         ):
-            mock_ff.return_value = pd.DataFrame(
-                {"files": ["P_001/emg_recording.Poly5", "P_001/vent_recording.Poly5"]}
-            )
-            cls.selector = ipy_widgets.PatientSelector(root_directory=Path("/tmp/test"))
+            mock_ff.return_value = pd.DataFrame({"files": ["P_001/emg_recording.Poly5", "P_001/vent_recording.Poly5"]})
+            cls.selector = ipy_widgets.DatasetSelector(root_directory=Path("/tmp/test"))
 
     def test_guess_data_type_emg(self):
         """Files with 'emg' in the name are classified as EMG."""
@@ -172,7 +170,7 @@ class TestCustomizeMatlabImport(unittest.TestCase):
         rng = np.random.default_rng(0)
         mat_content = {
             "y_emg": rng.standard_normal((100, 1)),  # single-channel time series
-            "fs_emg": np.array([[2000.0]]),           # scalar parameter
+            "fs_emg": np.array([[2000.0]]),  # scalar parameter
         }
         sio.savemat(str(cls.mat_file), mat_content)
         with patch("resurfemg.pipelines.ipy_widgets.display"):

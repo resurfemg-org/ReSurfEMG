@@ -115,8 +115,6 @@ class Poly5Reader:
         return mne.io.RawArray(self.samples * np.expand_dims(scale, axis=1), info)
 
     def _readFile(self, filename: Path) -> None:  # noqa: N802
-        # """number_per_block = self.num_samples_per_block
-        # suko = (self.num_samples % number_per_block) * self.num_channels"""
         self.file_obj = filename.open("rb")
         file_obj = self.file_obj
         self._readHeader(file_obj)
@@ -129,10 +127,6 @@ class Poly5Reader:
             sample_buffer = np.zeros(self.num_channels * self.num_samples)
 
             for i in range(self.num_data_blocks):
-                # """numb_per_block = self.num_data_blocks
-                # print("\rProgress: % 0.1f %%"
-                #  %(100*i/numb_per_block), end="\r")"""
-
                 # Check whether final data block is
                 # filled completely or not
                 if i == self.num_data_blocks - 1:
@@ -222,12 +216,8 @@ class Poly5Reader:
         magic_number = str(header_data[0])
         version_number = header_data[1]
         self.sample_rate: int = header_data[3]
-        # """self.storage_rate=header_data[4]
         self.num_channels: int = header_data[6] // 2
         self.num_samples: int = header_data[7]
-        # """self.start_time = datetime.datetime(header_data[8], header_data[9],
-        #                                     header_data[10], header_data[12],""""
-        #                                     header_data[13], header_data[14])""""
         self.num_data_blocks: int = header_data[15]
         self.num_samples_per_block: int = header_data[16]
         if magic_number != "b'POLY SAMPLE FILEversion 2.03\\r\\n\\x1a'":

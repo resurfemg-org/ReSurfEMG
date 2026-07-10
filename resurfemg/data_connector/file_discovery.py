@@ -19,9 +19,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def _resolve_data_pattern(
-    file_name_regex: str | None, extension_regex: str | None
-) -> str:
+def _resolve_data_pattern(file_name_regex: str | None, extension_regex: str | None) -> str:
     """Validate the name/extension patterns and build the glob pattern."""
     if file_name_regex is None:
         file_name_regex = "**"
@@ -108,9 +106,7 @@ def find_files(
     depth, folder_levels = _resolve_folder_levels(folder_levels)
 
     matching_files = root.glob(data_pattern)
-    matching_files_structure, non_matching_files_structure = _classify_files(
-        matching_files, root, depth
-    )
+    matching_files_structure, non_matching_files_structure = _classify_files(matching_files, root, depth)
 
     files = pd.DataFrame(matching_files_structure, columns=folder_levels)
     if verbose and non_matching_files_structure:
@@ -163,8 +159,7 @@ def find_folders(
     matching_dirs = [
         p
         for p in root.glob(pattern)
-        if p.is_dir()
-        and not any(part.startswith(".") for part in p.relative_to(root).parts)
+        if p.is_dir() and not any(part.startswith(".") for part in p.relative_to(root).parts)
     ]
 
     matching_path_structure = []
@@ -187,16 +182,14 @@ def find_folders(
     return folders
 
 
-MAX_DEPTH = 2
-
-
 def filepaths_dict(paths: list) -> dict:
     """Convert a list of file paths into a nested dictionary structure."""
+    max_depth = 2
 
     def _inner_iter(d: dict, paths: list) -> dict:
         if len(paths) == 1:
             d[paths[0]] = []
-        elif len(paths) > MAX_DEPTH:
+        elif len(paths) > max_depth:
             d[paths[0]] = _inner_iter(d.get(paths[0], {}), paths[1:])
         else:
             d.setdefault(paths[0], []).append(paths[1])  # was: d[paths[0]] = paths[1]

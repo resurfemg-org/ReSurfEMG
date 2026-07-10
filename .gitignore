@@ -58,8 +58,6 @@ venv.bak/
 .spyderproject
 .spyproject
 
-# locally-generated synthetic data
-synth_data/*.npy
 
 /site
 /historical_notebooks
@@ -86,3 +84,4 @@ synth_data/*.npy
 not_pushed
 conda-pkg/meta.yaml
 config.json
+.vscode/

@@ -246,7 +246,7 @@ class CheckBoxTree(anywidget.AnyWidget):
     file_types = traitlets.Dict({}).tag(sync=True)
 
 
-class PatientSelector:
+class DatasetSelector:
     """A widget to select patients and their corresponding files.
 
     Description: This class provides a user interface for selecting patients and their associated files.
@@ -315,7 +315,7 @@ class PatientSelector:
         self._get_selected()
 
     def _build_tree_data(self, node: dict) -> dict:
-        """Convert patient_dict subtree (leaves=lists) to CheckBoxTree tree_data (leaves=dtype strings).
+        """Convert dataset_dict subtree (leaves=lists) to CheckBoxTree tree_data (leaves=dtype strings).
 
         filepaths_dict produces three kinds of values:
           - empty list  → the key itself is a file (depth-2 path)
@@ -347,12 +347,12 @@ class PatientSelector:
         self.files = find_files(self.root_directory)
         col = self.files["files"]
         col = [Path(c).parts for c in col if re.search(self.patient_regex, c)]
-        self.patient_dict = filepaths_dict(col)
-        ids = list(self.patient_dict.keys())
+        self.dataset_dict = filepaths_dict(col)
+        ids = list(self.dataset_dict.keys())
 
         self.patient_selector = widgets.Dropdown(options=ids)
 
-        self._trees = {_id: CheckBoxTree(tree_data=self._build_tree_data(self.patient_dict[_id])) for _id in ids}
+        self._trees = {_id: CheckBoxTree(tree_data=self._build_tree_data(self.dataset_dict[_id])) for _id in ids}
 
         self.file_selector = widgets.Stack(
             [self._trees[_id] for _id in ids],
@@ -426,7 +426,7 @@ class PatientSelector:
             units = data.ch_unit_names[:n_channels] if hasattr(data, "channel_units") else n_channels * ["uV"]
         elif isinstance(data, AdichtReader):
             # Extract the ventilator data
-            select_channel_idxs = [*range(3)]
+            select_channel_idxs = [*range(len(data.adicht_data.channels))]
             record_idx = 0
             resample_channels_dict = None
             data_df, fs = data.extract_data(
@@ -438,9 +438,6 @@ class PatientSelector:
             y = data_df.to_numpy().T
             labels = data.get_labels(select_channel_idxs)
             units = data.get_units(select_channel_idxs, record_idx)
-            # NB: The units in the example data are in mV, so overwrite them:
-            labels = ["Paw", "Flow", "Volume"]
-            units = ["cmH2O", "L/min", "mL"]
         if data_type == "EMG":
             return EmgDataGroup(y, fs=fs, labels=labels, units=units)
         if data_type == "Ventilator":
@@ -460,7 +457,7 @@ class PatientSelector:
 
     def _update_data_type(self, _dropdown: widgets.Dropdown) -> None:
         self._get_selected()
-        self.patient_dict[self.selected_id][_dropdown.tooltip.replace("Data type for ", "")] = _dropdown.value
+        self.dataset_dict[self.selected_id][_dropdown.tooltip.replace("Data type for ", "")] = _dropdown.value
 
     def _create_checkbox(self, description: str, _type: str) -> widgets.HBox:
         """Create a checkbox widget and a dropdown widget for selecting the data type.
