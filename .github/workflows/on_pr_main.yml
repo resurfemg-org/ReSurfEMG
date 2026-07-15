@@ -15,29 +15,46 @@ jobs:
   Test-Sphinx:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
       with:
         submodules: recursive
-    - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+    - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
       with:
-        python-version: 3.12
+        python-version: 3.14
     - run: python3 -m venv .venv
     - run: .venv/bin/python -m pip install wheel sphinx setuptools
     - run: .venv/bin/python -m pip install -e .[docs]
     - run: .venv/bin/python setup.py apidoc
     - run: .venv/bin/python setup.py build_sphinx -W
 
-  Test-Sanity-Windows:
-    permissions:
-      id-token: write
-    runs-on: windows-latest
+  Test-Python-Versions-Ubuntu:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12', '3.13']
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       with:
         submodules: recursive
     - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
       with:
-        python-version: 3.12
+        python-version: ${{ matrix.python-version }}
+    - run: python3 -m venv .venv
+    - run: .venv/bin/python -m pip install wheel
+    - run: .venv/bin/python -m pip install -e .[tests]
+    - run: .venv/bin/python -m pytest
+
+  Test-Sanity-Windows:
+    permissions:
+      id-token: write
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+      with:
+        submodules: recursive
+    - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
+      with:
+        python-version: 3.14
     - run: python -m venv .venv
     - run: .venv\Scripts\pip install wheel setuptools
     - run: .venv\Scripts\pip install -e .[tests]
@@ -52,12 +69,12 @@ jobs:
   Test-Sanity-OSX:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
       with:
         submodules: recursive
-    - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+    - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
       with:
-        python-version: 3.12
+        python-version: 3.14
     - run: python3 -m venv .venv
     - run: .venv/bin/python -m pip install wheel
     - run: .venv/bin/python -m pip install -e .[tests]

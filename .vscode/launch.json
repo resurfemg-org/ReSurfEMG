@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Python/ipynb Files",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "justMyCode": false
+        },
+        {
+            "name": "Python Debugger: Notebook",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
+            "justMyCode": false
+        }
+    ]
+}

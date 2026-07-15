@@ -24,6 +24,134 @@ The library was initially built for surface EMG, however many functions will als
 invasively measured respiratory EMG.  This library supports the ongoing research at University of Twente on respiratory EMG.
 
 
+## Getting Started
+
+### Supported Platforms
+
+ReSurfEMG is a pure Python package. Below is the list of
+platforms that should work. Other platforms may work, but have had less extensive testing.
+Please note that where python.org Python stated as supported, it means
+that versions 3.10 - 3.14 are supported.
+
+#### AMD64 (x86)
+
+|                             | Linux     | Win       | OSX       |
+|:---------------------------:|:---------:|:---------:|:---------:|
+| ![p](etc/python-logo.png)   | 3.10 - 3.13 | 3.10 - 3.13* | 3.10 - 3.13 |
+| ![a](etc/anaconda-logo.png) | Discontinued | Discontinued | Discontinued |
+
+* For Python 3.13 on Windows there is a bug in the adi-reader package. For a succesfull install, please run the following command:
+``` sh
+pip install git+https://github.com/rspwarnaarUT/adinstruments_sdk_python.git@e15eb62862d3a8054eb3438c2a8f8d6480bf93b4
+```
+before running:
+``` sh
+pip install resurfemg
+```
+
+### Installation for all supported platforms
+
+Installation in a virtual environment is the preffered method. They are covered in the ["Virtual environment setup"](### Virtual environment setup) section. 
+If you wish to install with pip:
+
+``` sh
+pip install resurfemg
+```
+
+### Virtual environment setup (recommended)
+
+How to get the notebooks running? Assuming the raw data set and
+metadata is available.
+
+### 0a. Create a virtual environment using Python
+
+  #### On Linux/OSX:
+``` sh
+python3 -m venv .venv
+```
+
+  This might **require** the python3-venv.
+    
+  #### On Windows:
+  ``` sh
+  python -m venv .venv
+  ```
+
+### 0b. Activate the virtual environment and install ReSurfEMG
+
+  #### On Linux/OSX:
+  ``` sh
+  source .venv/bin/activate
+  ```
+    
+  #### On Windows:
+  ``` sh
+  .venv\Scripts\activate.bat
+  ```
+### 1. Install ReSurfEMG
+
+  ``` sh
+  pip install resurfemg[dev]
+  ```
+
+### 2. Open a notebook
+   Start a local Jupyter Notebook server by running the `jupyter notebook` 
+   command in your terminal. This opens a browser window where you can browse, 
+   open and run the notebooks. (We use [Jupyter notebooks](https://jupyter.org/try-jupyter/retro/notebooks/?path=notebooks/Intro.ipynb))
+   The ReSurfEMG notebooks are located in the notebooks folder. Navigate there 
+   and open a notebook of interest. The [basic_emg_analysis](https://github.com/resurfemg-org/ReSurfEMG/blob/main/researcher_interface/basic_emg_analysis.ipynb) 
+   notebook can be used to understand how to use the package.
+
+
+## Advanced contributor's setup / "Developer's setup"
+
+We distinguish between people who want to use this library in their own code 
+and/or analysis, and people who also want to develop this library who we call 
+developers, be it as members of our team or independent contributors. People 
+who simply want to use our library need to install the packaged version from 
+one of the package indexes to which we publish released versions (eg. PyPI). 
+This section of the readme is for advanced developers who want to modify the 
+library code (and possibly contribute their changes back or eventually publish 
+thier own modified fork). NB: You can accomplish modifications of the code, 
+submit pull-requests (PRs) and soforth without a 'developer's setup' but we 
+feel this setup will make advanced contributions easier.
+
+We have transitioned to a fully Python 3.10+ environment. 
+(For older instructions with `venv` please see versions below 0.2.0, and
+adapt them if using Windows and/or a different Python version than
+Python.org Python. e.g. you may need to use `.venv\Scripts\activate.bat` in
+place of `.venv/bin/activate`) 
+The instructions below are for our newer versions above 1.0.0. This will create 
+a distributable package from the source code, then install it in the currently
+active environment.  This will also install development tools we use
+s.a. `pytest` and `codestyle` and will also install tools we use for
+working with the library, such as `jupyter`.
+
+### On Linux/OSX:
+``` sh
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .[dev]
+``` 
+  
+### On Windows:
+``` sh
+python -m venv .venv
+.venv\Scripts\activate.bat
+pip install -e .[dev]
+```
+
+These installs differ in two ways from the regular install: 1) The `.[dev]` (as compared to `resurfemg[dev]`) 
+installs the library as it currently is including all your local changes, 
+instead of pulling it from the PyPI repository.  2) The `-e` flag ensures an 
+editable install, such that any changes to the library are automatically 
+applied to your environment.
+
+Now you should have everything necessary to start working on the
+source code.
+
+## Repository structure
+
 ### Program files
 
 The core functions of ReSurfEMG are in the folder [resurfemg](https://github.com/resurfemg-org/ReSurfEMG/tree/main/resurfemg):
@@ -57,7 +185,7 @@ researcher_interface:
 - These are a growing series of interactive notebooks that allow
   researchers to investigate questions about their own EMG data
 
-### Data sets
+## Data sets
 
 The notebooks are configured to run on various datasets.  Contact
 Dr. Eline Mos-Oppersma( 📫 e.mos-oppersma@utwente.nl) to discuss any
@@ -110,121 +238,6 @@ the root.  You do not need to specify all entries.
 ### Test data
 
 Test data is provided in the repository in the test_data folder.
-
-### Supported Platforms
-
-ReSurfEMG is a pure Python package. Below is the list of
-platforms that should work. Other platforms may work, but have had less extensive testing.
-Please note that where python.org Python stated as supported, it means
-that versions 3.9 - 3.12 are supported.
-
-#### AMD64 (x86)
-
-|                             | Linux     | Win       | OSX       |
-|:---------------------------:|:---------:|:---------:|:---------:|
-| ![p](etc/python-logo.png)   | Supported | Supported | Supported |
-| ![a](etc/anaconda-logo.png) | Discontinued | Discontinued | Discontinued |
-
-### Installation for all supported platforms
-
-Installation with Anaconda/conda and/or mamba are the preffered methods.
-They are covered in [the "Getting Started" section](#Getting-Started). 
-If you wish to install with pip:
-
-1. Create and activate a virtual environment (see developer setup section for more details) 
-2. Install ResurfEMG package by running `pip install resurfemg`.
-
-
-## Getting Started
-### With the recommended Python venv setup
-
-How to get the notebooks running? Assuming the raw data set and
-metadata is available.
-
-### 0a. Create a virtual environment using Python
-
-  #### On Linux/OSX:
-``` sh
-python3 -m venv .venv
-```
-
-  This might **require** the python3-venv.
-    
-  #### On Windows:
-  ``` sh
-  python -m venv .venv
-  ```
-
-### 0b. Activate the virtual environment and install ReSurfEMG
-
-  #### On Linux/OSX:
-``` sh
-source .venv/bin/activate
-pip install resurfemg[dev]
-```
-    
-  #### On Windows:
-  ``` sh
-  .venv\Scripts\activate.bat
-  pip install resurfemg[dev]
-  ```
-
-### 1. Open a notebook
-   Start a local Jupyter Notebook server by running the `jupyter notebook` 
-   command in your terminal. This opens a browser window where you can browse, 
-   open and run the notebooks. (We use [Jupyter notebooks](https://jupyter.org/try-jupyter/retro/notebooks/?path=notebooks/Intro.ipynb))
-   The ReSurfEMG notebooks are located in the notebooks folder. Navigate there 
-   and open a notebook of interest. The [basic_emg_analysis](https://github.com/resurfemg-org/ReSurfEMG/blob/main/researcher_interface/basic_emg_analysis.ipynb) 
-   notebook can be used to understand how to use the package.
-
-
-## Advanced contributor's setup / "Developer's setup"
-
-We distinguish between people who want to use this library in their own code 
-and/or analysis, and people who also want to develop this library who we call 
-developers, be it as members of our team or independent contributors. People 
-who simply want to use our library need to install the packaged version from 
-one of the package indexes to which we publish released versions (eg. PyPI). 
-This section of the readme is for advanced developers who want to modify the 
-library code (and possibly contribute their changes back or eventually publish 
-thier own modified fork). NB: You can accomplish modifications of the code, 
-submit pull-requests (PRs) and soforth without a 'developer's setup' but we 
-feel this setup will make advanced contributions easier.
-
-We have transitioned to a fully Python 3.9+ environment. 
-(For older instructions with `venv` please see versions below 0.2.0, and
-adapt them if using Windows and/or a different Python version than
-Python.org Python. e.g. you may need to use `.venv\Scripts\activate.bat` in
-place of `.venv/bin/activate`) 
-The instructions below are for our newer versions above 1.0.0. This will create 
-a distributable package from the source code, then install it in the currently
-active environment.  This will also install development tools we use
-s.a. `pytest` and `codestyle` and will also install tools we use for
-working with the library, such as `jupyter`.
-
-### On Linux/OSX:
-``` sh
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e .[dev]
-``` 
-  
-### On Windows:
-``` sh
-python -m venv .venv
-.venv\Scripts\activate.bat
-pip install -e .[dev]
-```
-
-These installs differ in two ways from the regular install: 1) The `.[dev]` (as compared to `resurfemg[dev]`) 
-installs the library as it currently is including all your local changes, 
-instead of pulling it from the PyPI repository.  2) The `-e` flag ensures an 
-editable install, such that any changes to the library are automatically 
-applied to your environment.
-
-Now you should have everything necessary to start working on the
-source code.
-
 
 ## Generating documentation
 

@@ -1,166 +1,202 @@
-"""
+"""This file contains functions to automatically find specified files and folders.
+
 Copyright 2022 Netherlands eScience Center and University of Twente
 Licensed under the Apache License, version 2.0. See LICENSE for details.
 
-This file contains functions to automatically find specified files and folders.
 """
-import os
-import platform
-import glob
+
+from __future__ import annotations
+
+import logging
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
-def find_files(
-    base_path,
-    file_name_regex=None,
-    extension_regex=None,
-    folder_levels=None,
-    verbose=True
-):
-    """
-    Find files with the file name and extension according to filename pattern
-    `file_name_regex`.`extension_regex` starting from the provided base_path
-    according to the provided folder_leves. If `folder_levels` is None, all
-    files matching the name pattern included, no matter the data organisation.
-    ---------------------------------------------------------------------------
-    :param base_path: Path to starting directory
-    :type base_path: str
-    :param file_name_regex: file name pattern, see Python Regex docs
-    :type file_name_regex: str
-    :param extension_regex: file extension pattern, see Python Regex docs
-    :type extension_regex: str
-    :param folder_levels: data directory organisation, e.g. ['patient', 'date']
-    :type folder_levels: list(str) or str
-    :param verbose: Provide feedback about non-included files
-    :type verbose: bool
+logger = logging.getLogger(__name__)
 
-    :returns files: Matching file paths tabled by the folder_levels
-    :rtype files: pd.DataFrame
-    """
 
-    if not os.path.isdir(base_path):
-        raise ValueError('Specified base_path cannot be found.')
-
+def _resolve_data_pattern(file_name_regex: str | None, extension_regex: str | None) -> str:
+    """Validate the name/extension patterns and build the glob pattern."""
     if file_name_regex is None:
-        file_name_regex = '**'
+        file_name_regex = "**"
     elif not isinstance(file_name_regex, str):
-        raise ValueError('file_name_regex should be a str.')
+        msg = "file_name_regex should be a str."
+        raise ValueError(msg)
 
     if extension_regex is None:
-        extension_regex = '**'
+        extension_regex = "**"
     elif not isinstance(extension_regex, str):
-        raise ValueError('extension_regex should be a str.')
-    if extension_regex.startswith('.'):
-        extension_regex = extension_regex[1:]
+        msg = "extension_regex should be a str."
+        raise ValueError(msg)
+    extension_regex = extension_regex.removeprefix(".")
 
+    return f"**/{file_name_regex}.{extension_regex}"
+
+
+def _resolve_folder_levels(
+    folder_levels: list[str] | None,
+) -> tuple[int | None, list[str]]:
+    """Determine the matching depth and the DataFrame column names."""
     if isinstance(folder_levels, list):
-        depth = len(folder_levels)
-        folder_levels.append('files')
-    elif folder_levels is None:
-        depth = None
-        folder_levels = ['files']
-    else:
-        raise ValueError('Provide either a list, or None as folder_levels.')
+        return len(folder_levels), [*folder_levels, "files"]
+    if folder_levels is None:
+        return None, ["files"]
+    msg = "Provide either a list, or None as folder_levels."
+    raise ValueError(msg)
 
-    if platform.system() == 'Windows':
-        path_sep = "\\"
-    else:
-        path_sep = '/'
 
-    data_pattern = os.path.join(
-        base_path, '**' + path_sep + file_name_regex + '.' + extension_regex)
-    matching_files = glob.glob(data_pattern, recursive=True)
-    files_structure = list()
-    for file_name in matching_files:
-        files_structure.append(
-            file_name.replace(base_path + path_sep, "").split(path_sep))
-
-    matching_files_structure = list()
-    non_matching_files_structure = list()
-    for file in files_structure:
+def _classify_files(
+    matching_files: Iterable[Path], base_path: Path, depth: int | None
+) -> tuple[list[str | list[str]], list[list[str]]]:
+    """Split matches into rows that fit the depth and those that don't."""
+    matching: list[str | list[str]] = []
+    non_matching: list[list[str]] = []
+    for file in matching_files:
+        rel = file.relative_to(base_path)
+        parts = list(rel.parts)
         if depth is None:
-            matching_files_structure.append(path_sep.join(file))
-        elif isinstance(file, str) and (depth == 0):
-            matching_files_structure.append(file)
-        elif isinstance(file, list) and (len(file) == depth+1):
-            matching_files_structure.append(file)
+            matching.append(str(rel))
+        elif len(parts) == depth + 1:
+            matching.append(parts)
         else:
-            non_matching_files_structure.append(file)
+            non_matching.append(parts)
+    return matching, non_matching
+
+
+def find_files(
+    base_path: str | Path,
+    file_name_regex: str | None = None,
+    extension_regex: str | None = None,
+    folder_levels: list[str] | None = None,
+    verbose: bool = True,
+) -> pd.DataFrame:
+    """Find files matching the provided name and extension patterns.
+
+    Find files with the file name and extension according to filename pattern
+    `file_name_regex`.`extension_regex` starting from the provided base_path
+    according to the provided folder_levels. If `folder_levels` is None, all
+    files matching the name pattern are included, no matter the data
+    organisation.
+
+    Args:
+        base_path (str | Path): Path to starting directory.
+        file_name_regex (str | None): File name pattern, see Python Regex docs.
+        extension_regex (str | None): File extension pattern, see Python Regex docs.
+        folder_levels (list[str] | None): Data directory organisation, e.g.
+            ["patient", "date"].
+        verbose (bool): Provide feedback about non-included files.
+
+    Returns:
+        pd.DataFrame: Matching file paths tabled by the folder_levels.
+
+    Raises:
+        ValueError: If base_path does not exist or the patterns or
+            folder_levels have an invalid type.
+    """
+    root = Path(base_path)
+    if not root.is_dir():
+        msg = f"Specified base_path {base_path} cannot be found."
+        raise ValueError(msg)
+
+    data_pattern = _resolve_data_pattern(file_name_regex, extension_regex)
+    depth, folder_levels = _resolve_folder_levels(folder_levels)
+
+    matching_files = root.glob(data_pattern)
+    matching_files_structure, non_matching_files_structure = _classify_files(matching_files, root, depth)
 
     files = pd.DataFrame(matching_files_structure, columns=folder_levels)
-    if verbose is True and len(non_matching_files_structure) > 0:
-        print('These files did not match the provided depth:\n',
-              (non_matching_files_structure))
+    if verbose and non_matching_files_structure:
+        logger.info(
+            "These files did not match the provided depth:\n%s",
+            non_matching_files_structure,
+        )
     return files
 
 
 def find_folders(
-    base_path,
-    folder_levels=None,
-    verbose=True
-):
-    """
-    Find folders up to the depth of the provided folder_levels starting from
-    the provided base_path. If `folder_levels` is None, all folders in the
-    provided are included, no matter the data organisation.
-    ---------------------------------------------------------------------------
-    :param base_path: Path to starting directory
-    :type base_path: str
-    :param folder_levels: data directory organisation, e.g. ['patient', 'date']
-    :type folder_levels: list(str) or str
-    :param verbose: Provide feedback about non-included files
-    :type verbose: bool
+    base_path: str | Path,
+    folder_levels: list[str] | None = None,
+    verbose: bool = True,
+) -> pd.DataFrame:
+    """Find folders up to the depth of the provided folder_levels.
 
-    :returns folders: Folder paths tabled by the folder_levels
-    :rtype folders: pd.DataFrame
+    Find folders starting from the provided base_path. If `folder_levels` is
+    None, all folders in the provided base_path are included, no matter the
+    data organisation.
+
+    Args:
+        base_path (str | Path): Path to starting directory.
+        folder_levels (list[str] | None): Data directory organisation, e.g.
+            ["patient", "date"].
+        verbose (bool): Provide feedback about non-included folders.
+
+    Returns:
+        pd.DataFrame: Folder paths tabled by the folder_levels.
+
+    Raises:
+        ValueError: If base_path does not exist or folder_levels has an
+            invalid type.
     """
-    if not os.path.isdir(base_path):
-        raise ValueError('Specified base_path cannot be found.')
+    root = Path(base_path)
+    if not root.is_dir():
+        msg = "Specified base_path cannot be found."
+        raise ValueError(msg)
 
     if isinstance(folder_levels, list):
         depth = len(folder_levels)
     elif folder_levels is None:
         depth = None
-        folder_levels = ['destination']
+        folder_levels = ["destination"]
     else:
-        raise ValueError('Provide either a list, or None as folder_levels.')
+        msg = "Provide either a list, or None as folder_levels."
+        raise ValueError(msg)
 
-    if platform.system() == 'Windows':
-        path_sep = "\\"
-    else:
-        path_sep = '/'
+    pattern = "*" if depth is None else "/".join(["*"] * depth)
+    matching_dirs = [
+        p
+        for p in root.glob(pattern)
+        if p.is_dir() and not any(part.startswith(".") for part in p.relative_to(root).parts)
+    ]
 
-    if depth is None:
-        data_pattern = os.path.join(
-            base_path, '*' + path_sep)
-    else:
-        data_pattern = os.path.join(
-            base_path, depth * ('*' + path_sep))
-    matching_paths = glob.glob(data_pattern, recursive=False)
-
-    path_structure = list()
-    for path_name in matching_paths:
-        path_structure.append(
-            path_name.replace(base_path + path_sep, "").split(path_sep))
-
-    matching_path_structure = list()
-    non_matching_path_structure = list()
-    for sub_path in path_structure:
+    matching_path_structure = []
+    non_matching_path_structure = []
+    for path in matching_dirs:
+        parts = list(path.relative_to(root).parts)
         if depth is None:
-            if isinstance(sub_path, str):
-                matching_path_structure.append(path_sep.join(sub_path))
-            elif isinstance(sub_path, list):
-                matching_path_structure.append(sub_path[0])
-        elif isinstance(sub_path, str) and (depth == 0):
-            matching_path_structure.append(sub_path)
-        elif isinstance(sub_path, list) and (len(sub_path) >= depth):
-            matching_path_structure.append(sub_path[:depth])
+            matching_path_structure.append(parts[0])
+        elif len(parts) >= depth:
+            matching_path_structure.append(parts[:depth])
         else:
-            non_matching_path_structure.append(sub_path)
+            non_matching_path_structure.append(parts)
 
     folders = pd.DataFrame(matching_path_structure, columns=folder_levels)
-    if verbose is True and len(non_matching_path_structure) > 0:
-        print('These paths did not match the provided depth:\n',
-              (non_matching_path_structure))
+    if verbose and non_matching_path_structure:
+        logger.info(
+            "These paths did not match the provided depth:\n%s",
+            non_matching_path_structure,
+        )
     return folders
+
+
+def filepaths_dict(paths: list) -> dict:
+    """Convert a list of file paths into a nested dictionary structure."""
+    max_depth = 2
+
+    def _inner_iter(d: dict, paths: list) -> dict:
+        if len(paths) == 1:
+            d[paths[0]] = []
+        elif len(paths) > max_depth:
+            d[paths[0]] = _inner_iter(d.get(paths[0], {}), paths[1:])
+        else:
+            d.setdefault(paths[0], []).append(paths[1])  # was: d[paths[0]] = paths[1]
+        return d
+
+    path_dict = {}
+    for path in paths:
+        path_dict[path[0]] = _inner_iter(path_dict.get(path[0], {}), path[1:])
+
+    return path_dict
