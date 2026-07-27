@@ -15,6 +15,7 @@ def moving_baseline(
     window_s,
     step_s,
     set_percentile=33,
+    omit_nan=False,
 ):
     """
     This function calculates a moving baseline from a envelope data in
@@ -37,8 +38,12 @@ def moving_baseline(
     for idx in range(0, len(signal_env), step_s):
         start_i = max([0, idx-int(window_s/2)])
         end_i = min([len(signal_env), idx + int(window_s/2)])
-        baseline_value_y = np.percentile(
-            signal_env[start_i:end_i], set_percentile)
+        if omit_nan:
+            baseline_value_y = np.nanpercentile(
+                signal_env[start_i:end_i], set_percentile)
+        else:
+            baseline_value_y = np.percentile(
+                signal_env[start_i:end_i], set_percentile)
 
         for i in range(idx, min([idx + step_s, len(signal_env)])):
             rolling_baseline[i] = baseline_value_y

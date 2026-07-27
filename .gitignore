@@ -70,6 +70,7 @@ venv.bak/
 /researcher_interface/output_emg_processed_upsampled/*
 /researcher_interface/ML_files/*
 /notebooks/open_work/hidden/*
+/notebooks/researcher_interface/hidden/*
 /ML_files/*
 /not_pushed/
 /notebooks/my_saved_experiments.csv

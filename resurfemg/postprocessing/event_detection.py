@@ -4,6 +4,7 @@ Licensed under the Apache License, version 2.0. See LICENSE for details.
 
 This file contains functions to extract detect peak, on- and offset samples.
 """
+import warnings
 import numpy as np
 import scipy
 import scipy.signal
@@ -385,6 +386,7 @@ def detect_emg_breaths(
 def find_linked_peaks(
     signal_1_t_peaks,
     signal_2_t_peaks,
+    tolerance_s=None,
 ):
     """
     Find the indices of the peaks in signal 2 closest to the time of the
@@ -404,8 +406,59 @@ def find_linked_peaks(
         signal_2_t_peaks = np.array(signal_2_t_peaks)
     peaks_idxs_signal_1_in_2 = np.zeros(signal_1_t_peaks.shape, dtype=int)
     for idx, signal_1_t_peak in enumerate(signal_1_t_peaks):
-        peaks_idxs_signal_1_in_2[idx] = np.argmin(
+        min_idx = np.argmin(
             np.abs(signal_2_t_peaks - signal_1_t_peak)
         )
+        if tolerance_s is None:
+            peaks_idxs_signal_1_in_2[idx] = min_idx
+        else:
+            min_diff = np.abs(signal_2_t_peaks - signal_1_t_peak)[min_idx]
+            if min_diff <= tolerance_s:
+                peaks_idxs_signal_1_in_2[idx] = min_idx
+            else:
+                peaks_idxs_signal_1_in_2[idx] = None
+            peaks_idxs_signal_1_in_2 = np.array(peaks_idxs_signal_1_in_2[
+                ~np.isnan(peaks_idxs_signal_1_in_2)], dtype=int)
 
     return peaks_idxs_signal_1_in_2
+
+
+def neural_expiratory_time(
+        env,
+        peak_idxs,
+        end_idxs,
+        threshold=0.70):
+    """
+    Find the neural expiratory time (Tne) of each breath by finding the moment
+    at which the envelope drops below a certain percentage of the peak.
+    :param env: EMG envelope
+    :type env: ~numpy.ndarray
+    :param peak_idxs: indices of the peaks in the envelope
+    :type peak_idxs: ~numpy.ndarray
+    :param start_idxs: indices of the start of each breath
+    :type start_idxs: ~numpy.ndarray
+    :param end_idxs: indices of the end of each breath
+    :type end_idxs: ~numpy.ndarray
+    :param threshold: threshold for the expiratory time
+    :type threshold: ~float
+
+    :returns cross_idx: indices of the expiratory times
+    :rtype cross_idx: ~numpy.ndarray[int]
+    """
+    cross_idxs = np.zeros(peak_idxs.shape, dtype=int)
+    for i, (peak_idx, end_idx) in enumerate(zip(peak_idxs, end_idxs)):
+        _env = env[peak_idx:end_idx]
+        _expiratory_threshold = threshold * env[peak_idx]
+        cross_idx = np.where(np.diff(np.sign(
+            _env - _expiratory_threshold)))[0]
+        if len(cross_idx) > 0:
+            cross_idx = cross_idx[0] + peak_idx + 1
+        else:
+            cross_idx = None
+        cross_idxs[i] = cross_idx
+    if np.sum(np.isnan(cross_idxs)) > 0:
+        warnings.warn(
+            'Some expiratory times could not be determined. '
+            + 'Check the threshold and the envelope signal.'
+        )
+    return cross_idxs

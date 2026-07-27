@@ -464,9 +464,10 @@ class TimeSeries:
 
         y_baseline_data = self.signal_type_data(signal_type=signal_io[0])
         if base_method in ('default', 'moving_baseline'):
+            omit_nan = kwargs.get('omit_nan', False)
             self[signal_io[1]] = bl.moving_baseline(
                 y_baseline_data, window_s=window_s, step_s=step_s,
-                set_percentile=percentile)
+                set_percentile=percentile, omit_nan=omit_nan)
         elif base_method == 'slopesum_baseline':
             if 'fs' not in self.param:
                 raise ValueError(
@@ -541,7 +542,7 @@ class TimeSeries:
                        peak_set_name=peak_set_name, overwrite=overwrite)
 
     def link_peak_set(self, peak_set_name, t_reference_peaks,
-                      linked_peak_set_name=None):
+                      linked_peak_set_name=None, tolerance_s=None):
         """
         Find the peaks in the PeaksSet with the peak_set_name closest in time
         to the provided peak timings in t_reference_peaks. The results are
@@ -567,7 +568,7 @@ class TimeSeries:
             linked_peak_set_name or peak_set_name + '_linked'
         t_peakset_peaks = peak_set['peak_idx'] / self.param['fs']
         link_peak_nrs = evt.find_linked_peaks(
-            t_reference_peaks, t_peakset_peaks)
+            t_reference_peaks, t_peakset_peaks, tolerance_s=tolerance_s)
 
         self.peaks[linked_peak_set_name] = PeaksSet(
             peak_set.signal, peak_set.t_data, peak_idxs=None
@@ -1329,7 +1330,11 @@ class VentilatorDataGroup(TimeSeriesGroup):
             peak_set_name='Pocc', overwrite=overwrite)
 
     def find_ventilator_peaks(
-            self, channel_io=None, overwrite=False, **kwargs):
+            self,
+            channel_io=None,
+            overwrite=False,
+            peak_set_name='ventilator_breaths',
+            **kwargs):
         """
         Detect breath-related peaks in a specified ventilator signal
         Peaks are stored in the corresponding TimeSeries under the same signal.
@@ -1394,6 +1399,6 @@ class VentilatorDataGroup(TimeSeriesGroup):
             self.channels[_channel_key].set_peaks(
                 signal=signal_raw,
                 peak_idxs=peak_idxs,
-                peak_set_name='ventilator_breaths',
+                peak_set_name=peak_set_name,
                 overwrite=overwrite
             )

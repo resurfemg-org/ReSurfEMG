@@ -8,6 +8,7 @@ This file contains functions to extract features from preprocessed EMG arrays.
 import warnings
 from scipy.integrate import trapezoid
 import numpy as np
+import pandas as pd
 
 from resurfemg.helper_functions.math_operations import running_smoother
 
@@ -257,3 +258,33 @@ def respiratory_rate(
     rr_median = float(np.nanmedian(rr_b2b))
 
     return rr_median, rr_b2b
+
+
+def percentile_snr(env, window_length=20480):
+    """
+    This function estimates the signal-to-noise ratio (SNR) of the EMG envelope
+    using the 25th and 75th percentiles of the envelope within a moving window.
+    Implementation based on Graßhof, Crit. Care 2021: Surface EMG-based
+    quantification of inspiratory effort: a quantitative comparison with Pes
+    :param env: The EMG envelope signal.
+    :type env: ~numpy.ndarray
+    :param window_length: The length of the moving window in samples.
+    :type window_length: int
+
+    :returns snr: The estimated SNR of the EMG envelope.
+    :rtype snr: ~numpy.ndarray[float]
+    """
+    env_series = pd.Series(env)
+    q1 = env_series.rolling(
+        window=window_length,
+        min_periods=1,
+        center=True
+    ).quantile(0.25)
+    q3 = env_series.rolling(
+        window=window_length,
+        min_periods=1,
+        center=True
+    ).quantile(0.75)
+    snr = np.median(q3/q1)
+
+    return snr

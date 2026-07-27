@@ -1,0 +1,7 @@
+{
+    "root_data": "./not_pushed",
+    "patient_data": "./patient_data",
+    "simulated_data": "./simulated_data",
+    "preprocessed_data": "./preprocessed_data",
+    "output_data": "./output_data"
+}
