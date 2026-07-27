@@ -247,6 +247,10 @@ class TestBellFit(unittest.TestCase):
             valid_peak,
             np.array([True, True, True, True, True])
         )
+        # Print the percentage of bell curve error: The test below incidentally
+        # throws an error during CI tests. This print statement is added to
+        # help debug the issue. TODO: Remove print once the issue is resolved.
+        print(percentage_bell_error)
         np.testing.assert_equal(
             np.abs(percentage_bell_error - 5) < 5,
             np.array([True, True, True, True, True])
