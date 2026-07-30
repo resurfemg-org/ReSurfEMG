@@ -51,12 +51,12 @@ class TestTauEstimation(unittest.TestCase):
         self.assertTrue(np.all(df_submask.loc[1:2000, 'quality']))
 
     def test_tau_estimation(self):
-        zc, _ = zero_cros_flow(self.flow, flow_threshold=0.2)
         df_tau, mask, _ = tau_est.tau_mask(
             p_aw=self.paw,
             flow=self.flow,
             volume=self.volume,
             peep=self.peep,
-            zc=zc)
+            flow_threshold=0.2
+            )
         tau, _ = tau_est.tau_switch_smf(df_tau[mask], c=4.685, verbose=False)
         self.assertAlmostEqual(tau, self.tau, places=10)

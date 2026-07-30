@@ -73,7 +73,7 @@ class TestTauEstimation(unittest.TestCase):
             df_ieqm=ieqm_df,
             t=1.345,
             keys=None,
-            verbose=False
+            verbose=True
         )
         self.assertAlmostEqual(c_est, 1000 * c_true, places=12)
         self.assertAlmostEqual(nmc_est, nmc_true, places=12)
