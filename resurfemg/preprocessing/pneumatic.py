@@ -87,9 +87,9 @@ def volume_computation(t, flow, fs, zc, method):
 
         case "Last points":
             end_exp_idxs = []
-            for i, zc in enumerate(zc):
-                zc_begin = max(0, zc - int(0.1 * fs))
-                zc_array = np.arange(zc_begin, zc + 1)
+            for _zc in zc:
+                zc_begin = max(0, _zc - int(0.1 * fs))
+                zc_array = np.arange(zc_begin, _zc + 1)
                 end_exp_idxs.append(zc_array)
 
             end_exp_idxs = [
