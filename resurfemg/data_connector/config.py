@@ -141,12 +141,10 @@ class Config:
         self.default_layout = self.get_default_layout()
         if configure:
             location = self.setup_config(location=location, force=force)
-        _path = self.load(location)
+        _path = self.load(location, verbose=verbose)
         self.parse_paths(_path)
         if configure:
             print(f'Created config. See and edit it at:\n {_path}\n')
-        elif verbose:
-            print(f'Loaded config from:\n {_path}\n')
         if verbose or configure:
             print('The following name-path combinations are configured:')
             self.print_config()
@@ -252,7 +250,7 @@ class Config:
             }
         return default_layout
 
-    def load(self, location):
+    def load(self, location, verbose=False):
         """
         This function loads the configuration file. If no location is specified
         it will try to load the configuration file from the default locations:
@@ -270,16 +268,28 @@ class Config:
         locations = (
             [location] if location is not None else self.default_locations
         )
-
+        _failed_paths = []
         for _path in locations:
             try:
                 with open(_path) as f:
                     self._raw = json.load(f)
+                    if verbose:
+                        msg = f'Loaded config file from:\n{_path}'
+                        logging.info(msg)
                     break
             except Exception as e:
-                logging.info(
-                    'Failed to load config file from %s: %s', _path, e)
+                if isinstance(e, FileNotFoundError):
+                    _failed_paths.append(_path)
+                else:
+                    raise e
         else:
+            msg = (
+                'Config file not found in any of the following locations:\n'
+                + '\n'.join(_failed_paths)
+                + '\n\n'
+                + self.usage()
+            )
+            logging.error(msg)
             raise ValueError('Config file not found.' + self.usage())
         return _path
 
