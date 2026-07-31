@@ -1,9 +1,10 @@
-cff-version: 1.0.1
+cff-version: 1.0.2
 title: ReSurfEMG
 message: "Please cite as below, if you use this software "
 type: software
 authors:
   -
+    affiliation: "University Health Network"
     affiliation: "University of Twente"
     family-names: Warnaar
     given-names: Robertus (Rob) Simon Petrus
@@ -27,6 +28,10 @@ authors:
     family-names: Soleimani
     given-names: Farnaz
     orcid: "https://orcid.org/0009-0003-3300-506X"
+  -
+    affiliation: "University of Twente"
+    family-names: Geraats
+    given-names: Stijn
   -
     affiliation: "University of Twente"
     family-names: Oppersma
