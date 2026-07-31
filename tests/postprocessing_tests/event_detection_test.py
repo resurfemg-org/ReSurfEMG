@@ -5,6 +5,7 @@ library
 import unittest
 import numpy as np
 import scipy
+from scipy.signal import sawtooth
 from scipy.integrate import trapezoid
 
 import resurfemg.preprocessing.envelope as evl
@@ -145,6 +146,18 @@ class TestFindLinkedPeaks(unittest.TestCase):
             np.array([10, 15, 20])
         )
 
+    def test_find_linked_peaks_tolerance(self):
+        t_1 = [10.0, 15.0, 20.0]
+        t_2 = np.arange(0, 30, 2.0) + 0.1
+        # The peak at 15.0 is not linked because the closest peak in t_2 is at
+        # 14.1, which is 0.9 away from 15.0 and greater than the tolerance
+        # of 0.5.
+        linked_peaks = evt.find_linked_peaks(t_1, t_2, tolerance_s=0.5)
+        np.testing.assert_array_equal(
+            linked_peaks,
+            np.array([5, 10])
+        )
+
 class TestDetectEmgBreaths(unittest.TestCase):
     def test_detect_emg_breaths(self):
         detected_peaks = evt.detect_emg_breaths(
@@ -152,6 +165,25 @@ class TestDetectEmgBreaths(unittest.TestCase):
         np.testing.assert_array_equal(
             detected_peaks,
             peaks_env
+        )
+
+
+class TestNeuralExpiratoryTime(unittest.TestCase):
+    def setUp(self):
+        self.t = np.arange(0, 10, 0.05)
+        self.env = - sawtooth(2 * np.pi * (self.t - 0.25), width=0.5)
+        self.env[self.env < 0] = 0
+        self.peak_idxs = np.arange(5, 85, 20)
+        self.end_idxs = np.arange(10, 100, 20)
+        self.threshold = 0.6
+
+    def test_neural_expiratory_time(self):
+        idxs_pred = self.peak_idxs + 2
+        neural_exp_idxs = evt.neural_expiratory_time(
+            self.env, self.peak_idxs, self.end_idxs, self.threshold)
+        np.testing.assert_array_equal(
+            neural_exp_idxs,
+            idxs_pred
         )
 
 if __name__ == '__main__':
