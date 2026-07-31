@@ -12,7 +12,11 @@ from sklearn.metrics import mean_absolute_error
 
 def explained_variance(y_true, y_pred):
     """
-    Calculate the explained variance score.
+    Calculate the explained variance score
+    :param y_true: The true output values.
+    :type y_true: ~numpy.ndarray
+    :param y_pred: The predicted output values.
+    :type y_pred: ~numpy.ndarray
     """
     # Propotion of variance explained
     ss_total = np.sum((y_true - np.mean(y_true)) ** 2)
@@ -23,6 +27,12 @@ def explained_variance(y_true, y_pred):
 def residual_standard_error(y_true, y_pred, p):
     """
     Calculate the residual standard error (RSE).
+    :param y_true: The true output values.
+    :type y_true: ~numpy.ndarray
+    :param y_pred: The predicted output values.
+    :type y_pred: ~numpy.ndarray
+    :param p: The number of predictors in the model.
+    :type p: int
     """
     # Standard deviation of residuals
     return np.sqrt(np.sum((y_true - y_pred) ** 2)/(len(y_true) - p))
