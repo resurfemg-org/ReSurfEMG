@@ -5,10 +5,14 @@ Licensed under the Apache License, version 2.0. See LICENSE for details.
 This file contains functions for estimating the time constant (tau) of the
 respiratory system from ventilator data.
 """
+import logging
 
 import numpy as np
 import statsmodels.api as sm
 from resurfemg.postprocessing.baseline import moving_baseline
+
+
+logger = logging.getLogger(__name__)
 
 
 def v_rs_estimation(
@@ -87,9 +91,9 @@ def compliance_estimation(df_ieqm, t=1.345, keys=None, verbose=False):
     nmc_est = nmc_x_c_est / c_mod
     mdl_c = rlm_model_breath
     if verbose:
-        print(rlm_model_breath.summary())
-        print(f"Compliance is: {c_est} mL/cmH2O")
-        print(f"NMC is: {nmc_est} cmH2O/uV")
+        logger.info(rlm_model_breath.summary())
+        logger.info(f"Compliance is: {c_est} mL/cmH2O")
+        logger.info(f"NMC is: {nmc_est} cmH2O/uV")
     return c_est, nmc_est, mdl_c
 
 

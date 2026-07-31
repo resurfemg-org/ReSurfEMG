@@ -6,12 +6,16 @@ This file contains functions for estimating the time constant (tau) of the
 respiratory system.
 """
 
+import logging
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 
 from resurfemg.preprocessing.pneumatic import zero_cros_flow
+
+
+logger = logging.getLogger(__name__)
 
 
 def tau_mask(p_aw, flow, volume, peep, zc=None, **kwargs):
@@ -147,16 +151,24 @@ def _breath_id(flow, zc, volume):
     associated signals.
     :rtype: ~pandas.DataFrame
     """
+    # Initialize arrays
     sample_array = np.arange(len(flow))
-    breath_array = np.full(len(flow), np.nan)
-    flow_output = np.full(len(flow), np.nan)
-    volume_output = np.full(len(flow), np.nan)
-
-    for j, (start, end) in enumerate(zip(zc[:-1]+1, zc[1:]+1)):
-        breath_array[start:end] = j
-        flow_output[start:end] = flow[start:end]
-        volume_output[start:end] = volume[start:end]
-
+    breath_array = np.full(flow.shape, np.nan)
+    flow_output = np.full(flow.shape, np.nan)
+    volume_output = np.full(flow.shape, np.nan)
+    # Calculate breath indices
+    breath_delta = np.zeros(flow.shape, dtype=int)
+    np.add.at(breath_delta, zc + 1, 1)  # Increment + 1 at start indices
+    breath_idxs = np.cumsum(breath_delta) - 1   # Breath IDs start from 0
+    # Detect expiration segments
+    delta = np.zeros(flow.shape, dtype=np.int64)
+    np.add.at(delta, zc[:-1] + 1, 1)    # Increment + 1 at start indices
+    np.add.at(delta, zc[1:] + 1, -1)    # Decrement - 1 at end indices
+    exp_idxs = np.argwhere(np.cumsum(delta) > 0)
+    # Assign breath IDs and flow/volume values for expiration segments
+    breath_array[exp_idxs] = breath_idxs[exp_idxs]
+    flow_output[exp_idxs] = flow[exp_idxs]
+    volume_output[exp_idxs] = volume[exp_idxs]
     breath_df = pd.DataFrame({
         'breath_id': pd.Series(breath_array),
         'flow': pd.Series(flow_output),
@@ -190,6 +202,6 @@ def tau_switch_smf(df, c=4.685, verbose=False):
     ).fit()
     tau = -1 * mdl.params.iloc[-1]
     if verbose:
-        print(f"Estimated Tau is: {tau}")
-        print(mdl.summary())
+        logger.info(f"Estimated Tau is: {tau}")
+        logger.info(mdl.summary())
     return tau, mdl
