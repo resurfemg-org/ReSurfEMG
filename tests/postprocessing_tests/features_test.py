@@ -7,6 +7,7 @@ import os
 import numpy as np
 import scipy
 from scipy.integrate import trapezoid
+from scipy.signal import square
 import resurfemg.preprocessing.envelope as evl
 import resurfemg.postprocessing.baseline as bl
 import resurfemg.postprocessing.event_detection as evt
@@ -154,6 +155,20 @@ class TestRespiratoryRate(unittest.TestCase):
             fs_emg)
         self.assertAlmostEqual(rr_median, 12, 2)
 
+
+class TestPercentileSnr(unittest.TestCase):
+    def setUp(self):
+        self.t = np.arange(0, 10, 0.01)
+        # Create a square wave signal with a duty cycle of 50% and add a DC
+        # offset of 1
+        self.signal = (square(2 * np.pi * self.t, duty=0.5) + 1) / 2  + 1
+
+    def test_percentile_snr(self):
+        snr = feat.percentile_snr(
+            env=self.signal,
+            window_length=500
+        )
+        self.assertEqual(snr, 2.0, 1)
 
 if __name__ == '__main__':
     unittest.main()
