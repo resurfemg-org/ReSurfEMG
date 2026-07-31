@@ -20,30 +20,24 @@ def zero_cros_flow(flow, flow_threshold=0.3):
     :param flow_threshold: The threshold for the flow signal.
     :type flow_threshold: float
 
-    :return zc:  zero crossings indices
+    :return zc: zero crossings indices
     :rtype: tuple
-    :return zc_candidate:  zero crossings candidates indices
+    :return zc_candi: zero crossings candidates indices
     :rtype: tuple
 
     """
-    zc_candidate = np.where(np.diff(np.sign(flow)))[0]
-    mask_positive = np.zeros_like(zc_candidate, dtype=bool)
-    for i in range(len(zc_candidate)-1):
-        # Check if the flow signal is above the threshold in the range between
-        # the zero crossings.
-        if zc_candidate[i+1] < len(flow):
-            post_range = flow[zc_candidate[i]:zc_candidate[i+1]+1]
-        else:
-            post_range = flow[zc_candidate[i]:-1]
+    zc_candi = np.where(np.diff(np.sign(flow)))[0]
+    mask_positive = np.zeros_like(zc_candi, dtype=bool)
+    for i, (_zc, _zc_next) in enumerate(zip(zc_candi[:-1], zc_candi[1:])):
         # Check if the maximum flow in the range is above the threshold and if
         # the flow signal is positive at the next sample.
-        max_flow = np.max(post_range)
-        sample_next = zc_candidate[i]+1
-        if max_flow > flow_threshold and flow[sample_next] > 0:
+        end_idx = _zc_next + 1 if _zc_next < len(flow) else -1
+        _flow_seg = flow[_zc:end_idx]
+        if np.max(_flow_seg) > flow_threshold and flow[_zc + 1] > 0:
             mask_positive[i] = True
 
-    zc = zc_candidate[mask_positive]
-    return zc, zc_candidate
+    zc = zc_candi[mask_positive]
+    return zc, zc_candi
 
 
 def volume_computation(t, flow, fs, zc, method):
@@ -87,14 +81,13 @@ def volume_computation(t, flow, fs, zc, method):
 
         case "Last points":
             end_exp_idxs = []
-            for _zc in zc:
-                zc_begin = max(0, _zc - int(0.1 * fs))
-                zc_array = np.arange(zc_begin, _zc + 1)
-                end_exp_idxs.append(zc_array)
-
-            end_exp_idxs = [
-                item for sublist in end_exp_idxs for item in sublist]
-            end_exp_idxs = np.array((end_exp_idxs), dtype=int).flatten()
+            zc_start_idxs = np.clip(
+                zc - int(0.1 * fs), 0, len(flow)).astype(int)
+            zc_end_idxs = zc + 1
+            delta = np.zeros(volume_raw.shape, dtype=np.int64)
+            np.add.at(delta, zc_start_idxs, 1)  # Increment + 1 at start idxs
+            np.add.at(delta, zc_end_idxs, -1)   # Decrement - 1 at end idxs
+            end_exp_idxs = np.where(np.cumsum(delta) > 0)[0]
 
             vol_zc = medfilt(
                 volume_raw[end_exp_idxs], kernel_size=int(0.1 * fs) - 1
@@ -103,10 +96,8 @@ def volume_computation(t, flow, fs, zc, method):
             # Select the samples where the flow signal is below 0.01 L/s and
             # the raw volume signal is below 0.1 L.
             end_exp_mask = (flow < 0) & (flow > -0.01) & (volume_raw < 0.1)
-            end_exp_idxs = np.arange(0, len(flow))[end_exp_mask]
-            vol_zc = medfilt(
-                volume_raw[end_exp_idxs], kernel_size=5
-            )
+            end_exp_idxs = np.argwhere(end_exp_mask).flatten()
+            vol_zc = medfilt(volume_raw[end_exp_idxs], kernel_size=5)
 
     vol_baseline = np.interp(t, t[end_exp_idxs], vol_zc)
     volume = volume_raw - vol_baseline

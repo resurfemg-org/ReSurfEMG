@@ -448,9 +448,8 @@ def neural_expiratory_time(
     cross_idxs = np.zeros(peak_idxs.shape, dtype=int)
     for i, (peak_idx, end_idx) in enumerate(zip(peak_idxs, end_idxs)):
         _env = env[peak_idx:end_idx]
-        _expiratory_threshold = threshold * env[peak_idx]
-        cross_idx = np.where(np.diff(np.sign(
-            _env - _expiratory_threshold)))[0]
+        _exp_threshold = threshold * env[peak_idx]
+        cross_idx = np.where(np.diff(np.sign(_env - _exp_threshold)))[0]
         if len(cross_idx) > 0:
             cross_idx = cross_idx[0] + peak_idx + 1
         else:
