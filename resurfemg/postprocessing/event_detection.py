@@ -404,7 +404,7 @@ def find_linked_peaks(
         signal_1_t_peaks = np.array(signal_1_t_peaks)
     if not isinstance(signal_2_t_peaks, np.ndarray):
         signal_2_t_peaks = np.array(signal_2_t_peaks)
-    peaks_idxs_signal_1_in_2 = np.zeros(signal_1_t_peaks.shape, dtype=int)
+    peaks_idxs_signal_1_in_2 = np.zeros(signal_1_t_peaks.shape, dtype=float)
     for idx, signal_1_t_peak in enumerate(signal_1_t_peaks):
         min_idx = np.argmin(
             np.abs(signal_2_t_peaks - signal_1_t_peak)
@@ -414,11 +414,11 @@ def find_linked_peaks(
         else:
             min_diff = np.abs(signal_2_t_peaks - signal_1_t_peak)[min_idx]
             if min_diff <= tolerance_s:
-                peaks_idxs_signal_1_in_2[idx] = min_idx
+                peaks_idxs_signal_1_in_2[idx] = float(min_idx)
             else:
-                peaks_idxs_signal_1_in_2[idx] = None
-            peaks_idxs_signal_1_in_2 = np.array(peaks_idxs_signal_1_in_2[
-                ~np.isnan(peaks_idxs_signal_1_in_2)], dtype=int)
+                peaks_idxs_signal_1_in_2[idx] = np.nan
+    peaks_idxs_signal_1_in_2 = np.array(peaks_idxs_signal_1_in_2[
+        ~np.isnan(peaks_idxs_signal_1_in_2)], dtype=int)
 
     return peaks_idxs_signal_1_in_2
 
