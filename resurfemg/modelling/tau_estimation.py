@@ -80,6 +80,7 @@ def tau_mask(p_aw, flow, volume, peep, fs, zc_idxs=None, **kwargs):
 
     def _quality_mask(
             breath_df,
+            fs,
             min_duration=1.5,
             min_tv=0.2,
             max_v0=0.1,
@@ -89,6 +90,8 @@ def tau_mask(p_aw, flow, volume, peep, fs, zc_idxs=None, **kwargs):
         :param breath_df: A DataFrame containing the breath identifiers and
         associated signals.
         :type breath_df: ~pandas.DataFrame
+        :param fs: The sampling rate of the signals.
+        :type fs: int
         :param min_duration: The minimum duration of a breath in seconds.
         :type min_duration: float
         :param min_tv: The minimum tidal volume of a breath in liters.
@@ -102,13 +105,13 @@ def tau_mask(p_aw, flow, volume, peep, fs, zc_idxs=None, **kwargs):
         breath_ids = np.unique(breath_df.breath_id.dropna())
         for _, breath_id in enumerate(breath_ids):
             mask_breath = breath_df.breath_id == breath_id
-            vol_segment = breath_df.volume[mask_breath].to_numpy()
-            sample_segment = breath_df.sample_idx[mask_breath].to_numpy()
+            vol_seg = breath_df.volume[mask_breath].to_numpy()
+            sample_seg = breath_df.sample_idx[mask_breath].to_numpy()
 
-            time_bool = (sample_segment[-1] - sample_segment[0]) > min_duration
-            vol_max_bool = max(vol_segment) > min_tv
-            v0_bool = vol_segment[-1] < max_v0
-            min_vol_bool = min(vol_segment) > min_vol
+            time_bool = (sample_seg[-1] - sample_seg[0]) > min_duration * fs
+            vol_max_bool = max(vol_seg) > min_tv
+            v0_bool = vol_seg[-1] < max_v0
+            min_vol_bool = min(vol_seg) > min_vol
             if time_bool and vol_max_bool and v0_bool and min_vol_bool:
                 mask[mask_breath] = True
         return mask
@@ -125,6 +128,7 @@ def tau_mask(p_aw, flow, volume, peep, fs, zc_idxs=None, **kwargs):
     breath_df = _breath_id(flow, zc_idxs, volume)
     mask_quality = _quality_mask(
             breath_df,
+            fs=fs,
             min_duration=kwargs.get('min_duration', 1.5),
             min_tv=kwargs.get('min_tv', 0.2),
             max_v0=kwargs.get('max_v0', 0.1),
@@ -181,7 +185,7 @@ def _breath_id(flow, zc_idxs, volume):
     return breath_df
 
 
-def tau_switch_smf(df, c=4.685, verbose=False):
+def tau_switch_smf(df, theta_act_exp=4.685, verbose=False):
     """
     Estimate the time constant (tau) using a robust linear model with Tukey's
     biweight function. The model is fitted to the end-expiratory slope between
@@ -189,8 +193,8 @@ def tau_switch_smf(df, c=4.685, verbose=False):
     to account for breath-specific offsets.
     :param df: A DataFrame containing the flow, volume, and breath identifier.
     :type df: ~pandas.DataFrame
-    :param c: The tuning constant for Tukey's biweight function.
-    :type c: float
+    :param theta_act_exp: The tuning constant for Tukey's biweight function.
+    :type theta_act_exp: float
     :param verbose: If True, print the model summary and estimated tau.
     :type verbose: bool
 
@@ -200,10 +204,10 @@ def tau_switch_smf(df, c=4.685, verbose=False):
     mdl = smf.rlm(
         'volume ~ flow + C(breath_id)',
         data=df,
-        M=sm.robust.norms.TukeyBiweight(c=c)
+        M=sm.robust.norms.TukeyBiweight(c=theta_act_exp)
     ).fit()
     tau = -1 * mdl.params.iloc[-1]
     if verbose:
-        logger.info(f"Estimated Tau is: {tau}")
+        logger.info("Estimated Tau is: %s", tau)
         logger.info(mdl.summary())
     return tau, mdl

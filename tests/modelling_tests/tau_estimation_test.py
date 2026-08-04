@@ -31,10 +31,14 @@ class TestTauEstimation(unittest.TestCase):
             1 + signal.square(2 * np.pi * self.t / 5))
 
     def test_tau_mask(self):
-        zc, _ = zero_cros_flow(self.flow, flow_threshold=0.2)
+        zc_idxs, _ = zero_cros_flow(self.flow, flow_threshold=0.2)
         (_, _, df_submask) = tau_est.tau_mask(
-            p_aw=self.paw, flow=self.flow, volume=self.volume, peep=self.peep,
-            zc=zc)
+            p_aw=self.paw,
+            flow=self.flow,
+            volume=self.volume,
+            peep=self.peep,
+            fs=self.fs,
+            zc_idxs=zc_idxs)
         # Paw - PEEP mask
         mask_paw_peep_pred = self.paw == self.peep
         np.testing.assert_array_equal(
@@ -56,7 +60,11 @@ class TestTauEstimation(unittest.TestCase):
             flow=self.flow,
             volume=self.volume,
             peep=self.peep,
+            fs=self.fs,
             flow_threshold=0.2
             )
-        tau, _ = tau_est.tau_switch_smf(df_tau[mask], c=4.685, verbose=False)
+        tau, _ = tau_est.tau_switch_smf(
+            df_tau[mask],
+            theta_act_exp=4.685,
+            verbose=False)
         self.assertAlmostEqual(tau, self.tau, places=10)

@@ -37,9 +37,9 @@ def v_rs_estimation(
     :param expiration_mask: A boolean mask indicating the samples that are
     during expiration.
     :type expiration_mask: ~numpy.ndarray
-    :param window_s: The window size in seconds for the moving baseline
+    :param window_s: The window size in samples for the moving baseline
     :type window_s: float
-    :param step_s: The step size in seconds for the moving baseline
+    :param step_s: The step size in samples for the moving baseline
     :type step_s: float
     :param set_percentile: The percentile to use for the moving baseline
     :type set_percentile: float
@@ -86,14 +86,14 @@ def compliance_estimation(df_ieqm, t=1.345, keys=None, verbose=False):
         df_ieqm[keys['VTP']],
         x_breath, M=sm.robust.norms.HuberT(t=t)
     ).fit(conv="coefs", cov="H3")
-    c_mod, nmc_x_c_est = rlm_model_breath.params
-    c_est = c_mod * 1000
-    nmc_est = nmc_x_c_est / c_mod
+    beta_0, beta_1 = rlm_model_breath.params
+    c_est = beta_0 * 1000
+    nmc_est = beta_1 / beta_0
     mdl_c = rlm_model_breath
     if verbose:
         logger.info(rlm_model_breath.summary())
-        logger.info(f"Compliance is: {c_est} mL/cmH2O")
-        logger.info(f"NMC is: {nmc_est} cmH2O/uV")
+        logger.info("Compliance is: %s mL/cmH2O", c_est)
+        logger.info("NMC is: %s cmH2O/uV", nmc_est)
     return c_est, nmc_est, mdl_c
 
 

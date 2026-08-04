@@ -39,6 +39,7 @@ class TestTauEstimation(unittest.TestCase):
             flow=self.flow,
             volume=self.volume,
             peep=self.peep,
+            fs=self.fs,
             zc=self.zc)
         self.v_rs = self.volume + self.tau_est * self.flow
 
