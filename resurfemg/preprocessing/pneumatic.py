@@ -20,27 +20,26 @@ def zero_cros_flow(flow, flow_threshold=0.3):
     :param flow_threshold: The threshold for the flow signal.
     :type flow_threshold: float
 
-    :return zc: zero crossings indices
+    :return zc_idxs: zero crossings indices
     :rtype: tuple
     :return zc_candi: zero crossings candidates indices
     :rtype: tuple
 
     """
-    zc_candi = np.where(np.diff(np.sign(flow)))[0]
+    zc_candi = np.argwhere(np.diff(np.sign(flow))).flatten() + 1
     mask_positive = np.zeros_like(zc_candi, dtype=bool)
     for i, (_zc, _zc_next) in enumerate(zip(zc_candi[:-1], zc_candi[1:])):
         # Check if the maximum flow in the range is above the threshold and if
         # the flow signal is positive at the next sample.
-        end_idx = _zc_next + 1 if _zc_next < len(flow) else -1
-        _flow_seg = flow[_zc:end_idx]
+        _flow_seg = flow[_zc:_zc_next]
         if np.max(_flow_seg) > flow_threshold and flow[_zc + 1] > 0:
             mask_positive[i] = True
 
-    zc = zc_candi[mask_positive]
-    return zc, zc_candi
+    zc_idxs = zc_candi[mask_positive]
+    return zc_idxs, zc_candi
 
 
-def volume_computation(t, flow, fs, zc, method):
+def volume_computation(t, flow, fs, zc_idxs, method):
     """
     Function to compute the volume signal from the flow signal. The volume
     signal is computed by integrating the flow signal. The volume signal is
@@ -57,8 +56,8 @@ def volume_computation(t, flow, fs, zc, method):
     :type flow: ~numpy.ndarray
     :param fs: The sampling frequency.
     :type fs: float
-    :param zc: The zero crossings.
-    :type zc: ~numpy.ndarray
+    :param zc_idxs: The zero crossing indices.
+    :type zc_idxs: ~numpy.ndarray
     :param method: The baseline correction method.
     :type method: str
 
@@ -76,14 +75,14 @@ def volume_computation(t, flow, fs, zc, method):
 
     match method:
         case "Last point":
-            end_exp_idxs = np.array((zc), dtype=int)
+            end_exp_idxs = np.array((zc_idxs), dtype=int)
             vol_zc = medfilt(volume_raw[end_exp_idxs], kernel_size=3)
 
         case "Last points":
             end_exp_idxs = []
             zc_start_idxs = np.clip(
-                zc - int(0.1 * fs), 0, len(flow)).astype(int)
-            zc_end_idxs = zc + 1
+                zc_idxs - int(0.1 * fs) - 1, 0, len(flow)).astype(int)
+            zc_end_idxs = zc_idxs
             delta = np.zeros(volume_raw.shape, dtype=np.int64)
             np.add.at(delta, zc_start_idxs, 1)  # Increment + 1 at start idxs
             np.add.at(delta, zc_end_idxs, -1)   # Decrement - 1 at end idxs

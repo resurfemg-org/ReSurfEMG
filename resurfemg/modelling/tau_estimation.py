@@ -18,7 +18,7 @@ from resurfemg.preprocessing.pneumatic import zero_cros_flow
 logger = logging.getLogger(__name__)
 
 
-def tau_mask(p_aw, flow, volume, peep, zc=None, **kwargs):
+def tau_mask(p_aw, flow, volume, peep, fs, zc_idxs=None, **kwargs):
     """
     Function to create a mask for the breaths based on various criteria. The
     criteria include the difference between Paw and PEEP, the flow signal, and
@@ -34,8 +34,10 @@ def tau_mask(p_aw, flow, volume, peep, zc=None, **kwargs):
     :type volume: ~numpy.ndarray
     :param peep: The PEEP signal.
     :type peep: ~numpy.ndarray
-    :param zc: The zero-crossings of the flow signal.
-    :type zc: ~numpy.ndarray
+    :param fs: The sampling rate of the signals.
+    :type fs: int
+    :param zc_idxs: The indices of the zero-crossings of the flow signal.
+    :type zc_idxs: ~numpy.ndarray
     :param kwargs: Additional keyword arguments for the criteria.
     :type kwargs: dict
 
@@ -117,10 +119,10 @@ def tau_mask(p_aw, flow, volume, peep, zc=None, **kwargs):
     mask_insp, mask_exp = _mask_expiration(
         flow, theta_flow=kwargs.get('theta_flow', 0.0))
 
-    if zc is None:
-        zc, _ = zero_cros_flow(
+    if zc_idxs is None:
+        zc_idxs, _ = zero_cros_flow(
             flow, flow_threshold=kwargs.get('flow_threshold', 0.2))
-    breath_df = _breath_id(flow, zc, volume)
+    breath_df = _breath_id(flow, zc_idxs, volume)
     mask_quality = _quality_mask(
             breath_df,
             min_duration=kwargs.get('min_duration', 1.5),
@@ -139,13 +141,13 @@ def tau_mask(p_aw, flow, volume, peep, zc=None, **kwargs):
     return breath_df, mask, df_submask
 
 
-def _breath_id(flow, zc, volume):
+def _breath_id(flow, zc_idxs, volume):
     """
     Assign a unique identifier to each breath.
     :param flow: The flow signal.
     :type flow: ~numpy.ndarray
-    :param zc: The zero-crossings of the flow signal.
-    :type zc: ~numpy.ndarray
+    :param zc_idxs: The indices of the zero-crossings of the flow signal.
+    :type zc_idxs: ~numpy.ndarray
 
     :return df_breaths: A DataFrame containing the breath identifiers and
     associated signals.
@@ -158,12 +160,12 @@ def _breath_id(flow, zc, volume):
     volume_output = np.full(flow.shape, np.nan)
     # Calculate breath indices
     breath_delta = np.zeros(flow.shape, dtype=int)
-    np.add.at(breath_delta, zc + 1, 1)  # Increment + 1 at start indices
+    np.add.at(breath_delta, zc_idxs, 1)  # Increment + 1 at start indices
     breath_idxs = np.cumsum(breath_delta) - 1   # Breath IDs start from 0
     # Detect expiration segments
     delta = np.zeros(flow.shape, dtype=np.int64)
-    np.add.at(delta, zc[:-1] + 1, 1)    # Increment + 1 at start indices
-    np.add.at(delta, zc[1:] + 1, -1)    # Decrement - 1 at end indices
+    np.add.at(delta, zc_idxs[:-1], 1)    # Increment + 1 at start indices
+    np.add.at(delta, zc_idxs[1:] + 1, -1)    # Decrement - 1 at end indices
     exp_idxs = np.argwhere(np.cumsum(delta) > 0)
     # Assign breath IDs and flow/volume values for expiration segments
     breath_array[exp_idxs] = breath_idxs[exp_idxs]
