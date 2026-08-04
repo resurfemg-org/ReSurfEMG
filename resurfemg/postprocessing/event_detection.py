@@ -445,7 +445,7 @@ def neural_expiratory_time(
     :returns cross_idx: indices of the expiratory times
     :rtype cross_idx: ~numpy.ndarray[int]
     """
-    cross_idxs = np.zeros(peak_idxs.shape, dtype=int)
+    cross_idxs = np.full(peak_idxs.shape, np.nan)
     for i, (peak_idx, end_idx) in enumerate(zip(peak_idxs, end_idxs)):
         _env = env[peak_idx:end_idx]
         _exp_threshold = threshold * env[peak_idx]
@@ -453,11 +453,12 @@ def neural_expiratory_time(
         if len(cross_idx) > 0:
             cross_idx = cross_idx[0] + peak_idx + 1
         else:
-            cross_idx = None
+            cross_idx = np.nan
         cross_idxs[i] = cross_idx
     if np.sum(np.isnan(cross_idxs)) > 0:
         warnings.warn(
             'Some expiratory times could not be determined. '
             + 'Check the threshold and the envelope signal.'
         )
+    cross_idxs = cross_idxs[~np.isnan(cross_idxs)].astype(int)
     return cross_idxs
