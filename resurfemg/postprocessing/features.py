@@ -285,6 +285,13 @@ def percentile_snr(env, window_length=20480):
         min_periods=1,
         center=True
     ).quantile(0.75)
+    if np.any(q1 == 0):
+        msg = ("Warning: The 25th percentile of the EMG envelope is zero in "
+               "some windows. These samples are excluded from the SNR"
+               "calculation, and might lead to an underestimation of the SNR."
+               + "Use uncorrected EMG envelope, i.e., without baseline "
+               + "substraction to get representative SNR values.")
+        warnings.warn(msg)
     snr = np.median(q3/q1)
 
     return snr
