@@ -52,5 +52,5 @@ jobs:
         with:
           prerelease: false
           files: |
-            ./dist/*/resurfemg-*.tar.gz2
+            ./dist/*/resurfemg-*.tar.gz
             ./dist/*/resurfemg-*.whl
