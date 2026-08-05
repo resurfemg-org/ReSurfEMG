@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>resurfemg.modelling.fit module &#8212; resurfemg 1.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css?v=2bf1fcf8" />
+    
+    <script src="_static/documentation_options.js?v=fc837d61"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="resurfemg.modelling.integrated_equation_of_motion module" href="resurfemg.modelling.integrated_equation_of_motion.html" />
+    <link rel="prev" title="resurfemg.modelling package" href="resurfemg.modelling.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="resurfemg.modelling.integrated_equation_of_motion.html" title="resurfemg.modelling.integrated_equation_of_motion module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="resurfemg.modelling.html" title="resurfemg.modelling package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">resurfemg 1.1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >resurfemg</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="resurfemg.html" >resurfemg package</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="resurfemg.modelling.html" accesskey="U">resurfemg.modelling package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">resurfemg.modelling.fit module</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-resurfemg.modelling.fit">
+<span id="resurfemg-modelling-fit-module"></span><h1>resurfemg.modelling.fit module<a class="headerlink" href="#module-resurfemg.modelling.fit" title="Link to this heading">¶</a></h1>
+<p>Copyright 2026 Netherlands eScience Center and University of Twente
+Licensed under the Apache License, version 2.0. See LICENSE for details.</p>
+<p>This file contains functions for checking the fit of linear models.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="resurfemg.modelling.fit.check_model_fit">
+<span class="sig-name descname"><span class="pre">check_model_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mdl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_constant_term</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.modelling.fit.check_model_fit" title="Link to this definition">¶</a></dt>
+<dd><p>Check the fit of a linear model by calculating the coefficient of
+determination (R^2), mean absolute error (MAE), and residual standard error
+(RSE).
+:param mdl: The fitted linear model.
+:type mdl: ~statsmodels.regression.linear_model.RegressionResultsWrapper
+:param x_input: The input features for the model.
+:type x_input: ~numpy.ndarray
+:param y_true: The true output values.
+:type y_true: ~numpy.ndarray</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="resurfemg.modelling.fit.explained_variance">
+<span class="sig-name descname"><span class="pre">explained_variance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_pred</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.modelling.fit.explained_variance" title="Link to this definition">¶</a></dt>
+<dd><p>Calculate the explained variance score
+:param y_true: The true output values.
+:type y_true: ~numpy.ndarray
+:param y_pred: The predicted output values.
+:type y_pred: ~numpy.ndarray</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="resurfemg.modelling.fit.residual_standard_error">
+<span class="sig-name descname"><span class="pre">residual_standard_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.modelling.fit.residual_standard_error" title="Link to this definition">¶</a></dt>
+<dd><p>Calculate the residual standard error (RSE).
+:param y_true: The true output values.
+:type y_true: ~numpy.ndarray
+:param y_pred: The predicted output values.
+:type y_pred: ~numpy.ndarray
+:param p: The number of predictors in the model.
+:type p: int</p>
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/Logo_rond_tekst.svg" alt="Logo of resurfemg"/>
+            </a></p>
+<h3><a href="index.html">Table of Contents</a></h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">resurfemg</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="resurfemg.html">resurfemg package</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developers.html">Developer’s Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="medical-professionals.html">Medical Professional Documentation</a></li>
+</ul>
+
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">resurfemg.modelling.fit module</a><ul>
+<li><a class="reference internal" href="#resurfemg.modelling.fit.check_model_fit"><code class="docutils literal notranslate"><span class="pre">check_model_fit()</span></code></a></li>
+<li><a class="reference internal" href="#resurfemg.modelling.fit.explained_variance"><code class="docutils literal notranslate"><span class="pre">explained_variance()</span></code></a></li>
+<li><a class="reference internal" href="#resurfemg.modelling.fit.residual_standard_error"><code class="docutils literal notranslate"><span class="pre">residual_standard_error()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="resurfemg.modelling.html"
+                          title="previous chapter">resurfemg.modelling package</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="resurfemg.modelling.integrated_equation_of_motion.html"
+                          title="next chapter">resurfemg.modelling.integrated_equation_of_motion module</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/resurfemg.modelling.fit.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="resurfemg.modelling.integrated_equation_of_motion.html" title="resurfemg.modelling.integrated_equation_of_motion module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="resurfemg.modelling.html" title="resurfemg.modelling package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">resurfemg 1.1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >resurfemg</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="resurfemg.html" >resurfemg package</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="resurfemg.modelling.html" >resurfemg.modelling package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">resurfemg.modelling.fit module</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2022, e.oppersma@utwente.nl.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

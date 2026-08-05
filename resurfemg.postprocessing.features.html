@@ -115,6 +115,27 @@ for the nadir
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="resurfemg.postprocessing.features.percentile_snr">
+<span class="sig-name descname"><span class="pre">percentile_snr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20480</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.postprocessing.features.percentile_snr" title="Link to this definition">¶</a></dt>
+<dd><p>This function estimates the signal-to-noise ratio (SNR) of the EMG envelope
+using the 25th and 75th percentiles of the envelope within a moving window.
+Implementation based on Graßhof, Crit. Care 2021: Surface EMG-based
+quantification of inspiratory effort: a quantitative comparison with Pes
+:param env: The EMG envelope signal.
+:type env: ~numpy.ndarray
+:param window_length: The length of the moving window in samples.
+:type window_length: int</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns snr<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The estimated SNR of the EMG envelope.</p>
+</dd>
+<dt class="field-even">Rtype snr<span class="colon">:</span></dt>
+<dd class="field-even"><p>~numpy.ndarray[float]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="resurfemg.postprocessing.features.pseudo_slope">
 <span class="sig-name descname"><span class="pre">pseudo_slope</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">emg_env</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smoothing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.postprocessing.features.pseudo_slope" title="Link to this definition">¶</a></dt>
 <dd><p>This is a function to get the shape/slope of the take-off angle of the
@@ -266,6 +287,7 @@ windows defined by the start_idx and end_idx sample pairs.
 <li><a class="reference internal" href="#">resurfemg.postprocessing.features module</a><ul>
 <li><a class="reference internal" href="#resurfemg.postprocessing.features.amplitude"><code class="docutils literal notranslate"><span class="pre">amplitude()</span></code></a></li>
 <li><a class="reference internal" href="#resurfemg.postprocessing.features.area_under_baseline"><code class="docutils literal notranslate"><span class="pre">area_under_baseline()</span></code></a></li>
+<li><a class="reference internal" href="#resurfemg.postprocessing.features.percentile_snr"><code class="docutils literal notranslate"><span class="pre">percentile_snr()</span></code></a></li>
 <li><a class="reference internal" href="#resurfemg.postprocessing.features.pseudo_slope"><code class="docutils literal notranslate"><span class="pre">pseudo_slope()</span></code></a></li>
 <li><a class="reference internal" href="#resurfemg.postprocessing.features.respiratory_rate"><code class="docutils literal notranslate"><span class="pre">respiratory_rate()</span></code></a></li>
 <li><a class="reference internal" href="#resurfemg.postprocessing.features.time_product"><code class="docutils literal notranslate"><span class="pre">time_product()</span></code></a></li>

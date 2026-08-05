@@ -1,0 +1,7 @@
+resurfemg.modelling.fit module
+==============================
+
+.. automodule:: resurfemg.modelling.fit
+   :members:
+   :show-inheritance:
+   :undoc-members:

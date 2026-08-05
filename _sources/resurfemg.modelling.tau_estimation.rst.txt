@@ -1,0 +1,7 @@
+resurfemg.modelling.tau\_estimation module
+==========================================
+
+.. automodule:: resurfemg.modelling.tau_estimation
+   :members:
+   :show-inheritance:
+   :undoc-members:

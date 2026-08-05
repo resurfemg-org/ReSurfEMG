@@ -1,0 +1,7 @@
+resurfemg.modelling.integrated\_equation\_of\_motion module
+===========================================================
+
+.. automodule:: resurfemg.modelling.integrated_equation_of_motion
+   :members:
+   :show-inheritance:
+   :undoc-members:

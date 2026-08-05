@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>resurfemg.modelling.integrated_equation_of_motion module &#8212; resurfemg 1.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css?v=2bf1fcf8" />
+    
+    <script src="_static/documentation_options.js?v=fc837d61"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="resurfemg.modelling.tau_estimation module" href="resurfemg.modelling.tau_estimation.html" />
+    <link rel="prev" title="resurfemg.modelling.fit module" href="resurfemg.modelling.fit.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="resurfemg.modelling.tau_estimation.html" title="resurfemg.modelling.tau_estimation module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="resurfemg.modelling.fit.html" title="resurfemg.modelling.fit module"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">resurfemg 1.1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >resurfemg</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="resurfemg.html" >resurfemg package</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="resurfemg.modelling.html" accesskey="U">resurfemg.modelling package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">resurfemg.modelling.integrated_equation_of_motion module</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-resurfemg.modelling.integrated_equation_of_motion">
+<span id="resurfemg-modelling-integrated-equation-of-motion-module"></span><h1>resurfemg.modelling.integrated_equation_of_motion module<a class="headerlink" href="#module-resurfemg.modelling.integrated_equation_of_motion" title="Link to this heading">¶</a></h1>
+<p>Copyright 2026 Netherlands eScience Center and University of Twente
+Licensed under the Apache License, version 2.0. See LICENSE for details.</p>
+<p>This file contains functions for estimating the time constant (tau) of the
+respiratory system from ventilator data.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="resurfemg.modelling.integrated_equation_of_motion.compliance_estimation">
+<span class="sig-name descname"><span class="pre">compliance_estimation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df_ieqm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.345</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.modelling.integrated_equation_of_motion.compliance_estimation" title="Link to this definition">¶</a></dt>
+<dd><p>Estimate the compliance and non-mechanical component of the integrated
+equation of motion using robust linear regression.
+:param df_ieqm: The integrated equation of motion data.
+:type df_ieqm: ~pandas.DataFrame
+:param t: The tuning parameter for the Huber loss function.
+:type t: float
+:param keys: key map for the PTP, VTP, and ETP.
+:type keys: dict
+:param verbose: Whether to print the summary of the model.
+:type verbose: bool
+:return e_est: The estimated elastance
+:rtype: np.float
+:return nmc_est: The estimated neuro-mechanical coupling
+:rtype: np.float
+:return mdl_C: The estimated model.
+:rtype: statsmodels.robust.robust_linear_model.RLMResults</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="resurfemg.modelling.integrated_equation_of_motion.p_mus_estimation">
+<span class="sig-name descname"><span class="pre">p_mus_estimation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p_aw</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_rs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.modelling.integrated_equation_of_motion.p_mus_estimation" title="Link to this definition">¶</a></dt>
+<dd><p>Estimate the Pmus signal using the integrated equation of motion:
+Pmus,est = 1/C * Vrs - (Paw - PEEP)
+:param p_aw: The airway pressure signal.
+:type p_aw: ~numpy.ndarray
+:param peep: The positive end-expiratory pressure (PEEP) signal.
+:type peep: ~numpy.ndarray
+:param v_rs: The estimated Vrs signal.
+:type v_rs: ~numpy.ndarray
+:param c: The compliance of the respiratory system in mL/cmH2O.
+:type c: float
+:return p_mus_pred: The estimated Pmus signal.
+:rtype: ~numpy.ndarray</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="resurfemg.modelling.integrated_equation_of_motion.v_rs_estimation">
+<span class="sig-name descname"><span class="pre">v_rs_estimation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">volume</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tau</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expiration_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_percentile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">33</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omit_nan</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.modelling.integrated_equation_of_motion.v_rs_estimation" title="Link to this definition">¶</a></dt>
+<dd><p>Estimate the Vrs signal for the integrated equation of motion. See the
+paper by Graßhoff et al. (2023) for details on the method.
+:param volume: The volume signal.
+:type volume: ~numpy.ndarray
+:param flow: The flow signal.
+:type flow: ~numpy.ndarray
+:param tau: The time constant (tau) of the respiratory system.
+:type tau: float
+:param expiration_mask: A boolean mask indicating the samples that are
+during expiration.
+:type expiration_mask: ~numpy.ndarray
+:param window_s: The window size in samples for the moving baseline
+:type window_s: float
+:param step_s: The step size in samples for the moving baseline
+:type step_s: float
+:param set_percentile: The percentile to use for the moving baseline
+:type set_percentile: float
+:return v_rs: The estimated Vrs signal.
+:rtype: ~numpy.ndarray</p>
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/Logo_rond_tekst.svg" alt="Logo of resurfemg"/>
+            </a></p>
+<h3><a href="index.html">Table of Contents</a></h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">resurfemg</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="resurfemg.html">resurfemg package</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developers.html">Developer’s Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="medical-professionals.html">Medical Professional Documentation</a></li>
+</ul>
+
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">resurfemg.modelling.integrated_equation_of_motion module</a><ul>
+<li><a class="reference internal" href="#resurfemg.modelling.integrated_equation_of_motion.compliance_estimation"><code class="docutils literal notranslate"><span class="pre">compliance_estimation()</span></code></a></li>
+<li><a class="reference internal" href="#resurfemg.modelling.integrated_equation_of_motion.p_mus_estimation"><code class="docutils literal notranslate"><span class="pre">p_mus_estimation()</span></code></a></li>
+<li><a class="reference internal" href="#resurfemg.modelling.integrated_equation_of_motion.v_rs_estimation"><code class="docutils literal notranslate"><span class="pre">v_rs_estimation()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="resurfemg.modelling.fit.html"
+                          title="previous chapter">resurfemg.modelling.fit module</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="resurfemg.modelling.tau_estimation.html"
+                          title="next chapter">resurfemg.modelling.tau_estimation module</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/resurfemg.modelling.integrated_equation_of_motion.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="resurfemg.modelling.tau_estimation.html" title="resurfemg.modelling.tau_estimation module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="resurfemg.modelling.fit.html" title="resurfemg.modelling.fit module"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">resurfemg 1.1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >resurfemg</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="resurfemg.html" >resurfemg package</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="resurfemg.modelling.html" >resurfemg.modelling package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">resurfemg.modelling.integrated_equation_of_motion module</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2022, e.oppersma@utwente.nl.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

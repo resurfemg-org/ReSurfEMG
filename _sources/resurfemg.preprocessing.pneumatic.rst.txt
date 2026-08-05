@@ -1,0 +1,7 @@
+resurfemg.preprocessing.pneumatic module
+========================================
+
+.. automodule:: resurfemg.preprocessing.pneumatic
+   :members:
+   :show-inheritance:
+   :undoc-members:

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>resurfemg.preprocessing.pneumatic module &#8212; resurfemg 1.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css?v=2bf1fcf8" />
+    
+    <script src="_static/documentation_options.js?v=fc837d61"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Developer’s Guide" href="developers.html" />
+    <link rel="prev" title="resurfemg.preprocessing.filtering module" href="resurfemg.preprocessing.filtering.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="developers.html" title="Developer’s Guide"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="resurfemg.preprocessing.filtering.html" title="resurfemg.preprocessing.filtering module"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">resurfemg 1.1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >resurfemg</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="resurfemg.html" >resurfemg package</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="resurfemg.preprocessing.html" accesskey="U">resurfemg.preprocessing package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">resurfemg.preprocessing.pneumatic module</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-resurfemg.preprocessing.pneumatic">
+<span id="resurfemg-preprocessing-pneumatic-module"></span><h1>resurfemg.preprocessing.pneumatic module<a class="headerlink" href="#module-resurfemg.preprocessing.pneumatic" title="Link to this heading">¶</a></h1>
+<p>Copyright 2022 Netherlands eScience Center and University of Twente
+Licensed under the Apache License, version 2.0. See LICENSE for details.</p>
+<p>This file contains functions for processing pneumatic data.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="resurfemg.preprocessing.pneumatic.volume_computation">
+<span class="sig-name descname"><span class="pre">volume_computation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zc_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.preprocessing.pneumatic.volume_computation" title="Link to this definition">¶</a></dt>
+<dd><p>Function to compute the volume signal from the flow signal. The volume
+signal is computed by integrating the flow signal. The volume signal is
+then baseline corrected using the end-expiratory samples. The end-
+expiratory samples are selected around the zero crossings of the flow
+signal. The baseline correction method can be set to “Last point”, “Last
+points” or “Mask”. The “Last point” option uses the zero crossing only.
+“Last points” uses the samples up to 0.1 seconds before the zero crossing.
+“Mask” selects the samples where the flow signal is below 0.01 L/s and the
+raw volume signal is below 0.1 L.
+:param t: The time vector.
+:type t: ~numpy.ndarray
+:param flow: The flow signal.
+:type flow: ~numpy.ndarray
+:param fs: The sampling frequency.
+:type fs: float
+:param zc_idxs: The zero crossing indices.
+:type zc_idxs: ~numpy.ndarray
+:param method: The baseline correction method.
+:type method: str</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return volume<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The volume signal.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a></p>
+</dd>
+<dt class="field-odd">Return vol_baseline<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The baseline of the volume signal.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a></p>
+</dd>
+<dt class="field-odd">Return volume_raw<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The raw volume signal.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a></p>
+</dd>
+<dt class="field-odd">Return end_exp_idxs<span class="colon">:</span></dt>
+<dd class="field-odd"><p>End-expiratory samples used for baseline correction.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="resurfemg.preprocessing.pneumatic.zero_cros_flow">
+<span class="sig-name descname"><span class="pre">zero_cros_flow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.3</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.preprocessing.pneumatic.zero_cros_flow" title="Link to this definition">¶</a></dt>
+<dd><p>Function to find the onset of inspiratory,i.e., positive, flow in the
+flow signal. Flow onsets are defined as the points where the flow signal
+crosses the zero line to become positive and the flow signal reaches
+above the flow_threshold during the breath.
+:param flow: The flow signal.
+:type flow: ~numpy.ndarray
+:param flow_threshold: The threshold for the flow signal.
+:type flow_threshold: float</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return zc_idxs<span class="colon">:</span></dt>
+<dd class="field-odd"><p>zero crossings indices</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
+</dd>
+<dt class="field-odd">Return zc_candi<span class="colon">:</span></dt>
+<dd class="field-odd"><p>zero crossings candidates indices</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/Logo_rond_tekst.svg" alt="Logo of resurfemg"/>
+            </a></p>
+<h3><a href="index.html">Table of Contents</a></h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">resurfemg</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="resurfemg.html">resurfemg package</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developers.html">Developer’s Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="medical-professionals.html">Medical Professional Documentation</a></li>
+</ul>
+
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">resurfemg.preprocessing.pneumatic module</a><ul>
+<li><a class="reference internal" href="#resurfemg.preprocessing.pneumatic.volume_computation"><code class="docutils literal notranslate"><span class="pre">volume_computation()</span></code></a></li>
+<li><a class="reference internal" href="#resurfemg.preprocessing.pneumatic.zero_cros_flow"><code class="docutils literal notranslate"><span class="pre">zero_cros_flow()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="resurfemg.preprocessing.filtering.html"
+                          title="previous chapter">resurfemg.preprocessing.filtering module</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="developers.html"
+                          title="next chapter">Developer’s Guide</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/resurfemg.preprocessing.pneumatic.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="developers.html" title="Developer’s Guide"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="resurfemg.preprocessing.filtering.html" title="resurfemg.preprocessing.filtering module"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">resurfemg 1.1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >resurfemg</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="resurfemg.html" >resurfemg package</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="resurfemg.preprocessing.html" >resurfemg.preprocessing package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">resurfemg.preprocessing.pneumatic module</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2022, e.oppersma@utwente.nl.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

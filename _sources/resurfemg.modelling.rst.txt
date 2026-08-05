@@ -1,0 +1,20 @@
+resurfemg.modelling package
+===========================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   resurfemg.modelling.fit
+   resurfemg.modelling.integrated_equation_of_motion
+   resurfemg.modelling.tau_estimation
+
+Module contents
+---------------
+
+.. automodule:: resurfemg.modelling
+   :members:
+   :show-inheritance:
+   :undoc-members:

@@ -116,7 +116,7 @@ neighbouring samples
 
 <dl class="py function">
 <dt class="sig sig-object py" id="resurfemg.postprocessing.event_detection.find_linked_peaks">
-<span class="sig-name descname"><span class="pre">find_linked_peaks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">signal_1_t_peaks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">signal_2_t_peaks</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.postprocessing.event_detection.find_linked_peaks" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">find_linked_peaks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">signal_1_t_peaks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">signal_2_t_peaks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance_s</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.postprocessing.event_detection.find_linked_peaks" title="Link to this definition">¶</a></dt>
 <dd><p>Find the indices of the peaks in signal 2 closest to the time of the
 peaks in signal 1
 :param signal_1_t_peaks: list of timing of peaks in signal 1
@@ -165,6 +165,31 @@ distance to other peaks.
 </dd>
 <dt class="field-even">Rtpe peak_idxs<span class="colon">:</span></dt>
 <dd class="field-even"><p>~nd.array[int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="resurfemg.postprocessing.event_detection.neural_expiratory_time">
+<span class="sig-name descname"><span class="pre">neural_expiratory_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.7</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.postprocessing.event_detection.neural_expiratory_time" title="Link to this definition">¶</a></dt>
+<dd><p>Find the neural expiratory time (Tne) of each breath by finding the moment
+at which the envelope drops below a certain percentage of the peak.
+:param env: EMG envelope
+:type env: ~numpy.ndarray
+:param peak_idxs: indices of the peaks in the envelope
+:type peak_idxs: ~numpy.ndarray
+:param start_idxs: indices of the start of each breath
+:type start_idxs: ~numpy.ndarray
+:param end_idxs: indices of the end of each breath
+:type end_idxs: ~numpy.ndarray
+:param threshold: threshold for the expiratory time
+:type threshold: ~float</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns cross_idx<span class="colon">:</span></dt>
+<dd class="field-odd"><p>indices of the expiratory times</p>
+</dd>
+<dt class="field-even">Rtype cross_idx<span class="colon">:</span></dt>
+<dd class="field-even"><p>~numpy.ndarray[int]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -298,6 +323,7 @@ to consider for detecting the local maximum slope
 <li><a class="reference internal" href="#resurfemg.postprocessing.event_detection.detect_ventilator_breath"><code class="docutils literal notranslate"><span class="pre">detect_ventilator_breath()</span></code></a></li>
 <li><a class="reference internal" href="#resurfemg.postprocessing.event_detection.find_linked_peaks"><code class="docutils literal notranslate"><span class="pre">find_linked_peaks()</span></code></a></li>
 <li><a class="reference internal" href="#resurfemg.postprocessing.event_detection.find_occluded_breaths"><code class="docutils literal notranslate"><span class="pre">find_occluded_breaths()</span></code></a></li>
+<li><a class="reference internal" href="#resurfemg.postprocessing.event_detection.neural_expiratory_time"><code class="docutils literal notranslate"><span class="pre">neural_expiratory_time()</span></code></a></li>
 <li><a class="reference internal" href="#resurfemg.postprocessing.event_detection.onoffpeak_baseline_crossing"><code class="docutils literal notranslate"><span class="pre">onoffpeak_baseline_crossing()</span></code></a></li>
 <li><a class="reference internal" href="#resurfemg.postprocessing.event_detection.onoffpeak_slope_extrapolation"><code class="docutils literal notranslate"><span class="pre">onoffpeak_slope_extrapolation()</span></code></a></li>
 </ul>

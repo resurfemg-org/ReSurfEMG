@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>resurfemg.pipelines package &#8212; resurfemg 1.1.0 documentation</title>
+    <title>resurfemg.modelling package &#8212; resurfemg 1.1.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/classic.css?v=2bf1fcf8" />
     
@@ -15,8 +15,8 @@
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="resurfemg.pipelines.ipy_widgets module" href="resurfemg.pipelines.ipy_widgets.html" />
-    <link rel="prev" title="resurfemg.modelling.tau_estimation module" href="resurfemg.modelling.tau_estimation.html" /> 
+    <link rel="next" title="resurfemg.modelling.fit module" href="resurfemg.modelling.fit.html" />
+    <link rel="prev" title="resurfemg.helper_functions.visualization module" href="resurfemg.helper_functions.visualization.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
@@ -28,15 +28,15 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="resurfemg.pipelines.ipy_widgets.html" title="resurfemg.pipelines.ipy_widgets module"
+          <a href="resurfemg.modelling.fit.html" title="resurfemg.modelling.fit module"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="resurfemg.modelling.tau_estimation.html" title="resurfemg.modelling.tau_estimation module"
+          <a href="resurfemg.helper_functions.visualization.html" title="resurfemg.helper_functions.visualization module"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">resurfemg 1.1.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="modules.html" >resurfemg</a> &#187;</li>
           <li class="nav-item nav-item-2"><a href="resurfemg.html" accesskey="U">resurfemg package</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">resurfemg.pipelines package</a></li> 
+        <li class="nav-item nav-item-this"><a href="">resurfemg.modelling package</a></li> 
       </ul>
     </div>  
 
@@ -45,33 +45,34 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <section id="resurfemg-pipelines-package">
-<h1>resurfemg.pipelines package<a class="headerlink" href="#resurfemg-pipelines-package" title="Link to this heading">¶</a></h1>
+  <section id="resurfemg-modelling-package">
+<h1>resurfemg.modelling package<a class="headerlink" href="#resurfemg-modelling-package" title="Link to this heading">¶</a></h1>
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="resurfemg.pipelines.ipy_widgets.html">resurfemg.pipelines.ipy_widgets module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="resurfemg.pipelines.ipy_widgets.html#resurfemg.pipelines.ipy_widgets.file_select"><code class="docutils literal notranslate"><span class="pre">file_select()</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="resurfemg.modelling.fit.html">resurfemg.modelling.fit module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="resurfemg.modelling.fit.html#resurfemg.modelling.fit.check_model_fit"><code class="docutils literal notranslate"><span class="pre">check_model_fit()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="resurfemg.modelling.fit.html#resurfemg.modelling.fit.explained_variance"><code class="docutils literal notranslate"><span class="pre">explained_variance()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="resurfemg.modelling.fit.html#resurfemg.modelling.fit.residual_standard_error"><code class="docutils literal notranslate"><span class="pre">residual_standard_error()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="resurfemg.pipelines.processing.html">resurfemg.pipelines.processing module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="resurfemg.pipelines.processing.html#resurfemg.pipelines.processing.ecg_removal_gating"><code class="docutils literal notranslate"><span class="pre">ecg_removal_gating()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="resurfemg.pipelines.processing.html#resurfemg.pipelines.processing.quick_look"><code class="docutils literal notranslate"><span class="pre">quick_look()</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="resurfemg.modelling.integrated_equation_of_motion.html">resurfemg.modelling.integrated_equation_of_motion module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="resurfemg.modelling.integrated_equation_of_motion.html#resurfemg.modelling.integrated_equation_of_motion.compliance_estimation"><code class="docutils literal notranslate"><span class="pre">compliance_estimation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="resurfemg.modelling.integrated_equation_of_motion.html#resurfemg.modelling.integrated_equation_of_motion.p_mus_estimation"><code class="docutils literal notranslate"><span class="pre">p_mus_estimation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="resurfemg.modelling.integrated_equation_of_motion.html#resurfemg.modelling.integrated_equation_of_motion.v_rs_estimation"><code class="docutils literal notranslate"><span class="pre">v_rs_estimation()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="resurfemg.pipelines.synthetic_data.html">resurfemg.pipelines.synthetic_data module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="resurfemg.pipelines.synthetic_data.html#resurfemg.pipelines.synthetic_data.simulate_raw_emg"><code class="docutils literal notranslate"><span class="pre">simulate_raw_emg()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="resurfemg.pipelines.synthetic_data.html#resurfemg.pipelines.synthetic_data.simulate_ventilator_data"><code class="docutils literal notranslate"><span class="pre">simulate_ventilator_data()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="resurfemg.pipelines.synthetic_data.html#resurfemg.pipelines.synthetic_data.synthetic_emg_cli"><code class="docutils literal notranslate"><span class="pre">synthetic_emg_cli()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="resurfemg.pipelines.synthetic_data.html#resurfemg.pipelines.synthetic_data.synthetic_ventilator_data_cli"><code class="docutils literal notranslate"><span class="pre">synthetic_ventilator_data_cli()</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="resurfemg.modelling.tau_estimation.html">resurfemg.modelling.tau_estimation module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="resurfemg.modelling.tau_estimation.html#resurfemg.modelling.tau_estimation.tau_mask"><code class="docutils literal notranslate"><span class="pre">tau_mask()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="resurfemg.modelling.tau_estimation.html#resurfemg.modelling.tau_estimation.tau_switch_smf"><code class="docutils literal notranslate"><span class="pre">tau_switch_smf()</span></code></a></li>
 </ul>
 </li>
 </ul>
 </div>
 </section>
-<section id="module-resurfemg.pipelines">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-resurfemg.pipelines" title="Link to this heading">¶</a></h2>
+<section id="module-resurfemg.modelling">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-resurfemg.modelling" title="Link to this heading">¶</a></h2>
 </section>
 </section>
 
@@ -99,9 +100,9 @@
   <div>
     <h3><a href="index.html">Table of Contents</a></h3>
     <ul>
-<li><a class="reference internal" href="#">resurfemg.pipelines package</a><ul>
+<li><a class="reference internal" href="#">resurfemg.modelling package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-resurfemg.pipelines">Module contents</a></li>
+<li><a class="reference internal" href="#module-resurfemg.modelling">Module contents</a></li>
 </ul>
 </li>
 </ul>
@@ -109,18 +110,18 @@
   </div>
   <div>
     <h4>Previous topic</h4>
-    <p class="topless"><a href="resurfemg.modelling.tau_estimation.html"
-                          title="previous chapter">resurfemg.modelling.tau_estimation module</a></p>
+    <p class="topless"><a href="resurfemg.helper_functions.visualization.html"
+                          title="previous chapter">resurfemg.helper_functions.visualization module</a></p>
   </div>
   <div>
     <h4>Next topic</h4>
-    <p class="topless"><a href="resurfemg.pipelines.ipy_widgets.html"
-                          title="next chapter">resurfemg.pipelines.ipy_widgets module</a></p>
+    <p class="topless"><a href="resurfemg.modelling.fit.html"
+                          title="next chapter">resurfemg.modelling.fit module</a></p>
   </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/resurfemg.pipelines.rst.txt"
+      <li><a href="_sources/resurfemg.modelling.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
@@ -148,15 +149,15 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="resurfemg.pipelines.ipy_widgets.html" title="resurfemg.pipelines.ipy_widgets module"
+          <a href="resurfemg.modelling.fit.html" title="resurfemg.modelling.fit module"
              >next</a> |</li>
         <li class="right" >
-          <a href="resurfemg.modelling.tau_estimation.html" title="resurfemg.modelling.tau_estimation module"
+          <a href="resurfemg.helper_functions.visualization.html" title="resurfemg.helper_functions.visualization module"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">resurfemg 1.1.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="modules.html" >resurfemg</a> &#187;</li>
           <li class="nav-item nav-item-2"><a href="resurfemg.html" >resurfemg package</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">resurfemg.pipelines package</a></li> 
+        <li class="nav-item nav-item-this"><a href="">resurfemg.modelling package</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">

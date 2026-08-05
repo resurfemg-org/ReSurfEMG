@@ -10,6 +10,7 @@ Submodules
    resurfemg.preprocessing.ecg_removal
    resurfemg.preprocessing.envelope
    resurfemg.preprocessing.filtering
+   resurfemg.preprocessing.pneumatic
 
 Module contents
 ---------------
