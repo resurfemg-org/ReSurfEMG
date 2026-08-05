@@ -48,12 +48,11 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           path: dist
+      - run: find dist -type f
       - uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228
         with:
           token: "${{ secrets.GITHUBTOKEN }}"
           prerelease: false
           files: |
-            ./dist/*/linux-64/resurfemg-*.tar.bz2
-            ./dist/*/osx-64/resurfemg-*.tar.bz2
-            ./dist/*/win-64/resurfemg-*.tar.bz2
-            ./dist/pypi-build/*.whl
+            ./dist/*/resurfemg-*.tar.gz
+            ./dist/*/resurfemg-*.whl
