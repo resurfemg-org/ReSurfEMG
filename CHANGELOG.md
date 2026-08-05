@@ -1,5 +1,25 @@
 # Change Log
 
+## Release 1.1.1
+* Minor revision
+	- Add integrated equation of motion
+ 		- Added subpackage modelling, with modules tau_estimation, integrated_equation_of_motion, fit
+		- Added module pneumatic to preprocessing with methods to compute volume from flow
+		- Updated postprocessing.baseline moving_baseline method with an omit_nan boolean
+		- Updated postprocessing.event_detection find_linked_peaks method with a tolerance argument
+		- Added neural_expiratory_time method to postprocessing.event_detection
+		- Added percentile_snr method to postprocessing.features
+	- Repo maintenance
+		- Git templates for bug, PR, feature request
+   		- Add security policies
+   		- Add test code coverage
+     	- Add dependabot
+      	- Add Scorecard
+	- Redesign config for more generalized and understandable behaviour
+ 		- config_example.json is moved to inside the package
+   		- Repo root finding is looking for general Python and repository files (pyproject.toml, .git, requirements.txt)
+     - Python version support: 3.10 - 3.14
+
 ## Release 1.1.0
 * Minor revision
 	- Add .adi* file reader (LabChart, BIOPAC). NB Windows only
