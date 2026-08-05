@@ -1,4 +1,4 @@
-cff-version: 1.0.2
+cff-version: 1.1.1
 title: ReSurfEMG
 message: "Please cite as below, if you use this software "
 type: software
@@ -34,6 +34,11 @@ authors:
     given-names: Stijn
   -
     affiliation: "University of Twente"
+    family-names: Maninetti
+    given-names: Chiara
+    orcid: "https://orcid.org/0009-0008-9817-3407"
+  -
+    affiliation: "University of Twente"
     family-names: Oppersma
     given-names: Eline
     orcid: "https://orcid.org/0000-0002-0150-306X"
@@ -49,5 +54,5 @@ keywords:
   - surface EMG
   - sEAdi
 license: Apache-2.0
-version: "1.0.2"
-date-released: 31/07/2026
+version: "1.1.1"
+date-released: 05/08/2026
