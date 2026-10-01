@@ -60,7 +60,7 @@ jobs:
     - run: .venv\Scripts\pip install -e .[tests]
     - run: .venv\Scripts\python -m pytest --cov . --cov-report=xml
     - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f
+      uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         slug: resurfemg-org/ReSurfEMG
