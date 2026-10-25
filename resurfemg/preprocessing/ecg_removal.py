@@ -5,7 +5,6 @@ Licensed under the Apache License, version 2.0. See LICENSE for details.
 This file contains functions to eliminate ECG artifacts from EMG arrays.
 """
 
-import copy
 import numpy as np
 import scipy
 import pywt
@@ -184,7 +183,7 @@ def gating(
         :rtype: numpy.ndarray
         """
         start_idxs = np.clip(
-            peak_idxs - gate_width // 2, 0, max_sample
+            peak_idxs - gate_width // 2 + 1, 0, max_sample
         ).astype(int)
         matched_peak = np.searchsorted(start_idxs, gate_idxs, side="right") - 1
         return np.clip(matched_peak, 0, len(peak_idxs) - 1).astype(int)
@@ -233,8 +232,10 @@ def gating(
         if gated_idxs.size == 0:
             return emg_raw_gated
 
-        pre_idxs = peak_idxs - (gate_width // 2) - 1
-        post_idxs = peak_idxs + (gate_width // 2) + 1
+        # Compute the indices of the samples just before and after each gate
+        # window
+        pre_idxs = - gate_width // 2 + peak_idxs
+        post_idxs = gate_width // 2 + peak_idxs + 2
         # Check bounds
         pre_in = (pre_idxs >= 0) & (pre_idxs < emg_raw_gated.shape[0])
         post_in = (post_idxs >= 0) & (post_idxs < emg_raw_gated.shape[0])
@@ -324,10 +325,10 @@ def gating(
 
         w = max(1, 2 * int(1.5 * gate_width) + 1)
         closed = "neither" if gate_width % 2 == 0 else "left"
-        local_mean = pd.Series(emg_raw_gated_rms).rolling(
+        local_rms = pd.Series(emg_raw_gated_rms).rolling(
             window=w, min_periods=1, center=True, closed=closed).mean().values
 
-        fill_vals = np.asarray(local_mean[gated_idxs])
+        fill_vals = np.asarray(local_rms[gated_idxs])
         interp_mask = np.isnan(fill_vals)
         emg_raw_gated[gated_idxs[~interp_mask]] = fill_vals[~interp_mask]
 
@@ -345,7 +346,7 @@ def gating(
         """Return all sample indices within peak-centered gate windows."""
         gated_idxs = (
             peak_idxs[:, None]
-            + np.arange(-gate_width // 2, gate_width // 2)
+            + np.arange(-gate_width // 2, gate_width // 2) + 1
         ).ravel()
 
         return gated_idxs[
@@ -359,16 +360,18 @@ def gating(
     ) -> tuple[np.ndarray, np.ndarray]:
         """
         Return a mask and indices for the union of all gate windows.
+        Odd gate widths are centered on the peak, while even gate widths have
+        the peak at the left of center.
 
         Overlapping windows are merged using a difference-array and cumulative
         sum approach.
         """
         k_start = np.clip(
-            peak_idxs - gate_width / 2, 0, max_sample - 1,
+            - gate_width // 2 + peak_idxs + 1, 0, max_sample - 1,
         ).astype(int)
 
         k_end = np.clip(
-            peak_idxs + gate_width / 2, 0, max_sample - 1,
+            gate_width // 2 + peak_idxs + 1, 0, max_sample - 1,
         ).astype(int)
 
         delta = (
@@ -391,7 +394,7 @@ def gating(
         # Compute the start of each gate window, ensuring they are within
         # bounds
         gate_starts = np.clip(
-            peak_idxs - gate_width // 2, 0, max_sample,
+            - gate_width // 2 + peak_idxs + 1, 0, max_sample,
         ).astype(int)
 
         # For each gated index, find the index of the last gate start that is
