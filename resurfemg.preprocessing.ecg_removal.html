@@ -113,7 +113,7 @@ detection.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="resurfemg.preprocessing.ecg_removal.gating">
-<span class="sig-name descname"><span class="pre">gating</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">emg_raw</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gate_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">205</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.preprocessing.ecg_removal.gating" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">gating</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">emg_raw</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gate_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">205</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#resurfemg.preprocessing.ecg_removal.gating" title="Link to this definition">¶</a></dt>
 <dd><p>Eliminate peaks (e.g. QRS) from emg_raw using gates
 of width gate_width. The gate either filled by zeros or interpolation.
 The filling method for the gate is encoded as follows:
@@ -121,22 +121,21 @@ The filling method for the gate is encoded as follows:
 1: Interpolation samples before and after
 2: Fill with average of prior segment if exists
 otherwise fill with post segment
-3: Fill with running average of RMS (default)
-—————————————————————————
-:param emg_raw: Signal to process
-:type emg_raw: ~numpy.ndarray
-:param peak_idxs: list of individual peak index places to be gated
-:type peak_idxs: ~list
-:param gate_width: width of the gate
-:type gate_width: int
-:param method: filling method of gate
-:type method: int</p>
+3: Fill with running average of RMS (default)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns emg_raw_gated<span class="colon">:</span></dt>
-<dd class="field-odd"><p>the gated result</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>emg_raw</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a>) – Signal to process</p></li>
+<li><p><strong>peak_idxs</strong> (<em>~list</em>) – list of individual peak index places to be gated</p></li>
+<li><p><strong>gate_width</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – width of the gate</p></li>
+<li><p><strong>method</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – filling method of gate</p></li>
+</ul>
 </dd>
-<dt class="field-even">Rtype emg_raw_gated<span class="colon">:</span></dt>
-<dd class="field-even"><p>numpy.ndarray</p>
+<dt class="field-even">Returns emg_raw_gated<span class="colon">:</span></dt>
+<dd class="field-even"><p>the gated result</p>
+</dd>
+<dt class="field-odd">Rtype emg_raw_gated<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -299,7 +298,7 @@ DEALINGS IN THE SOFTWARE.
     </div>
     <div class="footer" role="contentinfo">
     &#169; Copyright 2022, e.oppersma@utwente.nl.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.1.
     </div>
   </body>
 </html>
