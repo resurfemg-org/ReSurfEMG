@@ -5,7 +5,6 @@ Licensed under the Apache License, version 2.0. See LICENSE for details.
 This file contains functions to eliminate ECG artifacts from EMG arrays.
 """
 
-import copy
 import numpy as np
 import scipy
 import pywt
@@ -73,11 +72,18 @@ def detect_ecg_peaks(
     return ecg_peak_idxs
 
 
+# Gate fill method constants (avoid magic-number comparisons)
+GATE_FILL_ZEROS = 0        # 0: filled with zeros
+GATE_FILL_INTERP = 1       # 1: interpolation
+GATE_FILL_PRIOR_MEAN = 2   # 2: prior-window mean
+GATE_FILL_RMS = 3          # 3: RMS running average
+
+
 def gating(
     emg_raw,
     peak_idxs,
     gate_width=205,
-    method=1,
+    method=3,
 ):
     """
     Eliminate peaks (e.g. QRS) from emg_raw using gates
@@ -88,7 +94,7 @@ def gating(
     2: Fill with average of prior segment if exists
     otherwise fill with post segment
     3: Fill with running average of RMS (default)
-    ---------------------------------------------------------------------------
+
     :param emg_raw: Signal to process
     :type emg_raw: ~numpy.ndarray
     :param peak_idxs: list of individual peak index places to be gated
@@ -101,108 +107,368 @@ def gating(
     :returns emg_raw_gated: the gated result
     :rtype emg_raw_gated: numpy.ndarray
     """
-    emg_raw_gated = copy.deepcopy(emg_raw)
-    max_sample = emg_raw_gated.shape[0]
-    half_gate_width = gate_width // 2
-    if method == 0:
+
+    def _masked_window_means(
+        source: np.ndarray,
+        start_idxs: np.ndarray,
+        width: int,
+    ) -> np.ndarray:
+        """Windowed masked mean.
+
+        Calculate means over [start, start + width) windows of `source`,
+        ignoring both out-of-bounds positions and NaN values via a MaskedArray.
+        Fully-empty windows return NaN.
+
+        :param source: 1D array to average over.
+        :type source: numpy.ndarray
+        :param start_idxs: 1D array of window start indices.
+        :type start_idxs: numpy.ndarray
+        :param width: Window length.
+        :type width: int
+
+        :returns: Per-window mean, NaN where the window is fully masked.
+        :rtype: numpy.ndarray
+        """
+        # Create a 2D array of indices for each window, shape (peaks, window)
+        idx_mat = start_idxs[:, None] + np.arange(width)
+        # Out-of-bounds mask
+        oob = (idx_mat < 0) | (idx_mat >= source.shape[0])
+        # Gather values, clip to bounds, and mask out-of-bounds and NaN values
+        vals = source[np.clip(idx_mat, 0, source.shape[0] - 1)]
+        # Mask out-of-bounds and NaN values, then compute mean
+        masked = np.ma.array(vals, mask=oob | np.isnan(vals))
+        # Return the mean of each window, with NaN for fully masked windows
+        return masked.mean(axis=1).filled(np.nan)
+
+    def _get_emg_raw_gated_rms(
+        emg_raw_gated: np.ndarray,
+        gate_mask: np.ndarray,
+        gate_width: int
+    ) -> np.ndarray:
+        """
+        Calculate the RMS of the gated EMG signal.
+
+        :param emg_raw_gated: The gated EMG signal.
+        :type emg_raw_gated: numpy.ndarray
+        :param gate_mask: A boolean mask indicating the locations of the gates.
+        :type gate_mask: numpy.ndarray
+        :param gate_width: The width of each gate.
+        :type gate_width: int
+
+        :returns: The RMS of the gated EMG signal.
+        :rtype: numpy.ndarray
+        """
+        emg_raw_gated_base = np.array(emg_raw_gated, copy=True)
+        emg_raw_gated_base[gate_mask] = np.nan
+        return evl.full_rolling_rms(emg_raw_gated_base, gate_width)
+
+    def _find_corresponding_peak(
+        peak_idxs: np.ndarray,
+        gate_idxs: np.ndarray,
+        gate_width: int,
+        max_sample: int,
+    ) -> np.ndarray:
+        """
+        Find the corresponding peak index for each gated sample index.
+        :param peak_idxs: Indices of the detected peaks.
+        :type peak_idxs: numpy.ndarray
+        :param gate_idxs: Indices of the gated samples.
+        :type gate_idxs: numpy.ndarray
+        :param gate_width: The width of the gate.
+        :type gate_width: int
+        :param max_sample: The maximum sample index (length of the EMG signal).
+        :type max_sample: int
+
+        :returns: The corresponding peak indices for each gated sample index.
+        :rtype: numpy.ndarray
+        """
+        start_idxs = np.clip(
+            peak_idxs - gate_width // 2 + 1, 0, max_sample
+        ).astype(int)
+        matched_peak = np.searchsorted(start_idxs, gate_idxs, side="right") - 1
+        return np.clip(matched_peak, 0, len(peak_idxs) - 1).astype(int)
+
+    def _interp_missing_samples(
+        emg_raw_gated: np.ndarray,
+        interp_mask: np.ndarray,
+        sample_idxs: np.ndarray,
+    ) -> np.ndarray:
+        interpolate_samples = sample_idxs[interp_mask]
+        if interpolate_samples.size == 0:
+            return emg_raw_gated
+
+        x_samp = np.arange(emg_raw_gated.shape[0])
+        other_mask = ~np.isin(x_samp, interpolate_samples)
+        if not other_mask.any():  # no anchors left to interpolate from
+            return emg_raw_gated
+
+        emg_raw_gated[interpolate_samples] = np.interp(
+            interpolate_samples, x_samp[other_mask], emg_raw_gated[other_mask]
+        )
+        return emg_raw_gated
+
+    def _gate_fill_interpolation(
+        fill_idxs: np.ndarray,
+        emg_raw_gated: np.ndarray,
+        gated_idxs: np.ndarray,
+        peak_idxs: np.ndarray,
+        gate_width: int,
+    ) -> np.ndarray:
+        """
+        Fill the gated EMG signal using linear interpolation between the values
+        before and after the gate.
+
+        :param emg_raw_gated: The gated EMG signal.
+        :type emg_raw_gated: numpy.ndarray
+        :param gated_idxs: Indices of the gated samples.
+        :type gated_idxs: numpy.ndarray
+        :param peak_idxs: Indices of the detected peaks.
+        :type peak_idxs: numpy.ndarray
+        :param gate_width: The width of the gate.
+        :type gate_width: int
+        :returns: The filled EMG signal.
+        :rtype: numpy.ndarray
+        """
+        if gated_idxs.size == 0:
+            return emg_raw_gated
+
+        # Compute the indices of the samples just before and after each gate
+        # window
+        pre_idxs = - gate_width // 2 + peak_idxs
+        post_idxs = gate_width // 2 + peak_idxs + 2
+        # Check bounds
+        pre_in = (pre_idxs >= 0) & (pre_idxs < emg_raw_gated.shape[0])
+        post_in = (post_idxs >= 0) & (post_idxs < emg_raw_gated.shape[0])
+        # If the indices are out of bounds, use 0.0 as the value
+        pre_val = np.where(
+            pre_in,
+            emg_raw_gated[np.clip(pre_idxs, 0, emg_raw_gated.shape[0] - 1)],
+            0.0
+        )
+        post_val = np.where(
+            post_in,
+            emg_raw_gated[np.clip(post_idxs, 0, emg_raw_gated.shape[0] - 1)],
+            0.0
+        )
+
+        # Find the corresponding peak for each gated index
+        peak_nrs = _find_corresponding_peak(
+            peak_idxs, gated_idxs, gate_width, emg_raw_gated.shape[0])
+        # Calculate the fraction of the gate width for each gated index
+        frac = ((gated_idxs - peak_idxs[fill_idxs] + gate_width // 2) /
+                float(gate_width))
+        # Fill the gated EMG signal using linear interpolation
+        emg_raw_gated[gated_idxs] = (
+            (1.0 - frac) * pre_val[peak_nrs] + frac * post_val[peak_nrs]
+        )
+        return emg_raw_gated
+
+    def _gate_fill_prior_mean(
+        emg_raw: np.ndarray,
+        emg_raw_gated: np.ndarray,
+        gated_idxs: np.ndarray,
+        peak_idxs: np.ndarray,
+        gate_width: int,
+    ) -> np.ndarray:
+        """Fill the gated EMG signal with the mean of a window before the gate.
+
+        :param emg_raw: The original EMG signal.
+        :type emg_raw: numpy.ndarray
+        :param emg_raw_gated: The gated EMG signal.
+        :type emg_raw_gated: numpy.ndarray
+        :param gated_idxs: Indices of the gated samples.
+        :type gated_idxs: numpy.ndarray
+        :param peak_idxs: Indices of the detected peaks.
+        :type peak_idxs: numpy.ndarray
+        :param gate_width: The width of the gate.
+        :type gate_width: int
+        :returns: The filled EMG signal.
+        :rtype: numpy.ndarray
+        """
+        prior_start_idxs = peak_idxs - (gate_width // 2) * 3
+        oob = prior_start_idxs < 0
+        prior_means = _masked_window_means(
+            emg_raw, prior_start_idxs, gate_width)
+        post_means = _masked_window_means(
+            emg_raw, peak_idxs + gate_width // 2, gate_width)
+
+        fill_means = np.where(oob, post_means, prior_means)
+        # Find the corresponding peak for each gated index
+        peak_nrs = _find_corresponding_peak(
+            peak_idxs, gated_idxs, gate_width, emg_raw_gated.shape[0])
+        emg_raw_gated[gated_idxs] = fill_means[peak_nrs]
+        return emg_raw_gated
+
+    def _gate_fill_rms(
+        emg_raw_gated: np.ndarray,
+        gate_mask: np.ndarray,
+        gated_idxs: np.ndarray,
+        gate_width: int,
+    ) -> np.ndarray:
+        """Fill the gated EMG signal by interpolating the RMS of the
+        surrounding signal.
+
+        :param emg_raw_gated: The gated EMG signal.
+        :type emg_raw_gated: numpy.ndarray
+        :param gate_mask: A boolean mask of the gate locations.
+        :type gate_mask: numpy.ndarray
+        :param gated_idxs: Indices of the gated samples.
+        :type gated_idxs: numpy.ndarray
+        :param gate_width: The width of the gate.
+        :type gate_width: int
+
+        :returns: The filled EMG signal.
+        :rtype: numpy.ndarray
+        """
+        emg_raw_gated_rms = _get_emg_raw_gated_rms(
+            emg_raw_gated, gate_mask, gate_width)
+
+        w = max(1, 2 * int(1.5 * gate_width) + 1)
+        closed = "neither" if gate_width % 2 == 0 else "left"
+        local_rms = pd.Series(emg_raw_gated_rms).rolling(
+            window=w, min_periods=1, center=True, closed=closed).mean().values
+
+        fill_vals = np.asarray(local_rms[gated_idxs])
+        interp_mask = np.isnan(fill_vals)
+        emg_raw_gated[gated_idxs[~interp_mask]] = fill_vals[~interp_mask]
+
+        return _interp_missing_samples(
+            emg_raw_gated,
+            interp_mask,
+            gated_idxs,
+        )
+
+    def _compute_gated_indices(
+        peak_idxs: np.ndarray,
+        gate_width: int,
+        max_sample: int,
+    ) -> np.ndarray:
+        """Return all sample indices within peak-centered gate windows."""
+        gated_idxs = (
+            peak_idxs[:, None]
+            + np.arange(-gate_width // 2, gate_width // 2) + 1
+        ).ravel()
+
+        return gated_idxs[
+            (gated_idxs >= 0) & (gated_idxs < max_sample)
+        ].astype(int)
+
+    def _compute_gate_mask(
+        peak_idxs: np.ndarray,
+        gate_width: int,
+        max_sample: int,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Return a mask and indices for the union of all gate windows.
+        Odd gate widths are centered on the peak, while even gate widths have
+        the peak at the left of center.
+
+        Overlapping windows are merged using a difference-array and cumulative
+        sum approach.
+        """
+        k_start = np.clip(
+            - gate_width // 2 + peak_idxs + 1, 0, max_sample - 1,
+        ).astype(int)
+
+        k_end = np.clip(
+            gate_width // 2 + peak_idxs + 1, 0, max_sample - 1,
+        ).astype(int)
+
+        delta = (
+            np.bincount(k_start, minlength=max_sample)
+            - np.bincount(k_end, minlength=max_sample)
+        )
+
+        gate_mask = np.cumsum(delta)[:max_sample] > 0
+        gated_idxs = np.nonzero(gate_mask)[0]
+
+        return gate_mask, gated_idxs
+
+    def _compute_gate_peak_mapping(
+        peak_idxs: np.ndarray,
+        gated_idxs: np.ndarray,
+        gate_width: int,
+        max_sample: int,
+    ) -> np.ndarray:
+        """Map each gated sample to its corresponding peak index."""
+        # Compute the start of each gate window, ensuring they are within
+        # bounds
+        gate_starts = np.clip(
+            - gate_width // 2 + peak_idxs + 1, 0, max_sample,
+        ).astype(int)
+
+        # For each gated index, find the index of the last gate start that is
+        # less than or equal to it. This gives the corresponding peak index.
+        return np.clip(
+            np.searchsorted(gate_starts, gated_idxs, side="right") - 1,
+            0,
+            len(peak_idxs) - 1,
+        )
+
+    # Main gating function
+    peak_idxs = np.sort(np.asarray(peak_idxs))
+    emg_raw_gated = np.array(emg_raw, dtype=float, copy=True)
+
+    # These methods operate on individual peak-centered gate windows.
+    if method in (GATE_FILL_ZEROS, GATE_FILL_INTERP, GATE_FILL_PRIOR_MEAN):
+        # Determine the indices of the gated samples for methods 0, 1, and 2.
+        gated_idxs = _compute_gated_indices(
+            peak_idxs, gate_width, emg_raw_gated.shape[0]
+        )
+
         # Method 0: Fill with zeros
-        # TODO: can rewrite with slices from numpy irange to be more efficient
-        gate_samples = []
-        for _, peak in enumerate(peak_idxs):
-            for k in range(
-                max(0, peak - half_gate_width),
-                min(max_sample, peak + half_gate_width),
-            ):
-                gate_samples.append(k)
+        if method == GATE_FILL_ZEROS:
+            emg_raw_gated[gated_idxs] = 0
+            return emg_raw_gated
 
-        emg_raw_gated[gate_samples] = 0
-    elif method == 1:
+        # Methods 1 and 2: Compute mask via scatter grid, remaining linkage
+        # between sample and the corresponding peak_nr. As a result, pre- and
+        # post-gate values can be determined in a vectorized manner.
+        fill_idxs = _compute_gate_peak_mapping(
+            peak_idxs, gated_idxs, gate_width, emg_raw_gated.shape[0]
+        )
+
         # Method 1: Fill with interpolation pre- and post gate sample
-        # TODO: rewrite with numpy interpolation for efficiency
-        for _, peak in enumerate(peak_idxs):
-            pre_ave_emg = emg_raw[peak-half_gate_width-1]
-
-            if (peak + half_gate_width + 1) < emg_raw_gated.shape[0]:
-                post_ave_emg = emg_raw[peak+half_gate_width+1]
-            else:
-                post_ave_emg = 0
-
-            k_start = max(0, peak-half_gate_width)
-            k_end = min(
-                peak+half_gate_width, emg_raw_gated.shape[0]
+        if method == GATE_FILL_INTERP:  # 1
+            return _gate_fill_interpolation(
+                fill_idxs=fill_idxs,
+                emg_raw_gated=emg_raw_gated,
+                gated_idxs=gated_idxs,
+                peak_idxs=peak_idxs,
+                gate_width=gate_width,
             )
-            for k in range(k_start, k_end):
-                frac = (k - peak + half_gate_width)/gate_width
-                loup = (1 - frac) * pre_ave_emg + frac * post_ave_emg
-                emg_raw_gated[k] = loup
 
-    elif method == 2:
         # Method 2: Fill with window length mean over prior section
         # ..._____|_______|_______|XXXXXXX|XXXXXXX|_____...
         #         ^               ^- gate start   ^- gate end
         #         - peak - half_gate_width * 3 (replacer)
+        if method == GATE_FILL_PRIOR_MEAN:  # 2
+            return _gate_fill_prior_mean(
+                emg_raw=emg_raw,
+                emg_raw_gated=emg_raw_gated,
+                gated_idxs=gated_idxs,
+                peak_idxs=peak_idxs,
+                gate_width=gate_width,
+            )
 
-        for _, peak in enumerate(peak_idxs):
-            start = peak - half_gate_width * 3
-            if start < 0:
-                start = peak + half_gate_width
-            end = start + gate_width
-            pre_ave_emg = np.nanmean(emg_raw[start:end])
+    # Method 3: Fill with moving average over RMS
+    # RMS reconstruction operates on merged gate regions because overlapping
+    # gates must be treated as a single continuous interval.
+    if method == GATE_FILL_RMS:
+        # Build mask for all samples within gate windows around detected peaks.
+        gate_mask, gated_idxs = _compute_gate_mask(
+            peak_idxs, gate_width, emg_raw_gated.shape[0]
+        )
 
-            k_start = max(0, peak - half_gate_width)
-            k_end = min(peak + half_gate_width, emg_raw_gated.shape[0])
-            for k in range(k_start, k_end):
-                emg_raw_gated[k] = pre_ave_emg
+        return _gate_fill_rms(
+            emg_raw_gated,
+            gate_mask,
+            gated_idxs,
+            gate_width,
+        )
 
-    elif method == 3:
-        # Method 3: Fill with moving average over RMS
-        gate_samples = []
-        for _, peak in enumerate(peak_idxs):
-            for k in range(
-                max([0, int(peak-gate_width/2)]),
-                min([max_sample, int(peak+gate_width/2)])
-            ):
-                gate_samples.append(k)
-
-        emg_raw_gated_base = copy.deepcopy(emg_raw_gated)
-        emg_raw_gated_base[gate_samples] = np.nan
-        emg_raw_gated_rms = evl.full_rolling_rms(
-            emg_raw_gated_base,
-            gate_width,)
-
-        interpolate_samples = list()
-        for _, peak in enumerate(peak_idxs):
-            k_start = max([0, int(peak-gate_width/2)])
-            k_end = min([int(peak+gate_width/2), max_sample])
-
-            for k in range(k_start, k_end):
-                leftf = max([0, int(k-1.5*gate_width)])
-                rightf = min([int(k+1.5*gate_width), max_sample])
-                if any(np.logical_not(np.isnan(
-                        emg_raw_gated_rms[leftf:rightf]))):
-                    emg_raw_gated[k] = np.nanmean(
-                        emg_raw_gated_rms[leftf:rightf]
-                    )
-                else:
-                    interpolate_samples.append(k)
-
-        if len(interpolate_samples) > 0:
-            interpolate_samples = np.array(interpolate_samples)
-            if 0 in interpolate_samples:
-                emg_raw_gated[0] = 0
-
-            if len(emg_raw_gated)-1 in interpolate_samples:
-                emg_raw_gated[-1] = 0
-
-            x_samp = np.array([x_i for x_i in range(len(emg_raw_gated))])
-            other_samples = x_samp[~np.isin(x_samp, interpolate_samples)]
-            emg_raw_gated_interp = np.interp(
-                x_samp[interpolate_samples],
-                x_samp[other_samples],
-                emg_raw_gated[other_samples])
-            emg_raw_gated[interpolate_samples] = emg_raw_gated_interp
-
-    return emg_raw_gated
+    msg = f"Invalid method {method}."
+    raise ValueError(msg)
 
 
 def wavelet_denoising(
