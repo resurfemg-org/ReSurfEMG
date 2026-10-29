@@ -40,7 +40,6 @@ dependencies = [
     'adi-reader>=0.0.13',
     'prettytable>=3.12.0',
     'statsmodels>=0.13.5',
-    "pytest>=9.1.1",
 ]
 
 
@@ -56,7 +55,8 @@ tests = ['pytest',
          'pytest-cov',
          'pycodestyle', 
          'isort',
-         'wheel']
+         'wheel',
+         'ruff',]
 docs = ['wheel',
         'sphinx']
 dev = ['pytest', 
@@ -67,7 +67,8 @@ dev = ['pytest',
        'jupyter', 
        'ipympl',
        'sphinx',
-       'twine']
+       'twine',
+       'ruff',]
 
 [tool.setuptools.packages.find]
 include = ["resurfemg*"]
