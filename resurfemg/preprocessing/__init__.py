@@ -1,7 +1,2 @@
-# -*- coding: utf-8 -*-
-
 # Import the submodules
-from . import ecg_removal
-from . import envelope
-from . import filtering
-from . import pneumatic
+from resurfemg.preprocessing import ecg_removal, envelope, filtering, pneumatic

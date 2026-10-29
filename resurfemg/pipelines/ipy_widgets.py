@@ -1,25 +1,20 @@
-
-"""
-Copyright 2022 Netherlands eScience Center and University of Twente
+"""Copyright 2022 Netherlands eScience Center and University of Twente
 Licensed under the Apache License, version 2.0. See LICENSE for details.
 
 This file contains Jupyter widgets to perform default procedures.
 NB The functions in this file required the development installation including
 Jupyter (see README.md)
 """
+
+import ipywidgets as widgets
 import numpy as np
 import pandas as pd
-import ipywidgets as widgets
 
 
 def file_select(
-    files,
-    folder_levels,
-    default_value_select=None,
-    default_idx_select=None
+    files, folder_levels, default_value_select=None, default_idx_select=None
 ):
-    """
-    A widget for file selection for organised/nested data. default_value_select
+    """A widget for file selection for organised/nested data. default_value_select
     precedes default_idx_select in default value identification.
     ---------------------------------------------------------------------------
     :param files: file paths tabled by the folder_levels
@@ -35,17 +30,20 @@ def file_select(
     :rtype button_list: [ipywidgets.widgets.widget_selection.Dropdown]
     """
     if not isinstance(files, pd.core.frame.DataFrame):
-        raise ValueError('Files not provided in valid format.')
+        msg = "Files not provided in valid format."
+        raise ValueError(msg)
 
     if not isinstance(folder_levels, list):
-        raise TypeError('Provide either a list as folder_levels.')
+        msg = "Provide either a list as folder_levels."
+        raise TypeError(msg)
 
     if default_value_select is None:
         default_value_select = len(folder_levels) * [None]
         value_options_bool = len(folder_levels) * [False]
     elif isinstance(default_value_select, list):
         if len(default_value_select) < len(folder_levels):
-            raise IndexError('len(default_value_select) < len(folder_levels)')
+            msg = "len(default_value_select) < len(folder_levels)"
+            raise IndexError(msg)
         value_options_bool = list()
         for value in default_value_select:
             if value is None:
@@ -53,14 +51,16 @@ def file_select(
             elif isinstance(value, str):
                 value_options_bool.append(True)
             else:
-                raise TypeError('default_value_select values need to be str')
+                msg = "default_value_select values need to be str"
+                raise TypeError(msg)
 
     if default_idx_select is None:
         default_idx_select = len(folder_levels) * [None]
         idx_options_bool = len(folder_levels) * [False]
     elif isinstance(default_idx_select, list):
         if len(default_idx_select) < len(folder_levels):
-            raise IndexError('len(default_idx_select) < len(folder_levels)')
+            msg = "len(default_idx_select) < len(folder_levels)"
+            raise IndexError(msg)
         idx_options_bool = list()
         for idx in default_idx_select:
             if isinstance(idx, int):
@@ -68,13 +68,14 @@ def file_select(
             elif idx is None:
                 idx_options_bool.append(False)
             else:
-                raise TypeError('default_idx_select values need to be int')
+                msg = "default_idx_select values need to be int"
+                raise TypeError(msg)
 
     button_list = list()
     btn_dict = dict()
     for _, folder_level in enumerate(folder_levels):
         _btn = widgets.Dropdown(
-            description=folder_level + ':',
+            description=folder_level + ":",
             disabled=False,
         )
 
@@ -87,8 +88,7 @@ def file_select(
         """Update the dropdown options based on the previous selection."""
         btn_changed = []
         for _idx in range(len(folder_levels)):
-            btn_changed.append(
-                button_list[_idx].value != prev_values[_idx])
+            btn_changed.append(button_list[_idx].value != prev_values[_idx])
 
         for idx, dict_key in enumerate(btn_dict):
             btn_idx = folder_levels.index(dict_key)
@@ -100,8 +100,11 @@ def file_select(
                 bool_list = list()
                 for _idx in range(idx):
                     bool_list.append(
-                        (files[folder_levels[_idx]] ==
-                         button_list[_idx].value).values)
+                        (
+                            files[folder_levels[_idx]]
+                            == button_list[_idx].value
+                        ).values
+                    )
 
                 filter_files = files[np.all(np.array(bool_list), 0)]
 
@@ -113,7 +116,8 @@ def file_select(
                     if value_options_bool[btn_idx] is True:
                         if default_value_select[btn_idx] in options:
                             value = options[
-                                options.index(default_value_select[btn_idx])]
+                                options.index(default_value_select[btn_idx])
+                            ]
                         else:
                             value = options[0]
                     elif idx_options_bool[btn_idx] is True:

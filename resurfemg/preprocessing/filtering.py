@@ -1,12 +1,11 @@
-"""
-Copyright 2022 Netherlands eScience Center and University of Twente
+"""Copyright 2022 Netherlands eScience Center and University of Twente
 Licensed under the Apache License, version 2.0. See LICENSE for details.
 
 This file contains functions to filter EMG arrays.
 """
 
-from scipy import signal
 import numpy as np
+from scipy import signal
 
 
 def emg_bandpass_butter(
@@ -16,7 +15,7 @@ def emg_bandpass_butter(
     fs_emg,
     order=3,
 ):
-    """Bandpass filter for EMG signal
+    """Bandpass filter for EMG signal.
     ---------------------------------------------------------------------------
     :param emg_raw: The raw EMG signal
     :type emg_raw: ~numpy.ndarray
@@ -35,9 +34,9 @@ def emg_bandpass_butter(
     sos = signal.butter(
         order,
         [high_pass, low_pass],
-        'bandpass',
+        "bandpass",
         fs=fs_emg,
-        output='sos',
+        output="sos",
     )
     # sos (output parameter)is second order section  -> "stabilizes" ?
     emg_filt = signal.sosfiltfilt(sos, emg_raw)
@@ -50,7 +49,7 @@ def emg_lowpass_butter(
     fs_emg,
     order=3,
 ):
-    """Lowpass filter for EMG signal
+    """Lowpass filter for EMG signal.
     ---------------------------------------------------------------------------
     :param emg_raw: The raw EMG signal
     :type emg_raw: ~numpy.ndarray
@@ -67,9 +66,9 @@ def emg_lowpass_butter(
     sos = signal.butter(
         order,
         low_pass,
-        'lowpass',
+        "lowpass",
         fs=fs_emg,
-        output='sos',
+        output="sos",
     )
     emg_filt = signal.sosfiltfilt(sos, emg_raw)
     return emg_filt
@@ -81,8 +80,7 @@ def emg_highpass_butter(
     fs_emg,
     order=3,
 ):
-
-    """Highpass filter for EMG signal
+    """Highpass filter for EMG signal.
     ---------------------------------------------------------------------------
     :param emg_raw: The raw EMG signal
     :type emg_raw: ~numpy.ndarray
@@ -99,9 +97,9 @@ def emg_highpass_butter(
     sos = signal.butter(
         order,
         high_pass,
-        'highpass',
+        "highpass",
         fs=fs_emg,
-        output='sos',
+        output="sos",
     )
     emg_filt = signal.sosfiltfilt(sos, emg_raw)
     return emg_filt
@@ -123,10 +121,7 @@ def notch_filter(emg_raw, f_notch, fs_emg, q):
     :returns emg_filt: The notch filtered EMG data
     :rtype emg_filt: ~numpy.ndarray
     """
-    b_notch, a_notch = signal.iirnotch(
-        f_notch,
-        q,
-        fs_emg)
+    b_notch, a_notch = signal.iirnotch(f_notch, q, fs_emg)
 
     output_signal = signal.filtfilt(b_notch, a_notch, emg_raw)
     return output_signal
@@ -161,7 +156,7 @@ def compute_power_loss(
     if n_segment is None:
         n_segment = fs_original // 2
 
-    noverlap = int(percent_overlap/100 * fs_original)
+    noverlap = int(percent_overlap / 100 * fs_original)
 
     # power spectrum density of the original and
     # processed signals using Welch method
@@ -178,6 +173,6 @@ def compute_power_loss(
         noverlap=noverlap,
     )
     # compute the percentage of power loss
-    power_loss = 100*(1-(np.sum(pxx_den_orig)/np.sum(pxx_den_processed)))
+    power_loss = 100 * (1 - (np.sum(pxx_den_orig) / np.sum(pxx_den_processed)))
 
     return power_loss

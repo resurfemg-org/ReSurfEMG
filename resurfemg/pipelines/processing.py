@@ -1,16 +1,15 @@
-
-"""
-Copyright 2022 Netherlands eScience Center and University of Twente
+"""Copyright 2022 Netherlands eScience Center and University of Twente
 Licensed under the Apache License, version 2.0. See LICENSE for details.
 
 This file contains functions to perform default signal processing procedures.
 """
+
 import matplotlib.pyplot as plt
 
-import resurfemg.preprocessing.filtering as filt
+import resurfemg.helper_functions.visualization as vis
 import resurfemg.preprocessing.ecg_removal as ecg_rm
 import resurfemg.preprocessing.envelope as evl
-import resurfemg.helper_functions.visualization as vis
+import resurfemg.preprocessing.filtering as filt
 
 
 def quick_look(
@@ -21,8 +20,7 @@ def quick_look(
     plot_env=True,
     plot_power_spectrum=True,
 ):
-    """
-    Method for quick inspection of EMG data based on high-pass filtering @80Hz.
+    """Method for quick inspection of EMG data based on high-pass filtering @80Hz.
     ---------------------------------------------------------------------------
     :param emg_raw: raw single channel EMG data
     :type emg_raw: ~numpy.ndarray
@@ -45,25 +43,24 @@ def quick_look(
     emg_filt = filt.emg_bandpass_butter(
         emg_raw=emg_raw,
         high_pass=80,
-        low_pass=min([fs_emg//2, 500]),
+        low_pass=min([fs_emg // 2, 500]),
         fs_emg=fs_emg,
     )
     emg_env = evl.full_rolling_arv(emg_filt, fs_emg // 2)
     if any([plot_raw, plot_clean, plot_env]):
-        t_emg = [i/fs_emg for i in range(len(emg_raw))]
+        t_emg = [i / fs_emg for i in range(len(emg_raw))]
         _, axis_t = plt.subplots()
         if plot_raw:
-            axis_t.plot(t_emg, emg_raw, color='tab:cyan')
+            axis_t.plot(t_emg, emg_raw, color="tab:cyan")
         if plot_clean:
-            axis_t.plot(t_emg, emg_filt, color='tab:blue')
+            axis_t.plot(t_emg, emg_filt, color="tab:blue")
         if plot_env:
-            axis_t.plot(t_emg, emg_env, color='tab:red')
+            axis_t.plot(t_emg, emg_env, color="tab:red")
         axis_t.grid(True)
         plt.show()
     if plot_power_spectrum:
         _, axis_f = plt.subplots()
-        vis.show_power_spectrum(
-            emg_raw, fs_emg, t_emg[-1], signal_unit='uV')
+        vis.show_power_spectrum(emg_raw, fs_emg, t_emg[-1], signal_unit="uV")
         axis_f.grid(True)
     return emg_filt, emg_env
 
@@ -75,8 +72,7 @@ def ecg_removal_gating(
     method=3,
     ecg_shift=None,
 ):
-    """
-    Eliminate the ECG peaks from the emg_raw signal.
+    """Eliminate the ECG peaks from the emg_raw signal.
     ---------------------------------------------------------------------------
     :param emg_raw: 1 dimensional emg signal to gate
     :type emg_raw: ~numpy.ndarray
@@ -95,7 +91,8 @@ def ecg_removal_gating(
     :rtype emg_gated: numpy.ndarray
     """
     if len(emg_raw.shape) > 1:
-        raise ValueError('emg_raw should be a 1-D array')
+        msg = "emg_raw should be a 1-D array"
+        raise ValueError(msg)
 
     if ecg_shift is None:
         ecg_shift = 0
@@ -106,9 +103,7 @@ def ecg_removal_gating(
     # Fill methods: 0: Zeros, 1: Interpolate start-end, 2: Average prior data
     # 3: Moving average
     emg_gated = ecg_rm.gating(
-        emg_raw,
-        gate_peaks_idxs,
-        gate_width=gate_width_samples,
-        method=method)
+        emg_raw, gate_peaks_idxs, gate_width=gate_width_samples, method=method
+    )
 
     return emg_gated
