@@ -201,7 +201,7 @@ def percentage_under_baseline(
         end_idxs,
         aub_window_s,
         baseline,
-        ref_signal=signal,
+        ref_signal=ref_signal,
     )
 
     percentages_aub = aubs / (time_products + aubs) * 100
