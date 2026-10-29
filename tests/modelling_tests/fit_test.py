@@ -3,10 +3,10 @@ Sanity tests for the modelling.fit module of the ReSurfEMG library.
 """
 
 import unittest
+
 import numpy as np
 
 from resurfemg.modelling import fit
-
 
 
 class TestExplainedVariance(unittest.TestCase):
@@ -27,7 +27,7 @@ class TestResidualStandardError(unittest.TestCase):
         result = fit.residual_standard_error(y_true, y_pred, p=2)
         # ss_res = 4 * 0.2 ** 2 = 4 * 0.04 = 0.16
         # rse = sqrt(0.16 / (4 - 2)) = 0.4 / sqrt(2) = 0.2828427124746184
-        self.assertAlmostEqual(result, 0.4/np.sqrt(2), places=12)
+        self.assertAlmostEqual(result, 0.4 / np.sqrt(2), places=12)
 
 
 class TestCheckModelFit(unittest.TestCase):
@@ -41,11 +41,8 @@ class TestCheckModelFit(unittest.TestCase):
         # Check the model fit
         result = {}
         result = fit.check_model_fit(
-            mdl,
-            x_input,
-            y_true,
-            include_constant_term=True,
-            verbose=True)
+            mdl, x_input, y_true, include_constant_term=True, verbose=True
+        )
         # R2
         self.assertAlmostEqual(result[0], 1.0, places=12)
         # CoD
@@ -54,4 +51,5 @@ class TestCheckModelFit(unittest.TestCase):
         self.assertAlmostEqual(result[2], 0.0, places=12)
         # Residuals
         np.testing.assert_array_almost_equal(
-            result[3], np.zeros(result[3].shape), decimal=12)
+            result[3], np.zeros(result[3].shape), decimal=12
+        )
