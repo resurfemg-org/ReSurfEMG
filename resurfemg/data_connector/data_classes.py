@@ -10,7 +10,9 @@ Licensed under the Apache License, version 2.0. See LICENSE for details.
 from __future__ import annotations
 
 import functools
+import gzip
 import inspect
+import json
 import logging
 import warnings
 from textwrap import dedent, wrap
@@ -24,6 +26,7 @@ from resurfemg.data_connector.peakset_class import PeaksSet
 from resurfemg.helper_functions import (
     data_classes_quality_assessment as data_qa,
 )
+from resurfemg.helper_functions import file_utilities as fu
 from resurfemg.helper_functions import math_operations as mo
 from resurfemg.pipelines.processing import ecg_removal_gating
 from resurfemg.postprocessing import baseline as bl
@@ -45,6 +48,7 @@ _NDIM_VECTOR = 1
 _NDIM_MATRIX = 2
 
 logger = logging.getLogger(__name__)
+DEFAULT_Y_DATA = ["raw", "filt", "clean", "env", "env_ci", "baseline"]
 
 
 class TimeSeries:
@@ -136,8 +140,7 @@ class TimeSeries:
         self.y_units = units or "?"
 
     def __getattr__(self, item: str):
-        default_y_data = ["raw", "filt", "clean", "env", "env_ci", "baseline"]
-        if item.replace("y_", "") in default_y_data:
+        if item.replace("y_", "") in DEFAULT_Y_DATA:
             key = item.replace("y_", "")
             warnings.warn(
                 "\n".join(
@@ -235,6 +238,55 @@ class TimeSeries:
             for field in self._data_fields
             if field in self._y_data
             and isinstance(self._y_data[field], np.ndarray)
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> TimeSeries:
+        """Rebuild a TimeSeries from TimeSeries.to_dict() output."""
+        channel = cls(
+            y_raw=data["y_data"]["raw"],
+            t_data=data["t_data"],
+            fs=data["param"]["fs"],
+            label=data["label"],
+            units=data["y_units"],
+        )
+        channel._y_data = {k: np.asarray(v) for k, v in data["y_data"].items()}
+        channel.param = data["param"]
+        for name, peak_set in data["peaks"].items():
+            # Share the channel's t_data, as set_peaks does
+            channel.peaks[name] = PeaksSet.from_dict(
+                {**peak_set, "t_data": channel.t_data}
+            )
+        return channel
+
+    def _check_peak_set(self, peak_set: PeaksSet | None) -> PeaksSet:
+        """Check if the provided peak set is valid and return it."""
+        if peak_set is None:
+            msg = "Non-existent PeaksSet key"
+            raise KeyError(msg)
+        if not isinstance(peak_set, PeaksSet):
+            msg = "Object under provided key is not a PeaksSet"
+            raise TypeError(msg)
+        if peak_set.peak_df.empty:
+            msg = "PeaksSet is empty"
+            raise Warning(msg)
+        return peak_set
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert the TimeSeries object to a dictionary for JSON serialization."""
+        return {
+            "y_data": {
+                label: self._y_data[label]
+                for label in DEFAULT_Y_DATA
+                if label in self._y_data
+            },
+            "label": self.label,
+            "y_units": self.y_units,
+            "param": self.param,
+            "peaks": {
+                name: peak_set.to_dict()
+                for name, peak_set in self.peaks.items()
+            },
         }
 
     def signal_type_data(self, signal_type: str | None = None) -> np.ndarray:
@@ -792,7 +844,9 @@ class TimeSeries:
             msg = "PeaksSet already exists. Use overwrite=True"
             raise UserWarning(msg)
         self.peaks[peak_set_name] = PeaksSet(
-            peak_idxs=peak_idxs, t_data=self.t_data, signal=signal
+            peak_idxs=peak_idxs,
+            t_data=self.t_data,
+            signal=signal if signal is not None else np.array([]),
         )
 
     def detect_emg_breaths(
@@ -1558,19 +1612,6 @@ class TimeSeries:
                     color=color,
                 )
 
-    def _check_peak_set(self, peak_set: PeaksSet | None) -> PeaksSet:
-        """Check if the provided peak set is valid and return it."""
-        if peak_set is None:
-            msg = "Non-existent PeaksSet key"
-            raise KeyError(msg)
-        if not isinstance(peak_set, PeaksSet):
-            msg = "Object under provided key is not a PeaksSet"
-            raise TypeError(msg)
-        if peak_set.peak_df.empty:
-            msg = "PeaksSet is empty"
-            raise Warning(msg)
-        return peak_set
-
 
 class TimeSeriesGroup:
     """Data class to store, process, and plot time series data.
@@ -1589,7 +1630,191 @@ class TimeSeriesGroup:
         "plot_peaks",
         "plot_markers",
         "set_peaks",
+        "calculate_time_products",
     ]
+
+    def __init__(
+        self,
+        y_raw: np.ndarray,
+        t_data: np.ndarray | None = None,
+        fs: int | None = None,
+        labels: list[str] | None = None,
+        units: list[str] | None = None,
+    ) -> None:
+        """Initialize the TimeSeriesGroup object.
+
+        Args:
+                y_raw (numpy.ndarray): Raw signal data.
+                t_data (numpy.ndarray, optional): Time axis data. If None,
+                    generated from fs.
+                fs (int, optional): Sampling rate. If None, calculated from
+                    t_data.
+                labels (list, optional): List of labels, one per channel.
+                units (list, optional): List of signal units, one per channel.
+        """
+        self.channels = []
+        self.fs: int
+        y_raw, n_samp, n_channel = self._resolve_dims(y_raw)
+        t_data, self.fs = self._resolve_time(t_data, fs, n_samp)
+        self.param = {"fs": self.fs, "n_samp": n_samp, "n_channel": n_channel}
+        self.labels, self.y_units = self._resolve_labels_units(
+            labels, units, n_channel
+        )
+        for idx in range(n_channel):
+            self.channels.append(
+                TimeSeries(
+                    y_raw=y_raw[idx, :],
+                    t_data=t_data,
+                    fs=self.fs,
+                    label=self.labels[idx],
+                    units=self.y_units[idx],
+                )
+            )
+
+    def __getitem__(self, key: int | str | None) -> TimeSeries:
+        if isinstance(key, int):
+            return self.channels[key]
+        if isinstance(key, str):
+            for channel in self.channels:
+                if channel.label == key:
+                    return channel
+            msg = "Channel not found"
+            raise KeyError(msg)
+        msg = "Invalid key type"
+        raise ValueError(msg)
+
+    def __iter__(self):
+        return iter(self.channels)
+
+    @classmethod
+    def __init_subclass__(cls, **kwargs) -> None:
+        super().__init_subclass__(**kwargs)
+        for method_name in cls._available_methods:
+            if method_name not in cls.__dict__:
+                source: Callable[..., Any] | None = getattr(
+                    TimeSeries, method_name, None
+                )
+                if source is None:
+                    msg = (
+                        f"Method {method_name} not found in TimeSeries class."
+                    )
+                    raise AttributeError(msg)
+
+                @functools.wraps(source)
+                def make_wrapper(
+                    name: str, src: Callable[..., Any] | None
+                ) -> Callable[..., Any]:
+                    def wrapper(
+                        self: TimeSeriesGroup,
+                        *,
+                        channel_idxs: list[int] | np.ndarray | None = None,
+                        **kw,
+                    ) -> None:
+                        return self._run_wrapper(
+                            name, channel_idxs=channel_idxs, **kw
+                        )
+
+                    if src is not None:
+                        functools.update_wrapper(wrapper, src)
+                        sig = inspect.signature(src)
+                        params = list(sig.parameters.values())
+                        channel_idxs_param = inspect.Parameter(
+                            "channel_idxs",
+                            inspect.Parameter.KEYWORD_ONLY,
+                            default=None,
+                        )
+                        kwarg_index = next(
+                            (
+                                idx
+                                for idx, param in enumerate(params)
+                                if param.kind is inspect.Parameter.VAR_KEYWORD
+                            ),
+                            len(params),
+                        )
+                        params.insert(
+                            kwarg_index,
+                            channel_idxs_param,
+                        )
+                        wrapper.__signature__ = sig.replace(  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+                            parameters=params
+                        )
+                    return wrapper
+
+                setattr(cls, method_name, make_wrapper(method_name, source))
+
+    @classmethod
+    def import_from_json(cls, filename: str) -> TimeSeriesGroup:
+        """Load a group from a file written by ``export_to_json``.
+
+        The group is rebuilt through the class constructor, so
+        subclass-specific attributes are re-derived from the data: e.g.
+        ``ecg_idx`` for ``EmgDataGroup`` and ``p_vent_idx``, ``f_idx``,
+        ``v_vent_idx`` and ``peep`` for ``VentilatorDataGroup``. Channel data
+        and PeaksSets are then restored as saved, without recomputing peak
+        validity. All channels and PeaksSets share the stored time axis.
+
+        Args:
+            filename (str): Path to a gzip-compressed JSON file created by
+                ``export_to_json``.
+
+        Returns:
+            TimeSeriesGroup: Instance of the class this method is called on,
+                e.g. ``EmgDataGroup.import_from_json(...)`` returns an
+                ``EmgDataGroup``.
+
+        Raises:
+            KeyError: If required fields ("metadata", "data", "t_data", or
+                the sampling rate) are missing from the file.
+            OSError: If the file is not gzip-compressed.
+            json.JSONDecodeError: If the file content is not valid JSON.
+
+        Warns:
+            UserWarning: If the file was exported from a different class than
+                the one used to load it.
+
+        Note:
+            - "env_ci" is stored in memory as a ``(lower, upper)`` tuple but
+              loads as a ``(2, n_samp)`` array. Indexing with ``[0]``/``[1]``
+              behaves the same.
+            - Integer keys in ``param`` dicts are loaded as strings (JSON only
+              supports string keys).
+
+        Example:
+            >>> emg = EmgDataGroup.import_from_json("patient_01.json.gz")
+            >>> emg[1].peaks["breaths"].peak_df.head()
+        """
+        with gzip.open(filename, "rt") as fin:
+            dump = json.load(fin, object_hook=fu._json_object_hook)
+
+        object_type = dump.get("object_type")
+        if object_type is not None and object_type != cls.__name__:
+            warnings.warn(
+                f"File contains a {object_type}; loading as {cls.__name__}."
+            )
+
+        metadata = dump["metadata"]
+        data = dump["data"]
+        t_data = np.asarray(dump["t_data"])
+        labels = metadata["labels"]
+        if labels is not None and all(label is None for label in labels):
+            labels = None
+
+        y_raw = np.asarray(
+            [data[str(i)]["y_data"]["raw"] for i in range(len(data))]
+        )
+        # Run the real __init__ so subclass attributes (ecg_idx, p_vent_idx, peep) exist
+        group = cls(
+            y_raw,
+            t_data=t_data,
+            fs=metadata["fs"],
+            labels=labels,
+            units=metadata["units"],
+        )
+        group.channels = [
+            TimeSeries.from_dict({**data[str(i)], "t_data": t_data})
+            for i in range(len(data))
+        ]
+        return group
 
     @staticmethod
     def _resolve_dims(y_raw: np.ndarray) -> tuple[np.ndarray, int, int]:
@@ -1652,6 +1877,73 @@ class TimeSeriesGroup:
             out_units = units
         return out_labels, out_units
 
+    @staticmethod
+    def _check_plot_kwargs(
+        method: str, channel_idxs: np.ndarray, kwargs: dict
+    ) -> None:
+        """Validate and auto-create axes for plot_* methods."""
+        if "axes" not in kwargs:
+            _, kwargs["axes"] = plt.subplots(
+                nrows=len(channel_idxs), ncols=1, figsize=(10, 6), sharex=True
+            )
+
+        if method == "plot_full":
+            kwargs["axes"] = np.atleast_1d(kwargs["axes"])
+            if len(channel_idxs) > len(kwargs["axes"]):
+                msg = "Provided axes have not enough rows for all channels to plot."
+                raise ValueError(msg)
+            if len(channel_idxs) < len(kwargs["axes"]):
+                warnings.warn(
+                    "\n".join(
+                        wrap(
+                            dedent("More axes provided than channels to plot.")
+                        )
+                    )
+                )
+
+        elif method in ["plot_peaks", "plot_markers"]:
+            kwargs["axes"] = np.atleast_2d(kwargs["axes"])
+            if kwargs["axes"].shape[0] < len(channel_idxs):
+                msg = "Provided axes have not enough rows for all channels to plot."
+                raise ValueError(msg)
+            if "peak_set_name" not in kwargs:
+                msg = "No peak_set_name provided."
+                raise ValueError(msg)
+
+    def _check_channel_idxs(
+        self, channel_idxs: list[int] | np.ndarray | None
+    ) -> np.ndarray:
+        return np.asarray(self._resolve_channels(channel_idxs))
+
+    def _run_wrapper(
+        self,
+        method: str,
+        channel_idxs: list[int] | np.ndarray | None = None,
+        **kwargs,
+    ) -> None:
+        if method not in self._available_methods:
+            msg = "Invalid method"
+            raise ValueError(msg)
+        channel_idxs = self._check_channel_idxs(channel_idxs)
+
+        # only plot checks remain here
+        if method.startswith("plot_"):
+            self._check_plot_kwargs(method, channel_idxs, kwargs)
+        elif isinstance(self, EmgDataGroup):
+            if method in ["gating", "wavelet_denoising"]:
+                self._check_ecg_future_warning(channel_idxs, kwargs)
+            elif method == "get_ecg_peaks":
+                self._resolve_ecg_source(kwargs)
+
+        _kwargs = kwargs.copy()
+        for idx, channel_idx in enumerate(channel_idxs):
+            if method.startswith("plot_"):
+                if method in ["plot_peaks", "plot_markers"]:
+                    _kwargs["axes"] = kwargs["axes"][idx, :]
+                else:
+                    _kwargs["axes"] = kwargs["axes"][idx]
+            getattr(self.channels[channel_idx], method)(**_kwargs)
+
     def _resolve_channels(
         self,
         channels: int | str | list | np.ndarray | None,
@@ -1695,7 +1987,143 @@ class TimeSeriesGroup:
             raise ValueError(msg) from e
         return keys
 
+    def export_to_json(
+        self, filename: str, compression_level: int = 6
+    ) -> None:
+        """Export the group to a gzip-compressed JSON file.
+
+        Stores the group metadata (labels, units, sampling rate), the shared
+        time axis (once), and per channel: the default signal types, label,
+        units, parameters, and all PeaksSets (signal, peak_df,
+        quality_values_df, quality_outcomes_df, time_products). The class name
+        is saved as ``object_type`` so the file can be checked on import.
+        Reload with ``import_from_json`` on the same class.
+
+        Args:
+            filename (str): Output path, conventionally ending in ``.json.gz``.
+                Existing files are overwritten.
+            compression_level (int, optional): gzip compression level, 1
+                (fastest) to 9 (smallest). Default is 6.
+
+        Raises:
+            TypeError: If a stored value cannot be serialized, e.g. a
+                ``pandas.Timestamp`` in a DataFrame or a custom object in
+                ``param``.
+
+        Note:
+            - Only the default signal types ("raw", "filt", "clean", "env",
+              "env_ci", "baseline") are exported; custom signal types are
+              dropped.
+            - NaN and inf are written as ``NaN``/``Infinity``. Python's json
+              module reads these, but strict JSON parsers in other languages
+              do not.
+            - JSON stores numbers as text, so files are larger and slower to
+              write than binary formats. Expect roughly 80 MB and tens of
+              seconds for a 7-minute, 2-channel, 2048 Hz recording with full
+              processing.
+
+        Example:
+            >>> emg.export_to_json("patient_01.json.gz")
+        """
+        dump = {
+            "metadata": {
+                "labels": self.labels,
+                "units": self.y_units,
+                "fs": self.fs,
+            },
+            "data": {
+                i: self.channels[i].to_dict()
+                for i in range(len(self.channels))
+            },
+            "t_data": self.channels[0].t_data,
+            "object_type": type(self).__name__,
+        }
+
+        with gzip.open(
+            filename, "wt", compresslevel=compression_level
+        ) as fout:
+            # Streams to the file; compact separators, no indent
+            json.dump(
+                dump, fout, separators=(",", ":"), default=fu._json_default
+            )
+
+    def to_numpy(
+        self,
+        channel_idxs: int | np.ndarray | None = None,
+        signal_io: tuple = (None,),
+    ) -> np.ndarray:
+        """Convert the TimeSeriesGroup to a numpy array.
+
+            The output is a 2D
+            array with the shape (n_channels, n_samples). The signal type is
+            determined by the signal_io parameter. If signal_io is (None,), the
+            most advanced signal type (envelope > clean > filt > raw) is used.
+
+
+        Args:
+                channel_idxs (numpy.ndarray or int, optional): Channel indices to
+                    include. If None, all channels are used.
+                signal_io (tuple, optional): Tuple where the first element is the
+                    input signal type. Default is (None,).
+
+        Returns:
+                numpy.ndarray: 2D array of shape (n_channels, n_samples).
+        """
+        if channel_idxs is None:
+            channel_idxs = np.arange(self.param["n_channel"])
+        elif isinstance(channel_idxs, int):
+            channel_idxs = np.array([channel_idxs])
+        return np.array(
+            [
+                self.channels[idx].signal_type_data(signal_io[0])
+                for idx in np.asarray(channel_idxs)
+            ]
+        )
+
+    def run(
+        self,
+        method: str,
+        channel_idxs: list[int] | np.ndarray | None = None,
+        **kwargs,
+    ) -> None:
+        """Run the indicated method on the indicated channels with the provided kwargs.
+
+        LEGACY FUNCTION
+        """
+        warnings.warn(
+            "\n".join(
+                wrap(
+                    dedent(
+                        f"""
+                The `TimeSeriesGroup.{method}()` syntax is deprecated.",
+                "Call the method directly on the TimeSeriesGroup object instead, e.g.",
+                f"`group.{method}(channel_idxs=..., **kwargs)`."""
+                    )
+                )
+            ),
+            FutureWarning,
+        )
+        if method not in self._available_methods:
+            msg = "Invalid method"
+            raise ValueError(msg)
+        return self._run_wrapper(method, channel_idxs=channel_idxs, **kwargs)
+
     if TYPE_CHECKING:
+
+        def calculate_time_products(
+            self,
+            *,
+            peak_set_name: str,
+            include_aub: bool = True,
+            aub_window_s: int | None = None,
+            aub_reference_signal: np.ndarray
+            | tuple[np.ndarray, np.ndarray]
+            | None = None,
+            parameter_name: str | None = None,
+            signal_io: tuple[str, ...] = ("baseline",),
+        ) -> None:
+            """Calculate the time product, i.e. area under the curve for a PeaksSet."""
+            ...
 
         def envelope(
             self,
@@ -1789,243 +2217,6 @@ class TimeSeriesGroup:
 
         ...
 
-    def __init__(
-        self,
-        y_raw: np.ndarray,
-        t_data: np.ndarray | None = None,
-        fs: int | None = None,
-        labels: list[str] | None = None,
-        units: list[str] | None = None,
-    ) -> None:
-        """Initialize the TimeSeriesGroup object.
-
-        Args:
-                y_raw (numpy.ndarray): Raw signal data.
-                t_data (numpy.ndarray, optional): Time axis data. If None,
-                    generated from fs.
-                fs (int, optional): Sampling rate. If None, calculated from
-                    t_data.
-                labels (list, optional): List of labels, one per channel.
-                units (list, optional): List of signal units, one per channel.
-        """
-        self.channels = []
-        self.fs: int
-        y_raw, n_samp, n_channel = self._resolve_dims(y_raw)
-        t_data, self.fs = self._resolve_time(t_data, fs, n_samp)
-        self.param = {"fs": self.fs, "n_samp": n_samp, "n_channel": n_channel}
-        self.labels, self.y_units = self._resolve_labels_units(
-            labels, units, n_channel
-        )
-        for idx in range(n_channel):
-            self.channels.append(
-                TimeSeries(
-                    y_raw=y_raw[idx, :],
-                    t_data=t_data,
-                    fs=self.fs,
-                    label=self.labels[idx],
-                    units=self.y_units[idx],
-                )
-            )
-
-    @classmethod
-    def __init_subclass__(cls, **kwargs) -> None:
-        super().__init_subclass__(**kwargs)
-        for method_name in cls._available_methods:
-            if method_name not in cls.__dict__:
-                source: Callable[..., Any] | None = getattr(
-                    TimeSeries, method_name, None
-                )
-                if source is None:
-                    msg = (
-                        f"Method {method_name} not found in TimeSeries class."
-                    )
-                    raise AttributeError(msg)
-
-                @functools.wraps(source)
-                def make_wrapper(
-                    name: str, src: Callable[..., Any] | None
-                ) -> Callable[..., Any]:
-                    def wrapper(
-                        self: TimeSeriesGroup,
-                        *,
-                        channel_idxs: list[int] | np.ndarray | None = None,
-                        **kw,
-                    ) -> None:
-                        return self._run_wrapper(
-                            name, channel_idxs=channel_idxs, **kw
-                        )
-
-                    if src is not None:
-                        functools.update_wrapper(wrapper, src)
-                        sig = inspect.signature(src)
-                        params = list(sig.parameters.values())
-                        channel_idxs_param = inspect.Parameter(
-                            "channel_idxs",
-                            inspect.Parameter.KEYWORD_ONLY,
-                            default=None,
-                        )
-                        kwarg_index = next(
-                            (
-                                idx
-                                for idx, param in enumerate(params)
-                                if param.kind is inspect.Parameter.VAR_KEYWORD
-                            ),
-                            len(params),
-                        )
-                        params.insert(
-                            kwarg_index,
-                            channel_idxs_param,
-                        )
-                        wrapper.__signature__ = sig.replace(  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
-                            parameters=params
-                        )
-                    return wrapper
-
-                setattr(cls, method_name, make_wrapper(method_name, source))
-
-    def __getitem__(self, key: int | str | None) -> TimeSeries:
-        if isinstance(key, int):
-            return self.channels[key]
-        if isinstance(key, str):
-            for channel in self.channels:
-                if channel.label == key:
-                    return channel
-            msg = "Channel not found"
-            raise KeyError(msg)
-        msg = "Invalid key type"
-        raise ValueError(msg)
-
-    def __iter__(self):
-        return iter(self.channels)
-
-    def to_numpy(
-        self,
-        channel_idxs: int | np.ndarray | None = None,
-        signal_io: tuple = (None,),
-    ) -> np.ndarray:
-        """Convert the TimeSeriesGroup to a numpy array.
-
-            The output is a 2D
-            array with the shape (n_channels, n_samples). The signal type is
-            determined by the signal_io parameter. If signal_io is (None,), the
-            most advanced signal type (envelope > clean > filt > raw) is used.
-
-
-        Args:
-                channel_idxs (numpy.ndarray or int, optional): Channel indices to
-                    include. If None, all channels are used.
-                signal_io (tuple, optional): Tuple where the first element is the
-                    input signal type. Default is (None,).
-
-        Returns:
-                numpy.ndarray: 2D array of shape (n_channels, n_samples).
-        """
-        if channel_idxs is None:
-            channel_idxs = np.arange(self.param["n_channel"])
-        elif isinstance(channel_idxs, int):
-            channel_idxs = np.array([channel_idxs])
-        return np.array(
-            [
-                self.channels[idx].signal_type_data(signal_io[0])
-                for idx in np.asarray(channel_idxs)
-            ]
-        )
-
-    @staticmethod
-    def _check_plot_kwargs(
-        method: str, channel_idxs: np.ndarray, kwargs: dict
-    ) -> None:
-        """Validate and auto-create axes for plot_* methods."""
-        if "axes" not in kwargs:
-            _, kwargs["axes"] = plt.subplots(
-                nrows=len(channel_idxs), ncols=1, figsize=(10, 6), sharex=True
-            )
-
-        if method == "plot_full":
-            kwargs["axes"] = np.atleast_1d(kwargs["axes"])
-            if len(channel_idxs) > len(kwargs["axes"]):
-                msg = "Provided axes have not enough rows for all channels to plot."
-                raise ValueError(msg)
-            if len(channel_idxs) < len(kwargs["axes"]):
-                warnings.warn(
-                    "\n".join(
-                        wrap(
-                            dedent("More axes provided than channels to plot.")
-                        )
-                    )
-                )
-
-        elif method in ["plot_peaks", "plot_markers"]:
-            kwargs["axes"] = np.atleast_2d(kwargs["axes"])
-            if kwargs["axes"].shape[0] < len(channel_idxs):
-                msg = "Provided axes have not enough rows for all channels to plot."
-                raise ValueError(msg)
-            if "peak_set_name" not in kwargs:
-                msg = "No peak_set_name provided."
-                raise ValueError(msg)
-
-    def _check_channel_idxs(
-        self, channel_idxs: list[int] | np.ndarray | None
-    ) -> np.ndarray:
-        return np.asarray(self._resolve_channels(channel_idxs))
-
-    def _run_wrapper(
-        self,
-        method: str,
-        channel_idxs: list[int] | np.ndarray | None = None,
-        **kwargs,
-    ) -> None:
-        if method not in self._available_methods:
-            msg = "Invalid method"
-            raise ValueError(msg)
-        channel_idxs = self._check_channel_idxs(channel_idxs)
-
-        # only plot checks remain here
-        if method.startswith("plot_"):
-            self._check_plot_kwargs(method, channel_idxs, kwargs)
-        elif isinstance(self, EmgDataGroup):
-            if method in ["gating", "wavelet_denoising"]:
-                self._check_ecg_future_warning(channel_idxs, kwargs)
-            elif method == "get_ecg_peaks":
-                self._resolve_ecg_source(kwargs)
-
-        _kwargs = kwargs.copy()
-        for idx, channel_idx in enumerate(channel_idxs):
-            if method.startswith("plot_"):
-                if method in ["plot_peaks", "plot_markers"]:
-                    _kwargs["axes"] = kwargs["axes"][idx, :]
-                else:
-                    _kwargs["axes"] = kwargs["axes"][idx]
-            getattr(self.channels[channel_idx], method)(**_kwargs)
-
-    def run(
-        self,
-        method: str,
-        channel_idxs: list[int] | np.ndarray | None = None,
-        **kwargs,
-    ) -> None:
-        """Run the indicated method on the indicated channels with the provided kwargs.
-
-        LEGACY FUNCTION
-        """
-        warnings.warn(
-            "\n".join(
-                wrap(
-                    dedent(
-                        f"""
-                The `TimeSeriesGroup.{method}()` syntax is deprecated.",
-                "Call the method directly on the TimeSeriesGroup object instead, e.g.",
-                f"`group.{method}(channel_idxs=..., **kwargs)`."""
-                    )
-                )
-            ),
-            FutureWarning,
-        )
-        if method not in self._available_methods:
-            msg = "Invalid method"
-            raise ValueError(msg)
-        return self._run_wrapper(method, channel_idxs=channel_idxs, **kwargs)
-
 
 class EmgDataGroup(TimeSeriesGroup):
     """Child-class of TimeSeriesGroup to store and handle emg data in.
@@ -2049,6 +2240,8 @@ class EmgDataGroup(TimeSeriesGroup):
         "get_ecg_peaks",
         "gating",
         "wavelet_denoising",
+        "detect_emg_breaths",
+        "test_emg_quality",
     ]
 
     def __init__(
@@ -2077,74 +2270,6 @@ class EmgDataGroup(TimeSeriesGroup):
                 ],
             )
             self.ecg_idx = None
-
-    if TYPE_CHECKING:
-
-        def filter_emg(
-            self,
-            channel_idxs: list[int] | np.ndarray | None = None,
-            *,
-            signal_io: tuple[str, str] = ("raw", "filt"),
-            hp_cf: float = 20.0,
-            lp_cf: float = 500.0,
-            order: int = 3,
-            **kwargs,
-        ) -> None:
-            """Apply EMG band-pass filtering to the indicated channels."""
-
-        ...
-
-        def get_ecg_peaks(
-            self,
-            channel_idxs: list[int] | np.ndarray | None = None,
-            *,
-            ecg_raw: np.ndarray | None = None,
-            bp_filter: bool = True,
-            overwrite: bool = True,
-            name: str = "ecg",
-        ) -> None:
-            """Detect and store ECG peaks for the indicated channels."""
-
-        ...
-
-        def gating(
-            self,
-            channel_idxs: list[int] | np.ndarray | None = None,
-            *,
-            signal_io: tuple[str, str] = ("filt", "clean"),
-            ecg_peakset_name: str = "ecg",
-            gate_width_samples: int | None = None,
-            fill_method: int = 3,
-            **kwargs,
-        ) -> None:
-            """Remove ECG artefacts from the indicated channels using gating."""
-
-        ...
-
-        def wavelet_denoising(
-            self,
-            channel_idxs: list[int] | np.ndarray | None = None,
-            *,
-            signal_io: tuple[str, str] = ("filt", "clean"),
-            ecg_peakset_name: str = "ecg",
-            n: int | None = None,
-            fixed_threshold: float | None = None,
-            **kwargs,
-        ) -> None:
-            """Remove ECG artefacts from the indicated channels with wavelets."""
-
-        ...
-
-    def set_ecg_idx(self, ecg_idx: int | str) -> None:
-        """Set the ECG channel index in the group.
-
-        Args:
-                ecg_idx (int or str): ECG channel index or label.
-        """
-        if isinstance(ecg_idx, int):
-            self.ecg_idx = ecg_idx
-        elif isinstance(ecg_idx, str):
-            self.ecg_idx = self.labels.index(ecg_idx)
 
     def _check_ecg_future_warning(
         self, channel_idxs: list[int] | np.ndarray | None, kwargs: dict
@@ -2193,6 +2318,17 @@ class EmgDataGroup(TimeSeriesGroup):
             logger.warning("Channel raw signals used for ECG peak detection.")
         return kwargs
 
+    def set_ecg_idx(self, ecg_idx: int | str) -> None:
+        """Set the ECG channel index in the group.
+
+        Args:
+                ecg_idx (int or str): ECG channel index or label.
+        """
+        if isinstance(ecg_idx, int):
+            self.ecg_idx = ecg_idx
+        elif isinstance(ecg_idx, str):
+            self.ecg_idx = self.labels.index(ecg_idx)
+
     def filter(
         self,
         channel_idxs: list[int] | np.ndarray | None = None,
@@ -2216,6 +2352,85 @@ class EmgDataGroup(TimeSeriesGroup):
             order=order,
             **kwargs,
         )
+
+    if TYPE_CHECKING:
+
+        def test_emg_quality(
+            self,
+            channel_idxs: list[int] | np.ndarray | None = None,
+            *,
+            signal_io: tuple[str, str] = ("raw", "filt"),
+            **kwargs,
+        ) -> None:
+            """Test the quality of the EMG signal for the indicated channels."""
+
+        ...
+
+        def filter_emg(
+            self,
+            channel_idxs: list[int] | np.ndarray | None = None,
+            *,
+            signal_io: tuple[str, str] = ("raw", "filt"),
+            hp_cf: float = 20.0,
+            lp_cf: float = 500.0,
+            order: int = 3,
+            **kwargs,
+        ) -> None:
+            """Apply EMG band-pass filtering to the indicated channels."""
+
+        ...
+
+        def detect_emg_breaths(
+            self,
+            channel_idxs: list[int] | np.ndarray | None = None,
+            *,
+            signal_io: tuple[str, str] = ("filt", "clean"),
+            **kwargs,
+        ) -> None:
+            """Detect and store EMG breaths for the indicated channels."""
+
+        ...
+
+        def get_ecg_peaks(
+            self,
+            channel_idxs: list[int] | np.ndarray | None = None,
+            *,
+            ecg_raw: np.ndarray | None = None,
+            bp_filter: bool = True,
+            overwrite: bool = True,
+            name: str = "ecg",
+        ) -> None:
+            """Detect and store ECG peaks for the indicated channels."""
+
+        ...
+
+        def gating(
+            self,
+            channel_idxs: list[int] | np.ndarray | None = None,
+            *,
+            signal_io: tuple[str, str] = ("filt", "clean"),
+            ecg_peakset_name: str = "ecg",
+            gate_width_samples: int | None = None,
+            fill_method: int = 3,
+            **kwargs,
+        ) -> None:
+            """Remove ECG artefacts from the indicated channels using gating."""
+
+        ...
+
+        def wavelet_denoising(
+            self,
+            channel_idxs: list[int] | np.ndarray | None = None,
+            *,
+            signal_io: tuple[str, str] = ("filt", "clean"),
+            ecg_peakset_name: str = "ecg",
+            n: int | None = None,
+            fixed_threshold: float | None = None,
+            **kwargs,
+        ) -> None:
+            """Remove ECG artefacts from the indicated channels with wavelets."""
+
+        ...
 
 
 class VentilatorDataGroup(TimeSeriesGroup):
