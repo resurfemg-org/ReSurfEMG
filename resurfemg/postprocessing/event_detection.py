@@ -63,10 +63,7 @@ def find_occluded_breaths(
 
     if distance_s is None:
         if fs is None:
-            msg = (
-                "Minimmal peak distance and ventilator sampling"
-                " rate are not defined."
-            )
+            msg = "Minimmal peak distance and ventilator sampling rate are not defined."
             raise ValueError(msg)
         distance_s = int(0.5 * fs)
 
