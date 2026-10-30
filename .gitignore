@@ -85,3 +85,5 @@ venv.bak/
 not_pushed
 conda-pkg/meta.yaml
 config.json
+.vscode/
+uv.lock

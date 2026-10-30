@@ -1,5 +1,4 @@
-"""
-Copyright 2022 Netherlands eScience Center and University of Twente
+"""Copyright 2022 Netherlands eScience Center and University of Twente
 Licensed under the Apache License, version 2.0. See LICENSE for details.
 
 This file contains functions for processing pneumatic data.
@@ -10,15 +9,14 @@ from scipy.signal import medfilt
 
 
 def zero_cros_flow(flow, flow_threshold=0.3):
-    """
-    Function to find the onset of inspiratory,i.e., positive, flow in the
+    """Function to find the onset of inspiratory,i.e., positive, flow in the
     flow signal. Flow onsets are defined as the points where the flow signal
     crosses the zero line to become positive and the flow signal reaches
     above the flow_threshold during the breath.
     :param flow: The flow signal.
     :type flow: ~numpy.ndarray
     :param flow_threshold: The threshold for the flow signal.
-    :type flow_threshold: float
+    :type flow_threshold: float.
 
     :return zc_idxs: zero crossings indices
     :rtype: tuple
@@ -40,8 +38,7 @@ def zero_cros_flow(flow, flow_threshold=0.3):
 
 
 def volume_computation(t, flow, fs, zc_idxs, method):
-    """
-    Function to compute the volume signal from the flow signal. The volume
+    """Function to compute the volume signal from the flow signal. The volume
     signal is computed by integrating the flow signal. The volume signal is
     then baseline corrected using the end-expiratory samples. The end-
     expiratory samples are selected around the zero crossings of the flow
@@ -59,7 +56,7 @@ def volume_computation(t, flow, fs, zc_idxs, method):
     :param zc_idxs: The zero crossing indices.
     :type zc_idxs: ~numpy.ndarray
     :param method: The baseline correction method.
-    :type method: str
+    :type method: str.
 
     :return volume: The volume signal.
     :rtype: ~numpy.ndarray
@@ -71,7 +68,7 @@ def volume_computation(t, flow, fs, zc_idxs, method):
     :rtype: ~numpy.ndarray
     """
     volume_raw = np.cumsum(flow) / fs
-    volume_raw = np.insert(volume_raw, 0, 0)[:len(t)]
+    volume_raw = np.insert(volume_raw, 0, 0)[: len(t)]
 
     match method:
         case "Last point":
@@ -81,11 +78,12 @@ def volume_computation(t, flow, fs, zc_idxs, method):
         case "Last points":
             end_exp_idxs = []
             zc_start_idxs = np.clip(
-                zc_idxs - int(0.1 * fs) - 1, 0, len(flow)).astype(int)
+                zc_idxs - int(0.1 * fs) - 1, 0, len(flow)
+            ).astype(int)
             zc_end_idxs = zc_idxs
             delta = np.zeros(volume_raw.shape, dtype=np.int64)
             np.add.at(delta, zc_start_idxs, 1)  # Increment + 1 at start idxs
-            np.add.at(delta, zc_end_idxs, -1)   # Decrement - 1 at end idxs
+            np.add.at(delta, zc_end_idxs, -1)  # Decrement - 1 at end idxs
             end_exp_idxs = np.where(np.cumsum(delta) > 0)[0]
 
             vol_zc = medfilt(

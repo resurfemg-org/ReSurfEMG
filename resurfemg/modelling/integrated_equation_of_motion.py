@@ -1,32 +1,31 @@
-"""
-Copyright 2026 Netherlands eScience Center and University of Twente
+"""Copyright 2026 Netherlands eScience Center and University of Twente
 Licensed under the Apache License, version 2.0. See LICENSE for details.
 
 This file contains functions for estimating the time constant (tau) of the
 respiratory system from ventilator data.
 """
+
 import logging
 
 import numpy as np
 import statsmodels.api as sm
-from resurfemg.postprocessing.baseline import moving_baseline
 
+from resurfemg.postprocessing.baseline import moving_baseline
 
 logger = logging.getLogger(__name__)
 
 
 def v_rs_estimation(
-        volume,
-        flow,
-        tau,
-        expiration_mask,
-        window_s,
-        step_s,
-        set_percentile=33,
-        omit_nan=True
-        ):
-    """
-    Estimate the Vrs signal for the integrated equation of motion. See the
+    volume,
+    flow,
+    tau,
+    expiration_mask,
+    window_s,
+    step_s,
+    set_percentile=33,
+    omit_nan=True,
+):
+    """Estimate the Vrs signal for the integrated equation of motion. See the
     paper by Graßhoff et al. (2023) for details on the method.
     :param volume: The volume signal.
     :type volume: ~numpy.ndarray
@@ -44,9 +43,9 @@ def v_rs_estimation(
     :param set_percentile: The percentile to use for the moving baseline
     :type set_percentile: float
     :return v_rs: The estimated Vrs signal.
-    :rtype: ~numpy.ndarray
+    :rtype: ~numpy.ndarray.
     """
-    v_rs_hat = - volume - tau * flow
+    v_rs_hat = -volume - tau * flow
     v_rs_hat_est = np.where(expiration_mask, v_rs_hat, np.nan)
     v0_hat = moving_baseline(
         v_rs_hat_est,
@@ -60,8 +59,7 @@ def v_rs_estimation(
 
 
 def compliance_estimation(df_ieqm, t=1.345, keys=None, verbose=False):
-    """
-    Estimate the compliance and non-mechanical component of the integrated
+    """Estimate the compliance and non-mechanical component of the integrated
     equation of motion using robust linear regression.
     :param df_ieqm: The integrated equation of motion data.
     :type df_ieqm: ~pandas.DataFrame
@@ -76,15 +74,13 @@ def compliance_estimation(df_ieqm, t=1.345, keys=None, verbose=False):
     :return nmc_est: The estimated neuro-mechanical coupling
     :rtype: np.float
     :return mdl_C: The estimated model.
-    :rtype: statsmodels.robust.robust_linear_model.RLMResults
+    :rtype: statsmodels.robust.robust_linear_model.RLMResults.
     """
     if keys is None:
-        keys = {'PTP': 'PTPaw-PTPpeep', 'VTP': 'VTPrs', 'ETP': 'ETPmus'}
-    x_breath = np.column_stack(
-        (df_ieqm[keys['PTP']], df_ieqm[keys['ETP']]))
+        keys = {"PTP": "PTPaw-PTPpeep", "VTP": "VTPrs", "ETP": "ETPmus"}
+    x_breath = np.column_stack((df_ieqm[keys["PTP"]], df_ieqm[keys["ETP"]]))
     rlm_model_breath = sm.RLM(
-        df_ieqm[keys['VTP']],
-        x_breath, M=sm.robust.norms.HuberT(t=t)
+        df_ieqm[keys["VTP"]], x_breath, M=sm.robust.norms.HuberT(t=t)
     ).fit(conv="coefs", cov="H3")
     beta_0, beta_1 = rlm_model_breath.params
     c_est = beta_0 * 1000
@@ -98,8 +94,7 @@ def compliance_estimation(df_ieqm, t=1.345, keys=None, verbose=False):
 
 
 def p_mus_estimation(p_aw, peep, v_rs, c):
-    """
-    Estimate the Pmus signal using the integrated equation of motion:
+    """Estimate the Pmus signal using the integrated equation of motion:
     Pmus,est = 1/C * Vrs - (Paw - PEEP)
     :param p_aw: The airway pressure signal.
     :type p_aw: ~numpy.ndarray
@@ -110,6 +105,6 @@ def p_mus_estimation(p_aw, peep, v_rs, c):
     :param c: The compliance of the respiratory system in mL/cmH2O.
     :type c: float
     :return p_mus_pred: The estimated Pmus signal.
-    :rtype: ~numpy.ndarray
+    :rtype: ~numpy.ndarray.
     """
     return 1000 * v_rs / c - (p_aw - peep)

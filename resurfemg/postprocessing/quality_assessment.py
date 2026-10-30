@@ -1,5 +1,4 @@
-"""
-Copyright 2022 Netherlands eScience Center and University of Twente
+"""Copyright 2022 Netherlands eScience Center and University of Twente
 Licensed under the Apache License, version 2.0. See LICENSE for details.
 
 This file contains functions to determine peak and signal quality from
@@ -7,8 +6,9 @@ preprocessed EMG arrays.
 """
 
 import numpy as np
-from scipy.optimize import curve_fit
 from scipy.integrate import trapezoid
+from scipy.optimize import curve_fit
+
 import resurfemg.helper_functions.math_operations as mo
 import resurfemg.postprocessing.features as feat
 
@@ -19,8 +19,7 @@ def snr_pseudo(
     baseline,
     fs,
 ):
-    """
-    Approximate the signal-to-noise ratio (SNR) of the signal based
+    """Approximate the signal-to-noise ratio (SNR) of the signal based
     on the peak height relative to the baseline.
     ---------------------------------------------------------------------------
     :param signal: Signal to evaluate
@@ -35,7 +34,6 @@ def snr_pseudo(
     :returns snr_peaks: the SNR per peak
     :rtype snr_peaks: numpy.ndarray[float]
     """
-
     peak_heights = np.zeros((len(peaks),))
     noise_heights = np.zeros((len(peaks),))
 
@@ -58,8 +56,7 @@ def pocc_quality(
     dp_up_90_threshold=2.0,
     dp_up_90_norm_threshold=0.8,
 ):
-    """
-    Evaluation of occlusion pressure (Pocc) quality, in accordance with Warnaar
+    """Evaluation of occlusion pressure (Pocc) quality, in accordance with Warnaar
     et al. (2024). Poccs are labelled invalid if too many negative deflections
     happen in the upslope (first decile < 0), or if the upslope is to steep
     (high absolute or relative 9th decile), indicating occlusion release before
@@ -91,30 +88,30 @@ def pocc_quality(
     dp_up_90_norm = np.zeros((len(pocc_peaks),))
     for idx, pocc_peak in enumerate(pocc_peaks):
         end_i = pocc_ends[idx]
-        dp = p_vent_signal[pocc_peak+1:end_i]-p_vent_signal[pocc_peak:end_i-1]
+        dp = (
+            p_vent_signal[pocc_peak + 1 : end_i]
+            - p_vent_signal[pocc_peak : end_i - 1]
+        )
         dp_up_10[idx] = np.percentile(dp, 10)
         dp_up_90[idx] = np.percentile(dp, 90)
         dp_up_90_norm[idx] = dp_up_90[idx] / np.sqrt(ptp_occs[idx])
 
-    criteria_matrix = np.array([
-        dp_up_10,
-        dp_up_90,
-        dp_up_90_norm
-    ])
-    criteria_bool_matrix = np.array([
-        dp_up_10 <= dp_up_10_threshold,
-        dp_up_90 > dp_up_90_threshold,
-        dp_up_90_norm > dp_up_90_norm_threshold
-    ])
+    criteria_matrix = np.array([dp_up_10, dp_up_90, dp_up_90_norm])
+    criteria_bool_matrix = np.array(
+        [
+            dp_up_10 <= dp_up_10_threshold,
+            dp_up_90 > dp_up_90_threshold,
+            dp_up_90_norm > dp_up_90_norm_threshold,
+        ]
+    )
     valid_poccs = ~np.any(criteria_bool_matrix, axis=0)
     return valid_poccs, criteria_matrix
 
 
 def interpeak_dist(ecg_peak_idxs, emg_peak_idxs, threshold=1.1):
-    """
-    Calculate the median interpeak distances for ECG and EMG and check if their
+    """Calculate the median interpeak distances for ECG and EMG and check if their
     ratio is above the given threshold, i.e. if cardiac frequency is higher
-    than respiratory frequency (True)
+    than respiratory frequency (True).
     ---------------------------------------------------------------------------
     :param ecg_peak_idxs: Indices of ECG peaks
     :type ecg_peak_idxs: ~numpy.ndarray
@@ -127,11 +124,13 @@ def interpeak_dist(ecg_peak_idxs, emg_peak_idxs, threshold=1.1):
     :rtype valid_interpeak: bool
     """
     # Calculate median interpeak distance for ECG
-    t_delta_ecg_med = np.median(np.array(ecg_peak_idxs[1:])
-                                - np.array(ecg_peak_idxs[:-1]))
+    t_delta_ecg_med = np.median(
+        np.array(ecg_peak_idxs[1:]) - np.array(ecg_peak_idxs[:-1])
+    )
     # # Calculate median interpeak distance for EMG
-    t_delta_emg_med = np.median(np.array(emg_peak_idxs[1:])
-                                - np.array(emg_peak_idxs[:-1]))
+    t_delta_emg_med = np.median(
+        np.array(emg_peak_idxs[1:]) - np.array(emg_peak_idxs[:-1])
+    )
     # Check if each median interpeak distance is above the threshold
     t_delta_relative = t_delta_emg_med / t_delta_ecg_med
 
@@ -151,8 +150,7 @@ def percentage_under_baseline(
     ref_signal=None,
     aub_threshold=40,
 ):
-    """
-    Calculate the percentage area under the baseline, in accordance with
+    """Calculate the percentage area under the baseline, in accordance with
     Warnaar et al. (2024).
     ---------------------------------------------------------------------------
     :param signal: signal in which the peaks are detected
@@ -181,7 +179,7 @@ def percentage_under_baseline(
     :rtype percentages_aub: numpy.ndarray[float]
     """
     if aub_window_s is None:
-        aub_window_s = 5*fs
+        aub_window_s = 5 * fs
 
     if ref_signal is None:
         ref_signal = signal
@@ -215,10 +213,9 @@ def detect_local_high_aub(
     threshold_percentile=75.0,
     threshold_factor=4.0,
 ):
-    """
-    Detect local upward deflections in the area under the baseline.
+    """Detect local upward deflections in the area under the baseline.
     param aubs: List of area under the baseline values. See
-    resurfemg.postprocessing.features.area_under_baseline
+    resurfemg.postprocessing.features.area_under_baseline.
     ---------------------------------------------------------------------------
     :features.area_under_baseline
     :type aubs: ~numpy.ndarray[~float]
@@ -231,7 +228,7 @@ def detect_local_high_aub(
     :rtype valid_aubs: numpy.ndarray[bool]
     """
     threshold = threshold_factor * np.percentile(aubs, threshold_percentile)
-    valid_aubs = (aubs < threshold)
+    valid_aubs = aubs < threshold
     return valid_aubs
 
 
@@ -240,11 +237,10 @@ def detect_extreme_time_products(
     upper_percentile=95.0,
     upper_factor=10.0,
     lower_percentile=5.0,
-    lower_factor=.1,
+    lower_factor=0.1,
 ):
-    """
-    Detect extreme (high or low) time product values. See postprocessing.
-    features.time_product
+    """Detect extreme (high or low) time product values. See postprocessing.
+    features.time_product.
     ---------------------------------------------------------------------------
     :param time_products: List of time_productsvalues.
     :type time_products: ~numpy.ndarray[~float]
@@ -261,20 +257,22 @@ def detect_extreme_time_products(
     :rtype valid_etps: numpy.ndarray[bool]
     """
     upper_threshold = upper_factor * np.percentile(
-        time_products, upper_percentile)
+        time_products, upper_percentile
+    )
     lower_threshold = lower_factor * np.percentile(
-        time_products, lower_percentile)
-    valid_etps = np.all(np.array([time_products < upper_threshold,
-                                  time_products > lower_threshold]), axis=0)
+        time_products, lower_percentile
+    )
+    valid_etps = np.all(
+        np.array(
+            [time_products < upper_threshold, time_products > lower_threshold]
+        ),
+        axis=0,
+    )
     return valid_etps
 
 
-def detect_non_consecutive_manoeuvres(
-    ventilator_breath_idxs,
-    manoeuvres_idxs
-):
-    """
-    Detect manoeuvres (for example Pocc) with no supported breaths
+def detect_non_consecutive_manoeuvres(ventilator_breath_idxs, manoeuvres_idxs):
+    """Detect manoeuvres (for example Pocc) with no supported breaths
     in between. Input are the ventilator breaths, to be detected with the
     function post_processing.event_detecton.detect_supported_breaths
     If no supported breaths are detected in between two manoeuvres,
@@ -294,8 +292,9 @@ def detect_non_consecutive_manoeuvres(
         if idx > 0:
             # Check for supported breaths in between two Poccs
             intermediate_breaths = np.equal(
-                (manoeuvres_idxs[idx-1] < ventilator_breath_idxs),
-                (ventilator_breath_idxs < manoeuvres_idxs[idx]))
+                (manoeuvres_idxs[idx - 1] < ventilator_breath_idxs),
+                (ventilator_breath_idxs < manoeuvres_idxs[idx]),
+            )
 
             # If no supported breaths are detected in between, a
             # 'double dip' is detected
@@ -322,8 +321,7 @@ def evaluate_bell_curve_error(
     bell_window_s=None,
     bell_threshold=40,
 ):
-    """
-    Calculate the bell-curve error of signal peaks, in accordance with Warnaar
+    """Calculate the bell-curve error of signal peaks, in accordance with Warnaar
     et al. (2024).
     ---------------------------------------------------------------------------
     :param signal: filtered signal
@@ -364,7 +362,8 @@ def evaluate_bell_curve_error(
     fitted_parameters = np.zeros((len(peak_idxs), 3))
     y_min = np.zeros((len(peak_idxs),))
     for idx, (peak_idx, start_idx, end_i, tp) in enumerate(
-            zip(peak_idxs, start_idxs, end_idxs, time_products)):
+        zip(peak_idxs, start_idxs, end_idxs, time_products)
+    ):
         baseline_start_idx = max(0, peak_idx - bell_window_s)
         baseline_end_i = min(len(signal) - 1, peak_idx + bell_window_s)
         y_min[idx] = np.min(signal[baseline_start_idx:baseline_end_i])
@@ -374,21 +373,31 @@ def evaluate_bell_curve_error(
         else:
             plus_idx = 0
 
-        x_data = t[start_idx:end_i + 1 + plus_idx]
-        y_data = signal[start_idx:end_i + 1 + plus_idx] - y_min[idx]
+        x_data = t[start_idx : end_i + 1 + plus_idx]
+        y_data = signal[start_idx : end_i + 1 + plus_idx] - y_min[idx]
 
-        if np.any(np.isnan(x_data)) or np.any(np.isnan(y_data)) or np.any(
-                np.isinf(x_data)) or np.any(np.isinf(y_data)):
-            print(f"NaNs or Infs detected in data for peak index {idx}. "
-                  + "Skipping this peak.")
+        if (
+            np.any(np.isnan(x_data))
+            or np.any(np.isnan(y_data))
+            or np.any(np.isinf(x_data))
+            or np.any(np.isinf(y_data))
+        ):
+            print(
+                f"NaNs or Infs detected in data for peak index {idx}. "
+                "Skipping this peak."
+            )
             bell_error[idx] = np.nan
             continue
 
         try:
             popt, *_ = curve_fit(
-                mo.bell_curve, x_data, y_data,
-                bounds=([0., t[peak_idx] - 0.5, 0.],
-                        [np.inf, t[peak_idx] + 0.5, np.inf])
+                mo.bell_curve,
+                x_data,
+                y_data,
+                bounds=(
+                    [0.0, t[peak_idx] - 0.5, 0.0],
+                    [np.inf, t[peak_idx] + 0.5, np.inf],
+                ),
             )
         except RuntimeError as e:
             print(f"Curve fitting failed for peak index {idx} with error: {e}")
@@ -397,17 +406,24 @@ def evaluate_bell_curve_error(
             continue
 
         bell_error[idx] = trapezoid(
-            np.abs((signal[start_idx:end_i + 1] - (
-                mo.bell_curve(t[start_idx:end_i + 1], *popt) + y_min[idx]))),
-            dx=1 / fs
+            np.abs(
+                signal[start_idx : end_i + 1]
+                - (mo.bell_curve(t[start_idx : end_i + 1], *popt) + y_min[idx])
+            ),
+            dx=1 / fs,
         )
         percentage_bell_error[idx] = bell_error[idx] / tp * 100
         fitted_parameters[idx, :] = popt
 
     valid_peak = percentage_bell_error <= bell_threshold
 
-    return (valid_peak, bell_error, percentage_bell_error, y_min,
-            fitted_parameters)
+    return (
+        valid_peak,
+        bell_error,
+        percentage_bell_error,
+        y_min,
+        fitted_parameters,
+    )
 
 
 def evaluate_event_timing(
@@ -416,8 +432,7 @@ def evaluate_event_timing(
     delta_min=0,
     delta_max=None,
 ):
-    """
-    Evaluate whether the timing of the events in `t_events_1` preceeds the
+    """Evaluate whether the timing of the events in `t_events_1` preceeds the
     events in `t_events_2` minimally by `delta_min` and maximally by
     `delta_max`. `t_events_1` and `t_events_2` should be the same length.
     ---------------------------------------------------------------------------
@@ -435,7 +450,7 @@ def evaluate_event_timing(
     :returns delta_time: List of delta times between the events
     :rtype delta_time: numpy.ndarray[float]
     """
-    delta_time = (np.array(t_events_2) - np.array(t_events_1))
+    delta_time = np.array(t_events_2) - np.array(t_events_1)
     min_crit = delta_time >= delta_min
     if delta_max is not None:
         max_crit = delta_time <= delta_max
@@ -451,8 +466,7 @@ def evaluate_respiratory_rates(
     rr_vent,
     min_fraction=0.1,
 ):
-    """
-    This function evaluates fraction of detected EMG breaths relative to the
+    """This function evaluates fraction of detected EMG breaths relative to the
     ventilatory respiratory rate.
     ---------------------------------------------------------------------------
     :param emg_breath_idxs: EMG breath indices
@@ -469,6 +483,6 @@ def evaluate_respiratory_rates(
     :returns criterium_met: Boolean if the fraction is above the minimum
     :rtype criterium_met: bool
     """
-    detected_fraction = float(len(emg_breath_idxs)/(rr_vent * t_emg/60))
-    criterium_met = (detected_fraction >= min_fraction)
+    detected_fraction = float(len(emg_breath_idxs) / (rr_vent * t_emg / 60))
+    criterium_met = detected_fraction >= min_fraction
     return (detected_fraction, criterium_met)

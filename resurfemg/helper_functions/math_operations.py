@@ -1,5 +1,4 @@
-"""
-Copyright 2022 Netherlands eScience Center and University of Twente
+"""Copyright 2022 Netherlands eScience Center and University of Twente
 Licensed under the Apache License, version 2.0. See LICENSE for details.
 
 This file contains functions for math operations to support the functions in
@@ -8,11 +7,12 @@ ReSurfEMG
 
 import os
 from collections import namedtuple
+
 import numpy as np
 import pandas as pd
 
 
-class Range(namedtuple('RangeBase', 'start,end')):
+class Range(namedtuple("RangeBase", "start,end")):
     """Utility class for working with ranges (intervals).
     ---------------------------------------------------------------------------
     :param start: Start of the range
@@ -31,9 +31,9 @@ class Range(namedtuple('RangeBase', 'start,end')):
         :rtype: bool
         """
         return (
-            (self.end >= other.end) and (self.start < other.end) or
-            (self.end >= other.start) and (self.start < other.start) or
-            (self.end < other.end) and (self.start >= other.start)
+            ((self.end >= other.end) and (self.start < other.end))
+            or ((self.end >= other.start) and (self.start < other.start))
+            or ((self.end < other.end) and (self.start >= other.start))
         )
 
     def precedes(self, other):
@@ -55,7 +55,7 @@ class Range(namedtuple('RangeBase', 'start,end')):
 
         :rtype: slice
         """
-        return slice(*map(int, self))   # maps whole tuple set
+        return slice(*map(int, self))  # maps whole tuple set
 
 
 def zero_one_for_jumps_base(array, cut_off):
@@ -96,12 +96,11 @@ def slices_slider(array_sample, slice_len):
     :rtype: ~numpy.ndarray
     """
     for i in range(len(array_sample) - slice_len + 1):
-        yield array_sample[i:i + slice_len]
+        yield array_sample[i : i + slice_len]
 
 
 def slices_jump_slider(array_sample, slice_len, jump):
-    """
-    This function produces continuous sequential slices over an
+    """This function produces continuous sequential slices over an
     array of a certain length spaced out by a 'jump'.
     The function yields, does not return these slices.
     ---------------------------------------------------------------------------
@@ -116,7 +115,7 @@ def slices_jump_slider(array_sample, slice_len, jump):
     :rtype: ~numpy.ndarray
     """
     for i in range(len(array_sample) - (slice_len)):
-        yield array_sample[(jump*i):((jump*i) + slice_len)]
+        yield array_sample[(jump * i) : ((jump * i) + slice_len)]
 
 
 def ranges_of(array):
@@ -138,7 +137,7 @@ def ranges_of(array):
     if len(boundaries) % 2 != 0:
         boundaries = boundaries[:-1]
     range_return = tuple(
-        Range(*boundaries[i:i+2]) for i in range(0, len(boundaries), 2)
+        Range(*boundaries[i : i + 2]) for i in range(0, len(boundaries), 2)
     )
     return range_return
 
@@ -183,20 +182,19 @@ def raw_overlap_percent(signal1, signal2):
     :rtype _raw_overlap_percent: float
     """
     if len(signal1) != len(signal2):
-        print('Warning: length of arrays is not matched')
+        print("Warning: length of arrays is not matched")
         longer_signal_len = np.max([len(signal1), len(signal2)])
     else:
         longer_signal_len = len(signal1)
 
-    _raw_overlap_percent = sum(
-        signal1.astype(int) & signal2.astype(int)
-    ) / longer_signal_len
+    _raw_overlap_percent = (
+        sum(signal1.astype(int) & signal2.astype(int)) / longer_signal_len
+    )
     return _raw_overlap_percent
 
 
 def merge(left, right):
-    """
-    Merge two lists based linear order.
+    """Merge two lists based linear order.
     ---------------------------------------------------------------------------
     :param left: First list
     :type left: List
@@ -235,9 +233,8 @@ def merge(left, right):
 
 
 def scale_arrays(array, maximum, minimum):
-    """
-    This function will scale all arrays along the vertical axis to have an
-    absolute maximum value of the maximum parameter
+    """This function will scale all arrays along the vertical axis to have an
+    absolute maximum value of the maximum parameter.
     ---------------------------------------------------------------------------
     :param array: Original signal array with any number iflayers
     :type array: ~numpy.ndarray
@@ -249,19 +246,14 @@ def scale_arrays(array, maximum, minimum):
     :returns reformed: a new array with absolute max of maximum
     :rtype reformed: ~numpy.ndarray
     """
-    reformed = np.interp(
-        array,
-        (array.min(), array.max()),
-        (maximum, minimum)
-    )
+    reformed = np.interp(array, (array.min(), array.max()), (maximum, minimum))
     return reformed
 
 
 def delay_embedding(data, emb_dim, lag=1):
-    """
-    The following code is adapted from openly licensed code written by
+    """The following code is adapted from openly licensed code written by
     Christopher Schölzel in his package nolds (NOnLinear measures for Dynamical
-    Systems).It performs a time-delay embedding of a time series
+    Systems).It performs a time-delay embedding of a time series.
     ---------------------------------------------------------------------------
     :param data: array-like
     :type data: array
@@ -276,8 +268,10 @@ def delay_embedding(data, emb_dim, lag=1):
     data = np.asarray(data)
     min_len = (emb_dim - 1) * lag + 1
     if len(data) < min_len:
-        msg = "cannot embed data of length {} with embedding dimension {} " \
-            + "and lag {}, minimum required length is {}"
+        msg = (
+            "cannot embed data of length {} with embedding dimension {} "
+            "and lag {}, minimum required length is {}"
+        )
         raise ValueError(msg.format(len(data), emb_dim, lag, min_len))
     m = len(data) - min_len + 1
     indices = np.repeat([np.arange(emb_dim) * lag], m, axis=0)
@@ -288,8 +282,7 @@ def delay_embedding(data, emb_dim, lag=1):
 
 
 def save_preprocessed(array, out_fname, force):
-    """
-    This function is written to be called by the cli module.
+    """This function is written to be called by the cli module.
     It stores arrays in a directory.
     ---------------------------------------------------------------------------
     :param array: array to be stored
@@ -313,8 +306,7 @@ def save_preprocessed(array, out_fname, force):
 
 
 def derivative(signal, fs, window_s=None):
-    """
-    This function calculates the first derivative of a signal. If
+    """This function calculates the first derivative of a signal. If
     window_s is given, the signal is smoothed before derivative calculation.
     ---------------------------------------------------------------------------
     :param signal: signal to calculate the derivate over
@@ -327,14 +319,15 @@ def derivative(signal, fs, window_s=None):
     :returns dsignal_dt: The 1st derivative of the signal length len(signal)-1.
     :rtype dsignal_dt: ~numpy.ndarray
     """
-
     if window_s is not None:
         # Moving average over signal
         signal_series = pd.Series(signal)
-        signal_moving_average = signal_series.rolling(
-            window=window_s, center=True).mean().values
-        dsignal_dt = (signal_moving_average[1:]
-                      - signal_moving_average[:-1]) * fs
+        signal_moving_average = (
+            signal_series.rolling(window=window_s, center=True).mean().values
+        )
+        dsignal_dt = (
+            signal_moving_average[1:] - signal_moving_average[:-1]
+        ) * fs
     else:
         dsignal_dt = (signal[1:] - signal[:-1]) * fs
 
@@ -342,8 +335,7 @@ def derivative(signal, fs, window_s=None):
 
 
 def bell_curve(x, a, b, c):
-    """
-    This function calculates a bell curve on the samples of `x`, shifted by
+    """This function calculates a bell curve on the samples of `x`, shifted by
     b, amplified by a for a standard amplitude of 1.
     ---------------------------------------------------------------------------
     :param x: x values to calculate the bell_curve for
@@ -358,12 +350,11 @@ def bell_curve(x, a, b, c):
     :returns: bell curve
     :rtype: ~numpy.ndarray
     """
-    return a * np.exp(-(x - b) ** 2 / c ** 2)
+    return a * np.exp(-((x - b) ** 2) / c**2)
 
 
 def running_smoother(array):
-    """
-    This is the smoother to use in time calculations
+    """This is the smoother to use in time calculations.
     ---------------------------------------------------------------------------
     :param array: array to be smoothed
     :type array: ~numpy.ndarray
@@ -379,8 +370,7 @@ def running_smoother(array):
 
 
 def get_dict_key_where_value(dictionary, value):
-    """
-    This function returns the key of a dictionary where the value matches
+    """This function returns the key of a dictionary where the value matches
     the input value.
     ---------------------------------------------------------------------------
     :param dictionary: dictionary to search

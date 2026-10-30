@@ -1,5 +1,4 @@
-"""
-Copyright 2022 Netherlands eScience Center and University of Twente
+"""Copyright 2022 Netherlands eScience Center and University of Twente
 Licensed under the Apache License, version 2.0. See LICENSE for details.
 
 This file contains legacy functions to extract entropy features from
@@ -10,8 +9,9 @@ not included in the ReSurfEMG module.
 import collections
 import math
 import warnings
-from scipy.stats import entropy
+
 import numpy as np
+from scipy.stats import entropy
 
 from resurfemg.helper_functions.math_operations import delay_embedding
 
@@ -30,15 +30,16 @@ def entropical(sig):
     :rtype sum_e_x: float
 
     """
-    probabilit = [n_x/len(sig) for x, n_x in collections.Counter(sig).items()]
-    e_x = [-p_x*math.log(p_x, 2) for p_x in probabilit]
+    probabilit = [
+        n_x / len(sig) for x, n_x in collections.Counter(sig).items()
+    ]
+    e_x = [-p_x * math.log(p_x, 2) for p_x in probabilit]
     sum_e_x = sum(e_x)
     return sum_e_x
 
 
 def entropy_scipy(sli, base=None):
-    """
-    This function wraps scipy.stats entropy  (which is a Shannon entropy)
+    """This function wraps scipy.stats entropy  (which is a Shannon entropy)
     for use in the resurfemg library, it can be used in a slice iterator
     as a drop-in substitute for the hf.entropical but it is a true entropy.
 
@@ -48,9 +49,8 @@ def entropy_scipy(sli, base=None):
     :returns entropy_count: the entropy of the slice
     :rtype entropy_count: float
     """
-
     _, counts = np.unique(sli, return_counts=True)
-    entropy_count = entropy(counts/len(counts), base=base)
+    entropy_count = entropy(counts / len(counts), base=base)
     return entropy_count
 
 
@@ -59,18 +59,18 @@ def rowwise_chebyshev(x, y):
 
 
 def sampen(
-        data,
-        emb_dim=2,
-        tolerance=None,
-        dist=rowwise_chebyshev,
-        closed=False,
+    data,
+    emb_dim=2,
+    tolerance=None,
+    dist=rowwise_chebyshev,
+    closed=False,
 ):
-    """
-    The following code is adapted from openly licensed code written by
+    """The following code is adapted from openly licensed code written by
     Christopher Schölzel in his package
     nolds (NOnLinear measures for Dynamical Systems).
     It computes the sample entropy of time sequence data.
-    Returns
+
+    Returns:
     the sample entropy of the data (negative logarithm of ratio between
     similar template vectors of length emb_dim + 1 and emb_dim)
     [c_m, c_m1]:
@@ -117,7 +117,7 @@ def sampen(
     data = np.asarray(data)
 
     if tolerance is None:
-        lint_helper = (0.5627 * np.log(emb_dim) + 1.3334)
+        lint_helper = 0.5627 * np.log(emb_dim) + 1.3334
         tolerance = np.std(data, ddof=1) * 0.1164 * lint_helper
     n = len(data)
 
@@ -144,10 +144,10 @@ def sampen(
     for m in [emb_dim, emb_dim + 1]:
         counts.append(0)
         # get the matrix that we need for the current m
-        t_vecs_m = t_vecs[:n - m + 1, :m]
+        t_vecs_m = t_vecs[: n - m + 1, :m]
         # successively calculate distances between each pair of templ vectrs
         for i in range(len(t_vecs_m) - 1):
-            dsts = dist(t_vecs_m[i + 1:], t_vecs_m[i])
+            dsts = dist(t_vecs_m[i + 1 :], t_vecs_m[i])
             # count how many distances are smaller than the tolerance
             if closed:
                 counts[-1] += np.sum(dsts <= tolerance)
@@ -171,7 +171,7 @@ def sampen(
                 " and ".join(zcounts),
                 "NaN" if len(zcounts) == 2 else "inf",
             ),
-            RuntimeWarning
+            RuntimeWarning,
         )
         if counts[0] == 0 and counts[1] == 0:
             saen = np.nan
@@ -183,18 +183,17 @@ def sampen(
 
 
 def sampen_optimized(
-        data,
-        tolerance=None,
-        closed=False,
+    data,
+    tolerance=None,
+    closed=False,
 ):
-    """
-
-    The following code is adapted from openly licensed code written by
+    """The following code is adapted from openly licensed code written by
     Christopher Schölzel in his package
     nolds (NOnLinear measures for Dynamical Systems).
     It computes the sample entropy of time sequence data.
-    emb_dim has been set to 1 (not parameterized)
-    Returns
+    emb_dim has been set to 1 (not parameterized).
+
+    Returns:
     the sample entropy of the data (negative logarithm of ratio between
     similar template vectors of length emb_dim + 1 and emb_dim)
     [c_m, c_m1]:
@@ -226,7 +225,7 @@ def sampen_optimized(
     # TODO: this function can still be further optimized
     data = np.asarray(data)
     if tolerance is None:
-        lint_helper = (0.5627 * np.log(1) + 1.3334)
+        lint_helper = 0.5627 * np.log(1) + 1.3334
         tolerance = np.std(data, ddof=1) * 0.1164 * lint_helper
     n = len(data)
 
@@ -256,7 +255,7 @@ def sampen_optimized(
                 " and ".join(zcounts),
                 "NaN" if len(zcounts) == 2 else "inf",
             ),
-            RuntimeWarning
+            RuntimeWarning,
         )
         if counts[0] == 0 and counts[1] == 0:
             saen = np.nan
@@ -273,11 +272,10 @@ def calc_closed_sampent(t_vecs, n, tolerance):
 
 
 def calc_open_sampent(t_vecs, n, tolerance):
-    triplets = t_vecs[:n - 2, :3]
+    triplets = t_vecs[: n - 2, :3]
 
     raw_dsts = tuple(
-        triplets[i + 1:] - triplets[i]
-        for i in range(len(triplets) - 1)
+        triplets[i + 1 :] - triplets[i] for i in range(len(triplets) - 1)
     )
     dsts = np.concatenate(raw_dsts)
     dsts_abs = np.abs(dsts)
@@ -288,25 +286,24 @@ def calc_open_sampent(t_vecs, n, tolerance):
 
 
 def entropy_maker(
-        array,
-        method='sample_entropy',
-        base=None,
+    array,
+    method="sample_entropy",
+    base=None,
 ):
-    """
-    The following code allows a user to input an array and calculate either
+    """The following code allows a user to input an array and calculate either
     a time-series specific entropy i.e. the nolds or a more general
     Shannon entropy as calculated in scipy.
     It calls entropy functions in the file.
 
     """
-    if method == 'scipy':
+    if method == "scipy":
         output = entropy_scipy(array, base=base)
-    elif method == 'nolds':
+    elif method == "nolds":
         output = sampen(array)
-    elif method == 'sample_entropy':
+    elif method == "sample_entropy":
         output = sampen_optimized(array)
     else:
-        print('your method is not an option,')
-        print('we defaulted to a slow unoptimized sample entropy')
+        print("your method is not an option,")
+        print("we defaulted to a slow unoptimized sample entropy")
         output = sampen(array)
     return output

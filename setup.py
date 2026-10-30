@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import os
+import subprocess
 import sys
 from glob import glob
-import subprocess
 
 from setuptools import Command, setup
 
@@ -10,8 +10,7 @@ project_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 class SphinxApiDoc(Command):
-
-    description = 'run apidoc to generate documentation'
+    description = "run apidoc to generate documentation"
 
     user_options = []
 
@@ -24,14 +23,14 @@ class SphinxApiDoc(Command):
     def run(self):
         from sphinx.ext.apidoc import main
 
-        src = os.path.join(project_dir, 'docs')
+        src = os.path.join(project_dir, "docs")
         special = (
-            'index.rst',
-            'developers.rst',
-            'medical-professionals.rst',
+            "index.rst",
+            "developers.rst",
+            "medical-professionals.rst",
         )
 
-        for f in glob(os.path.join(src, '*.rst')):
+        for f in glob(os.path.join(src, "*.rst")):
             for end in special:
                 if f.endswith(end):
                     os.utime(f, None)
@@ -39,19 +38,25 @@ class SphinxApiDoc(Command):
             else:
                 os.unlink(f)
 
-        sys.exit(main([
-            '-o', src,
-            '-f', os.path.join(project_dir, 'resurfemg'),
-            '-d', '4',
-            '--separate',
-        ]))
+        sys.exit(
+            main(
+                [
+                    "-o",
+                    src,
+                    "-f",
+                    os.path.join(project_dir, "resurfemg"),
+                    "-d",
+                    "4",
+                    "--separate",
+                ]
+            )
+        )
 
 
 class SphinxDoc(Command):
+    description = "generate documentation"
 
-    description = 'generate documentation'
-
-    user_options = [('wall', 'W', ('Warnings are errors'))]
+    user_options = [("wall", "W", ("Warnings are errors"))]
 
     def initialize_options(self):
         self.wall = True
@@ -60,38 +65,42 @@ class SphinxDoc(Command):
         pass
 
     def run(self):
-        from sphinx.util.console import nocolor
-        from sphinx.util.docutils import docutils_namespace, patch_docutils
         from sphinx.application import Sphinx
         from sphinx.cmd.build import handle_exception
+        from sphinx.util.console import nocolor
+        from sphinx.util.docutils import docutils_namespace, patch_docutils
 
-        name = 'resurfemg'
+        name = "resurfemg"
         try:
-            tag = subprocess.check_output(
-                [
-                    'git',
-                    '--no-pager',
-                    'describe',
-                    '--abbrev=0',
-                    '--tags',
-                ],
-                stderr=subprocess.DEVNULL,
-            ).strip().decode()
+            tag = (
+                subprocess.check_output(
+                    [
+                        "git",
+                        "--no-pager",
+                        "describe",
+                        "--abbrev=0",
+                        "--tags",
+                    ],
+                    stderr=subprocess.DEVNULL,
+                )
+                .strip()
+                .decode()
+            )
         except subprocess.CalledProcessError:
-            tag = 'v0.0.0'
+            tag = "v0.0.0"
 
         version = tag[1:]
 
         nocolor()
         confoverrides = {}
-        confoverrides['project'] = name
-        confoverrides['version'] = version
-        confoverrides['autodoc_mock_imports'] = ["adi"]
-        confdir = os.path.join(project_dir, 'docs')
+        confoverrides["project"] = name
+        confoverrides["version"] = version
+        confoverrides["autodoc_mock_imports"] = ["adi"]
+        confdir = os.path.join(project_dir, "docs")
         srcdir = confdir
-        builder = 'html'
-        build = self.get_finalized_command('build')
-        build_dir = os.path.join(os.path.abspath(build.build_base), 'sphinx')
+        builder = "html"
+        build = self.get_finalized_command("build")
+        build_dir = os.path.join(os.path.abspath(build.build_base), "sphinx")
         builder_target_dir = os.path.join(build_dir, builder)
         app = None
 
@@ -101,7 +110,7 @@ class SphinxDoc(Command):
                     srcdir,
                     confdir,
                     builder_target_dir,
-                    os.path.join(build_dir, 'doctrees'),
+                    os.path.join(build_dir, "doctrees"),
                     builder,
                     confoverrides,
                     sys.stdout,
@@ -113,7 +122,7 @@ class SphinxDoc(Command):
                 app.build(force_all=False)
                 if app.statuscode:
                     sys.stderr.write(
-                        'Sphinx builder {} failed.'.format(app.builder.name),
+                        f"Sphinx builder {app.builder.name} failed.",
                     )
                     raise SystemExit(8)
         except Exception as e:
@@ -121,13 +130,13 @@ class SphinxDoc(Command):
             raise
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     setup(
         use_scm_version=True,
-        long_description=open('README.md').read(),
+        long_description=open("README.md").read(),
         long_description_content_type="text/markdown",
         cmdclass={
-            'apidoc': SphinxApiDoc,
-            'build_sphinx': SphinxDoc,
+            "apidoc": SphinxApiDoc,
+            "build_sphinx": SphinxDoc,
         },
     )
